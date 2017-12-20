@@ -25,18 +25,25 @@
 #include "my_sys.h"                             // MY_*, NullS, NULL
 #include "log.h"
 
+#if !defined _WIN32
+  #define ENABLE_OTHER_LANG
+#endif
 
 enum err_msgs_index
 {
-  en_US= 0, cs_CZ, da_DK, nl_NL, et_EE, fr_FR, de_DE, el_GR, hu_HU, it_IT,
+  en_US= 0, 
+#ifdef ENABLE_OTHER_LANG 
+  cs_CZ, da_DK, nl_NL, et_EE, fr_FR, de_DE, el_GR, hu_HU, it_IT,
   ja_JP, ko_KR, no_NO, nn_NO, pl_PL, pt_PT, ro_RO, ru_RU, sr_RS,  sk_SK,
   es_ES, sv_SE, uk_UA
+#endif
 } ERR_MSGS_INDEX;
 
 
 MY_LOCALE_ERRMSGS global_errmsgs[]=
 {
   MY_LOCALE_ERRMSGS("english"),
+#ifdef ENABLE_OTHER_LANG 
   MY_LOCALE_ERRMSGS("czech"),
   MY_LOCALE_ERRMSGS("danish"),
   MY_LOCALE_ERRMSGS("dutch"),
@@ -60,9 +67,10 @@ MY_LOCALE_ERRMSGS global_errmsgs[]=
   MY_LOCALE_ERRMSGS("swedish"),
   MY_LOCALE_ERRMSGS("ukrainian"),
   MY_LOCALE_ERRMSGS(NULL)
+#endif
 };
 
-
+#ifdef ENABLE_OTHER_LANG 
 /***** LOCALE BEGIN ar_AE: Arabic - United Arab Emirates *****/
 static const char *my_locale_month_names_ar_AE[13] = 
  {"يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر", NullS };
@@ -494,6 +502,7 @@ MY_LOCALE my_locale_de_DE
   &global_errmsgs[de_DE]
 );
 /***** LOCALE END de_DE *****/
+#endif
 
 /***** LOCALE BEGIN en_US: English - United States *****/
 static const char *my_locale_month_names_en_US[13] = 
@@ -531,6 +540,7 @@ MY_LOCALE my_locale_en_US
 );
 /***** LOCALE END en_US *****/
 
+#ifdef ENABLE_OTHER_LANG 
 /***** LOCALE BEGIN es_ES: Spanish - Spain *****/
 static const char *my_locale_month_names_es_ES[13] = 
  {"enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre", NullS };
@@ -3314,6 +3324,7 @@ MY_LOCALE my_locale_rm_CH
 );
 /***** LOCALE END rm_CH *****/
 
+#endif
 
 /*
   The list of all locales.
@@ -3324,6 +3335,7 @@ MY_LOCALE my_locale_rm_CH
 MY_LOCALE *my_locales[]=
   {
     &my_locale_en_US,
+#ifdef ENABLE_OTHER_LANG 
     &my_locale_en_GB,
     &my_locale_ja_JP,
     &my_locale_sv_SE,
@@ -3434,13 +3446,16 @@ MY_LOCALE *my_locales[]=
     &my_locale_zh_HK,
     &my_locale_el_GR,
     &my_locale_rm_CH,
+#endif        
     NULL 
   };
 
 
 MY_LOCALE *my_locales_deprecated[]=
 {
+#ifdef ENABLE_OTHER_LANG 
   &my_locale_sr_YU,
+#endif
   NULL
 };
 
