@@ -45,12 +45,21 @@ ADD_CONVENIENCE_LIBRARY(client_base
   ../../sql-common/sql_string.cc
 )
 
-ADD_COMPILE_FLAGS(
-  mutex.cc
-  mysql_query_runner.cc
-  show_variable_query_extractor.cc
-  COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -isystem ${BOOST_INCLUDE_DIR}
-)
+IF (NOT WIN32)
+  ADD_COMPILE_FLAGS(
+    mutex.cc
+    mysql_query_runner.cc
+    show_variable_query_extractor.cc
+    COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -isystem ${BOOST_INCLUDE_DIR}
+  )
+ELSE()
+  ADD_COMPILE_FLAGS(
+    mutex.cc
+    mysql_query_runner.cc
+    show_variable_query_extractor.cc
+    COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -I${BOOST_INCLUDE_DIR}
+  )
+ENDIF()
 
 TARGET_LINK_LIBRARIES(client_base perconaserverclient)
 

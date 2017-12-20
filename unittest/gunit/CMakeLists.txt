@@ -385,10 +385,17 @@ IF (MERGE_UNITTESTS)
       COMPILE_FLAGS "-Wno-empty-body"
     )
   ENDIF()
-  ADD_COMPILE_FLAGS(
-    ${MERGE_SMALL_TESTS}
-    COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -isystem ${BOOST_INCLUDE_DIR}
-  )
+  IF (NOT WIN32)
+    ADD_COMPILE_FLAGS(
+      ${MERGE_SMALL_TESTS}
+      COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -isystem ${BOOST_INCLUDE_DIR}
+    )
+  ELSE()
+    ADD_COMPILE_FLAGS(
+      ${MERGE_SMALL_TESTS}
+      COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -I${BOOST_INCLUDE_DIR}
+    )
+  ENDIF()
   # Fixes "C1128: number of sections exceeded object file format limit" in MSVC
   IF(WIN32)
     ADD_COMPILE_FLAGS(
@@ -467,14 +474,25 @@ ENDIF(MERGE_UNITTESTS)
       COMPILE_FLAGS "-Wno-empty-body"
   )
   ENDIF()
-  ADD_COMPILE_FLAGS(
-    bounded_queue-t.cc
-    COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -isystem ${BOOST_INCLUDE_DIR}
-  )
-  ADD_COMPILE_FLAGS(
-    pump_object_filter-t.cc
-    COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -isystem ${BOOST_INCLUDE_DIR}
-  )
+  IF (NOT WIN32)
+    ADD_COMPILE_FLAGS(
+      bounded_queue-t.cc
+      COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -isystem ${BOOST_INCLUDE_DIR}
+    )
+    ADD_COMPILE_FLAGS(
+      pump_object_filter-t.cc
+      COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -isystem ${BOOST_INCLUDE_DIR}
+    )
+  ELSE()
+    ADD_COMPILE_FLAGS(
+      bounded_queue-t.cc
+      COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -I${BOOST_INCLUDE_DIR}
+    )
+    ADD_COMPILE_FLAGS(
+      pump_object_filter-t.cc
+      COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -I${BOOST_INCLUDE_DIR}
+    )
+  ENDIF()
 
   FOREACH(test ${SERVER_TESTS})
     SET(SRC_FILES ${test}-t.cc)

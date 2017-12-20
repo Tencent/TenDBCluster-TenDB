@@ -51,9 +51,15 @@ IF(NOT WITHOUT_SERVER)
   MYSQL_ADD_EXECUTABLE(mysql_upgrade
     upgrade/program.cc
   )
-ADD_COMPILE_FLAGS(
-  upgrade/program.cc COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -isystem ${BOOST_INCLUDE_DIR}
-)
+IF (NOT WIN32)
+  ADD_COMPILE_FLAGS(
+    upgrade/program.cc COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -isystem ${BOOST_INCLUDE_DIR}
+  )
+ELSE()
+  ADD_COMPILE_FLAGS(
+    upgrade/program.cc COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -I${BOOST_INCLUDE_DIR}
+  )
+ENDIF()
 TARGET_LINK_LIBRARIES(mysql_upgrade perconaserverclient client_base mysqlcheck_core)
 ADD_DEPENDENCIES(mysql_upgrade GenFixPrivs GenSysSchema)
 ENDIF()
