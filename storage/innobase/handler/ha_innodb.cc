@@ -21514,6 +21514,23 @@ static MYSQL_SYSVAR_ENUM(stats_method, srv_innodb_stats_method,
   " NULLS_UNEQUAL and NULLS_IGNORED",
    NULL, NULL, SRV_STATS_NULLS_EQUAL, &innodb_stats_method_typelib);
 
+#ifdef _WIN32
+static MYSQL_SYSVAR_BOOL(track_changed_pages, srv_track_changed_pages,
+  PLUGIN_VAR_NOCMDARG
+//#ifndef UNIV_DEBUG
+  /* Make this variable dynamic for debug builds to
+  provide a testcase sync facility */
+  | PLUGIN_VAR_READONLY
+//#endif
+  ,
+  "Track the redo log for changed pages and output a changed page bitmap",
+//#ifdef UNIV_DEBUG
+  innodb_track_changed_pages_validate,
+//#else
+//  NULL,
+//#endif
+  NULL, FALSE);
+#else
 static MYSQL_SYSVAR_BOOL(track_changed_pages, srv_track_changed_pages,
   PLUGIN_VAR_NOCMDARG
 #ifndef UNIV_DEBUG
@@ -21528,7 +21545,7 @@ static MYSQL_SYSVAR_BOOL(track_changed_pages, srv_track_changed_pages,
 #else
   NULL,
 #endif
-  NULL, FALSE);
+#endif
 
 static MYSQL_SYSVAR_ULONGLONG(max_bitmap_file_size, srv_max_bitmap_file_size,
     PLUGIN_VAR_RQCMDARG,

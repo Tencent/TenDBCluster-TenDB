@@ -574,7 +574,7 @@ static void my_b_print_status(IO_CACHE *log_file, const char *status,
   for (tmp= status; *tmp; tmp++)
     my_b_printf(log_file, "%c", *tmp == ' ' ? '_' : *tmp);
 
-  snprintf(query_time_buff, sizeof(query_time_buff), "%.6f",
+  my_snprintf(query_time_buff, sizeof(query_time_buff), "%.6f",
            (stop->time_usecs - start->time_usecs) / (1000.0 * 1000));
   my_b_printf(log_file, ": %s ", query_time_buff);
 
@@ -583,7 +583,7 @@ static void my_b_print_status(IO_CACHE *log_file, const char *status,
     my_b_printf(log_file, "%c", *tmp == ' ' ? '_' : *tmp);
   my_b_printf(log_file, "_cpu: ");
 
-  snprintf(query_time_buff, sizeof(query_time_buff), "%.6f",
+  my_snprintf(query_time_buff, sizeof(query_time_buff), "%.6f",
            (stop->cpu_time_usecs - start->cpu_time_usecs) /
            (1000.0 * 1000 * 1000));
   my_b_printf(log_file, "%s ", query_time_buff);

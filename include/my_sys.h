@@ -972,6 +972,9 @@ void my_win_console_fputs(const CHARSET_INFO *cs, const char *data);
 void my_win_console_putc(const CHARSET_INFO *cs, int c);
 void my_win_console_vfprintf(const CHARSET_INFO *cs, const char *fmt, va_list args);
 int my_win_translate_command_line_args(const CHARSET_INFO *cs, int *ac, char ***av);
+
+char *strsep(char **stringp, const char *delim);
+int gettimeofday(struct timeval *tp, void *tzp);
 #endif /* _WIN32 */
 
 #ifdef HAVE_PSI_INTERFACE

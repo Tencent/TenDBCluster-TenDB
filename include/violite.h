@@ -106,6 +106,15 @@ enum enum_vio_io_event
 #define VIO_READ_BUFFER_SIZE 16384              /* size of read buffer */
 #define VIO_DESCRIPTION_SIZE 30                 /* size of description */
 
+
+#ifdef _WIN32 
+#if (_WIN32_WINNT < 0x0600)
+typedef u_short sa_family_t;
+#else
+typedef ADDRESS_FAMILY sa_family_t;
+#endif //(_WIN32_WINNT < 0x0600)
+#endif // _WIN32
+
 struct st_vio_network {
   union {
     struct in_addr in;

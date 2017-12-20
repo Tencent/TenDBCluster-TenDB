@@ -687,6 +687,6 @@ os_file_set_nocache(
 	const char*	operation_name,
 	bool		failure_warning)
 {
-	return os_file_set_nocache(file.m_file, file_name, operation_name,
+	return os_file_set_nocache((int)file.m_file, file_name, operation_name,
 				   failure_warning);
 }

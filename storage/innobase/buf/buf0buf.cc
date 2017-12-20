@@ -4523,7 +4523,7 @@ got_block:
 
 		buf_page_mutex_exit(block);
 
-		os_atomic_increment(&buf_pool->n_pend_unzip, 1);
+		os_atomic_increment_ulint(&buf_pool->n_pend_unzip, 1);
 
 		buf_page_free_descriptor(bpage);
 
@@ -5493,7 +5493,7 @@ buf_page_create(
 	mutex_exit(&buf_pool->LRU_list_mutex);
 
 	buf_block_buf_fix_inc(block, __FILE__, __LINE__);
-	os_atomic_increment(&buf_pool->stat.n_pages_created, 1);
+	os_atomic_increment_ulint(&buf_pool->stat.n_pages_created, 1);
 
 	if (page_size.is_compressed()) {
 		void*	data;
@@ -5971,7 +5971,7 @@ retry_mutex:
 	BPageMutex*	page_mutex = buf_page_get_mutex(bpage);
 	mutex_enter(page_mutex);
 
-	if (UNIV_UNLIKELY(io_type == BUF_IO_WRITE
+	if ((io_type == BUF_IO_WRITE
 			  && (
 #if defined UNIV_DEBUG || defined UNIV_BUF_DEBUG
 			      buf_page_get_state(bpage) == BUF_BLOCK_ZIP_DIRTY

@@ -652,7 +652,7 @@ bool File_query_log::open()
     if (generate_new_log_name(log_file_name, &cur_log_ext, name, false))
       goto err;
   } else {
-    snprintf(log_file_name, sizeof(log_file_name),
+    my_snprintf(log_file_name, sizeof(log_file_name),
              "%s.%06lu", name, cur_log_ext);
   }
 
@@ -930,7 +930,7 @@ bool File_query_log::write_slow(THD *thd, ulonglong current_utime,
       && thd->innodb_trx_id)
   {
     char buf[20];
-    snprintf(buf, 20, "%llX", thd->innodb_trx_id);
+    my_snprintf(buf, 20, "%llX", thd->innodb_trx_id);
     if (my_b_printf(&log_file,
                     "# InnoDB_trx_id: %s\n", buf) == (uint) -1)
       goto err;
@@ -955,9 +955,9 @@ bool File_query_log::write_slow(THD *thd, ulonglong current_utime,
       && thd->innodb_was_used)
   {
     char buf[3][20];
-    snprintf(buf[0], 20, "%.6f", thd->innodb_io_reads_wait_timer / 1000000.0);
-    snprintf(buf[1], 20, "%.6f", thd->innodb_lock_que_wait_timer / 1000000.0);
-    snprintf(buf[2], 20, "%.6f", thd->innodb_innodb_que_wait_timer / 1000000.0);
+    my_snprintf(buf[0], 20, "%.6f", thd->innodb_io_reads_wait_timer / 1000000.0);
+    my_snprintf(buf[1], 20, "%.6f", thd->innodb_lock_que_wait_timer / 1000000.0);
+    my_snprintf(buf[2], 20, "%.6f", thd->innodb_innodb_que_wait_timer / 1000000.0);
     if (my_b_printf(&log_file,
                     "#   InnoDB_IO_r_ops: %lu  InnoDB_IO_r_bytes: %llu  "
                     "InnoDB_IO_r_wait: %s\n"
@@ -1790,7 +1790,7 @@ bool File_query_log::purge_up_to(ulong to_ext, const char *log_name)
   DBUG_ENTER("File_query_log::purge_up_to");
 
   do {
-    snprintf(buff, sizeof(buff), "%s.%06lu", name, to_ext);
+    my_snprintf(buff, sizeof(buff), "%s.%06lu", name, to_ext);
     if ((error= unlink(buff)))
     {
       if (my_errno() == ENOENT)
@@ -2201,7 +2201,7 @@ int File_query_log::new_file()
       error= 1;
       goto end;
     }
-    snprintf(new_name, sizeof(new_name), "%s.%06lu", name, ++cur_log_ext);
+    my_snprintf(new_name, sizeof(new_name), "%s.%06lu", name, ++cur_log_ext);
   }
 
   /*

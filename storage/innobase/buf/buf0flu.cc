@@ -600,12 +600,19 @@ buf_flush_ready_for_flush(
 	buf_pool_t*	buf_pool = buf_pool_from_bpage(bpage);
 #endif
 
+#ifndef _WIN32
 	ut_a(buf_page_in_file(bpage)
 	     || (buf_page_get_state(bpage) == BUF_BLOCK_REMOVE_HASH
 #ifdef UNIV_DEBUG
 		 && !mutex_own(&buf_pool->LRU_list_mutex)
 #endif
 		     ));
+#else 
+	ut_ad(buf_page_in_file(bpage)
+	     || (buf_page_get_state(bpage) == BUF_BLOCK_REMOVE_HASH
+		 && !mutex_own(&buf_pool->LRU_list_mutex)
+		     ));
+#endif
 	ut_ad(mutex_own(buf_page_get_mutex(bpage))
 	      || (flush_type == BUF_FLUSH_LIST
 		  && buf_flush_list_mutex_own(buf_pool)));
@@ -1533,12 +1540,19 @@ buf_flush_page_and_try_neighbors(
 		mutex_enter(block_mutex);
 	}
 
+#ifndef _WIN32
 	ut_a(buf_page_in_file(bpage)
 	     || (buf_page_get_state(bpage) == BUF_BLOCK_REMOVE_HASH
 #ifdef UNIV_DEBUG
 		 && !mutex_own(&buf_pool->LRU_list_mutex)
 #endif
 		 ));
+#else
+	ut_ad(buf_page_in_file(bpage)
+	     || (buf_page_get_state(bpage) == BUF_BLOCK_REMOVE_HASH
+		 && !mutex_own(&buf_pool->LRU_list_mutex)
+		 ));
+#endif
 
 	if (buf_flush_ready_for_flush(bpage, flush_type)) {
 		buf_pool_t*	buf_pool;

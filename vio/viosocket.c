@@ -24,6 +24,7 @@
 */
 
 #include "vio_priv.h"
+#include <stdint.h>
 
 #ifdef FIONREAD_IN_SYS_FILIO
 # include <sys/filio.h>
@@ -535,7 +536,7 @@ int vio_cancel(Vio * vio, int how)
 #ifdef  _WIN32
     /* Cancel possible IO in progress (shutdown does not do that on
     Windows). */
-    (void) cancel_io((HANDLE)vio->mysql_socket, vio->thread_id);
+		(void) cancel_io((HANDLE)vio_fd(vio), vio->thread_id);
 #endif
   }
 
@@ -715,7 +716,7 @@ static my_bool vio_client_must_be_proxied(const struct sockaddr *addr)
         if ((check->s_addr & mask->s_addr) == addr->s_addr)
           return TRUE;
       }
-#ifdef HAVE_IPV6
+#if defined(HAVE_IPV6) && !defined(_WIN32)
       else {
         struct in6_addr *check= &((struct sockaddr_in6 *)addr)->sin6_addr;
         struct in6_addr *addr= &vio_pp_networks[i].addr.in6;

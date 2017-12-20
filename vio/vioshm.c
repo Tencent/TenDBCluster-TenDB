@@ -161,7 +161,7 @@ void vio_delete_shared_memory(Vio *vio)
     DBUG_VOID_RETURN;
 
   if (vio->inactive == FALSE)
-    vio->vioshutdown(vio);
+    vio->vioshutdown(vio, SHUT_RDWR);
 
   /*
     Close all handlers. UnmapViewOfFile and CloseHandle return non-zero

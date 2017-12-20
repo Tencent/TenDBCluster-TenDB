@@ -172,12 +172,12 @@ sync_print_wait_info(FILE* file)
 		= static_cast<int64_t>(rw_lock_stats.rw_sx_os_wait_count);
 
 	fprintf(file,
-		"RW-shared spins " INT64PF ", rounds " INT64PF ","
-		" OS waits " INT64PF "\n"
-		"RW-excl spins " INT64PF ", rounds " INT64PF ","
-		" OS waits " INT64PF "\n"
-		"RW-sx spins " INT64PF ", rounds " INT64PF ","
-		" OS waits " INT64PF "\n",
+		"RW-shared spins " UINT64PF ", rounds " UINT64PF ","
+		" OS waits " UINT64PF "\n"
+		"RW-excl spins " UINT64PF ", rounds " UINT64PF ","
+		" OS waits " UINT64PF "\n"
+		"RW-sx spins " UINT64PF ", rounds " UINT64PF ","
+		" OS waits " UINT64PF "\n",
 		rw_s_spin_wait_count_val, rw_s_spin_round_count_val,
 		rw_s_os_wait_count_val,
 		rw_x_spin_wait_count_val, rw_x_spin_round_count_val,

@@ -28,6 +28,7 @@
   for functions.
 */
 #if defined(_MSC_VER)
+#include <stdint.h>
 #if defined(MYSQL_DYNAMIC_PLUGIN)
   #ifdef __cplusplus
     #define MYSQL_PLUGIN_EXPORT extern "C" __declspec(dllexport)

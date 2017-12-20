@@ -3051,14 +3051,18 @@ static File create_file(THD *thd, char *path, sql_exchange *exchange,
     if (MY_S_ISFIFO(stat_arg.st_mode))
       file= mysql_file_open(key_select_to_file,
                             path, O_WRONLY, MYF(MY_WME));
-#ifndef __WIN__
+#ifndef _WIN32
     if (MY_S_ISSOCK(stat_arg.st_mode))
       file= mysql_unix_socket_connect(key_select_to_file,
                                       path, MYF(MY_WME));
 #endif
     if (file < 0)
     {
+#ifdef _WIN32
+      if (!(MY_S_ISFIFO(stat_arg.st_mode)))
+#else
       if (!(MY_S_ISFIFO(stat_arg.st_mode) || MY_S_ISSOCK(stat_arg.st_mode)))
+#endif
         my_error(ER_FILE_EXISTS_ERROR, MYF(0), exchange->file_name);
       return -1;
     }

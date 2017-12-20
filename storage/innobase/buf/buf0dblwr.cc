@@ -1482,6 +1482,7 @@ static MY_ATTRIBUTE((warn_unused_result))
 dberr_t
 buf_parallel_dblwr_file_create(void)
 {
+#ifndef _WIN32
 	ut_ad(!srv_read_only_mode);
 	/* The buffer size is two doublewrite batches (one for LRU, one for
 	flush list flusher) per buffer pool instance. */
@@ -1547,6 +1548,7 @@ buf_parallel_dblwr_file_create(void)
 		   << parallel_dblwr_buf.path << ", size "
 		   << os_file_get_size(parallel_dblwr_buf.file) << " bytes";
 
+#endif
 	return(DB_SUCCESS);
 }
 

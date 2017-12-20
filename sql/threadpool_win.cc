@@ -21,16 +21,29 @@
 
 #include <my_global.h>
 #include <violite.h>
-#include <sql_priv.h>
+//#include <sql_priv.h>
 #include <sql_class.h>
-#include <my_pthread.h>
-#include <scheduler.h>
+#include <my_thread.h>
+//#include <scheduler.h>
 #include <sql_connect.h>
 #include <mysqld.h>
 #include <debug_sync.h>
 #include <threadpool.h>
 #include <windows.h>
 #include <conn_handler/connection_handler_impl.h>
+#include <log.h>
+#include <mysqld_thd_manager.h>
+#include <channel_info.h>
+
+
+#if defined(HAVE_LONG_LONG) && !defined(ULONGLONG_MAX)
+/* First check for ANSI C99 definition: */
+#ifdef ULLONG_MAX
+#define ULONGLONG_MAX  ULLONG_MAX
+#else
+#define ULONGLONG_MAX ((unsigned long long)(~0ULL))
+#endif
+#endif /* defined (HAVE_LONG_LONG) && !defined(ULONGLONG_MAX)*/
 
 
 /*
@@ -251,12 +264,12 @@ void init_connection(connection_t *connection)
 int init_io(connection_t *connection, THD *thd)
 {
   connection->thd= thd;
-  Vio *vio = thd->net.vio;
+	Vio *vio = thd->get_protocol_classic()->get_vio();
   switch(vio->type)
   {
     case VIO_TYPE_SSL:
     case VIO_TYPE_TCPIP:
-      connection->handle= (HANDLE)vio->sd;
+      connection->handle= (HANDLE)vio_fd(vio); 
       break;
     case VIO_TYPE_NAMEDPIPE:
       connection->handle= (HANDLE)vio->hPipe;
@@ -320,17 +333,19 @@ int start_io(connection_t *connection, PTP_CALLBACK_INSTANCE instance)
   DWORD last_error= 0;
 
   int retval;
-  Vio *vio= connection->thd->net.vio;
+	Vio *vio = connection->thd->get_protocol_classic()->get_vio();
 
   if (vio->type == VIO_TYPE_SHARED_MEMORY)
   {
+#if !defined (EMBEDDED_LIBRARY)
       SetThreadpoolWait(connection->shm_read, vio->event_server_wrote, NULL);
+#endif
       return 0;
   }
-  if (vio->type == VIO_CLOSED)
-  {
-    return -1;
-  }
+  //if (vio->type == VIO_CLOSED)
+  //{
+  //  return -1;
+  //}
 
   DBUG_ASSERT(vio->type == VIO_TYPE_TCPIP || 
     vio->type == VIO_TYPE_SSL ||
@@ -343,7 +358,7 @@ int start_io(connection_t *connection, PTP_CALLBACK_INSTANCE instance)
   if (vio->type == VIO_TYPE_TCPIP || vio->type == VIO_TYPE_SSL)
   {
     /* Start async io (sockets). */
-    if (WSARecv(vio->sd , &buf, 1, &num_bytes, &flags,
+    if (WSARecv(vio_fd(vio) , &buf, 1, &num_bytes, &flags,
           overlapped,  NULL) == 0)
     {
         retval= last_error= 0;
@@ -555,7 +570,7 @@ void tp_post_kill_notification(THD *thd)
   if (thd->system_thread)
    return; /* Will crash if we attempt to kill system thread. */
 
-  Vio *vio= thd->net.vio;
+	Vio *vio = thd->get_protocol_classic()->get_vio();
 
   vio_shutdown(vio, SD_BOTH);
 
@@ -629,9 +644,10 @@ static VOID CALLBACK timer_callback(PTP_CALLBACK_INSTANCE instance,
 
   if (timeout <= now())
   {
-    con->thd->killed = KILL_CONNECTION;
-    if(con->thd->net.vio)
-      vio_shutdown(con->thd->net.vio, SD_BOTH);
+    Vio* vio = con->thd->get_protocol_classic()->get_vio();
+    con->thd->killed = THD::KILL_CONNECTION;
+    if(vio)
+      vio_shutdown(vio, SD_BOTH);
   }
   else if(timeout != ULONGLONG_MAX)
   {
@@ -664,9 +680,12 @@ static void CALLBACK shm_read_callback(PTP_CALLBACK_INSTANCE instance,
     and the current state is "not set". Thus we need to reset the event again, 
     or vio_read will hang.
   */
-  HANDLE h = con->thd->net.vio->event_server_wrote;
+#if !defined(EMBEDDED_LIBRARY)
+	Vio * vio = con->thd->get_protocol_classic()->get_vio();
+  HANDLE h = vio->event_server_wrote;
   SetEvent(h);
   io_completion_callback(instance, context, NULL, 0, 0 , 0);
+#endif
 }
 
 

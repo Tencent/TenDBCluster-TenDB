@@ -5062,6 +5062,7 @@ int query_get_string(MYSQL* mysql, const char* query,
 }
 
 
+#ifndef _WIN32
 /**
   A wrapper around kill call that prints diagnostics if the call failed with
   any other error than ESRCH.
@@ -5080,6 +5081,7 @@ static int my_kill(int pid, int sig)
   }
   return result;
 }
+#endif
 
 /**
   Check if process is active.

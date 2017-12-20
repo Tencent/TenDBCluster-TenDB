@@ -103,7 +103,9 @@
 #include "sp_rcontext.h"
 #include "parse_location.h"
 
+#ifndef _WIN32
 #include <sys/time.h>
+#endif // !_WIN32
 
 #include "sql_digest.h"
 #include "sql_timer.h"        // thd_timer_set

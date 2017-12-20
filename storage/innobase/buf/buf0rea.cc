@@ -797,7 +797,9 @@ buf_read_ahead_linear(
 			}
 		}
 	}
+#ifndef _WIN32
 	os_aio_dispatch_read_array_submit();
+#endif // _WIN32
 
 	/* In simulated aio we wake the aio handler threads only after
 	queuing all aio requests, in native aio the following call does

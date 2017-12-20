@@ -1603,7 +1603,7 @@ static void set_proxy()
                           "'%s/%d' in 'proxy_protocol_networks' directive.",
                           buffer, bits);
     }
-#ifdef HAVE_IPV6
+#if defined(HAVE_IPV6) && !defined(_WIN32) 
     else {
 
       /* Process IPv6 mask */

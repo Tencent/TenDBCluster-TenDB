@@ -3300,7 +3300,7 @@ public:
   {
     mysql_mutex_lock(&LOCK_thd_data);
     active_vio = vio;
-    vio_set_thread_id(vio, pthread_self());
+    vio_set_thread_id(vio, my_thread_self());
     mysql_mutex_unlock(&LOCK_thd_data);
   }
 
@@ -5859,7 +5859,7 @@ inline void reattach_engine_ha_data_to_thd(THD *thd, const struct handlerton *ht
 
 /*************************************************************************/
 
-extern pthread_attr_t *get_connection_attrib(void);
+extern my_thread_attr_t *get_connection_attrib(void);
 
 #endif /* MYSQL_SERVER */
 

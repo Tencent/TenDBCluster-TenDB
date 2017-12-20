@@ -23,6 +23,13 @@
 #include <sql_prepare.h>
 #include "query_response_time.h"
 
+#ifdef _WIN32
+//static uint sql_command_flags[];
+
+static void init_update_queries(void);
+
+#endif
+
 
 ulong opt_query_response_time_range_base= QRT_DEFAULT_BASE;
 my_bool opt_query_response_time_stats= FALSE;
@@ -30,10 +37,10 @@ static my_bool opt_query_response_time_flush= FALSE;
 
 
 static void query_response_time_flush_update(
-              MYSQL_THD thd __attribute__((unused)),
-              struct st_mysql_sys_var *var __attribute__((unused)),
-              void *tgt __attribute__((unused)),
-              const void *save __attribute__((unused)))
+              MYSQL_THD thd ,
+              struct st_mysql_sys_var *var ,
+              void *tgt ,
+              const void *save )
 {
   query_response_time_flush();
 }
@@ -118,12 +125,17 @@ static int query_response_time_info_init(void *p)
     i_s_query_response_time->fill_table= query_response_time_fill_rw;
   else
     DBUG_ASSERT(0);
+
+#ifdef _WIN32
+	init_update_queries();
+#endif // __WIN__
+
   query_response_time_init();
   return 0;
 }
 
 
-static int query_response_time_info_deinit(void *arg __attribute__((unused)))
+static int query_response_time_info_deinit(void *arg )
 {
   opt_query_response_time_stats= FALSE;
   query_response_time_free();
@@ -270,3 +282,483 @@ mysql_declare_plugin(query_response_time)
   0,
 }
 mysql_declare_plugin_end;
+
+#ifdef _WIN32
+static uint sql_command_flags[SQLCOM_END + 1];
+
+static void init_update_queries(void)
+{
+	/* Initialize the server command flags array. */
+	//memset(server_command_flags, 0, sizeof(server_command_flags));
+
+	//server_command_flags[COM_SLEEP] = CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_INIT_DB] = CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_QUERY] = CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_FIELD_LIST] = CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_REFRESH] = CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_SHUTDOWN] = CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_STATISTICS] = CF_SKIP_QUESTIONS;
+	//server_command_flags[COM_PROCESS_KILL] = CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_PING] = CF_SKIP_QUESTIONS;
+	//server_command_flags[COM_STMT_PREPARE] = CF_SKIP_QUESTIONS |
+	//	CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_STMT_EXECUTE] = CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_STMT_SEND_LONG_DATA] = CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_STMT_CLOSE] = CF_SKIP_QUESTIONS |
+	//	CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_STMT_RESET] = CF_SKIP_QUESTIONS |
+	//	CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_STMT_FETCH] = CF_ALLOW_PROTOCOL_PLUGIN;
+	//server_command_flags[COM_END] = CF_ALLOW_PROTOCOL_PLUGIN;
+
+	/* Initialize the sql command flags array. */
+	memset(sql_command_flags, 0, sizeof(sql_command_flags));
+
+	/*
+	In general, DDL statements do not generate row events and do not go
+	through a cache before being written to the binary log. However, the
+	CREATE TABLE...SELECT is an exception because it may generate row
+	events. For that reason,  the SQLCOM_CREATE_TABLE  which represents
+	a CREATE TABLE, including the CREATE TABLE...SELECT, has the
+	CF_CAN_GENERATE_ROW_EVENTS flag. The distinction between a regular
+	CREATE TABLE and the CREATE TABLE...SELECT is made in other parts of
+	the code, in particular in the Query_log_event's constructor.
+	*/
+	sql_command_flags[SQLCOM_CREATE_TABLE] = CF_CHANGES_DATA | CF_REEXECUTION_FRAGILE |
+		CF_AUTO_COMMIT_TRANS |
+		CF_CAN_GENERATE_ROW_EVENTS;
+	sql_command_flags[SQLCOM_CREATE_INDEX] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_ALTER_TABLE] = CF_CHANGES_DATA | CF_WRITE_LOGS_COMMAND |
+		CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_TRUNCATE] = CF_CHANGES_DATA | CF_WRITE_LOGS_COMMAND |
+		CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_DROP_TABLE] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_LOAD] = CF_CHANGES_DATA | CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS;
+	sql_command_flags[SQLCOM_CREATE_COMPRESSION_DICTIONARY] = CF_CHANGES_DATA |
+		CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_DROP_COMPRESSION_DICTIONARY] = CF_CHANGES_DATA |
+		CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_CREATE_DB] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_DROP_DB] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_ALTER_DB_UPGRADE] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_ALTER_DB] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_RENAME_TABLE] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_DROP_INDEX] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_CREATE_VIEW] = CF_CHANGES_DATA | CF_REEXECUTION_FRAGILE |
+		CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_DROP_VIEW] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_CREATE_TRIGGER] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_DROP_TRIGGER] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_CREATE_EVENT] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_ALTER_EVENT] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_DROP_EVENT] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+
+	sql_command_flags[SQLCOM_UPDATE] = CF_CHANGES_DATA | CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE |
+		CF_CAN_BE_EXPLAINED;
+	sql_command_flags[SQLCOM_UPDATE_MULTI] = CF_CHANGES_DATA | CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE |
+		CF_CAN_BE_EXPLAINED;
+	// This is INSERT VALUES(...), can be VALUES(stored_func()) so we trace it
+	sql_command_flags[SQLCOM_INSERT] = CF_CHANGES_DATA | CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE |
+		CF_CAN_BE_EXPLAINED;
+	sql_command_flags[SQLCOM_INSERT_SELECT] = CF_CHANGES_DATA | CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE |
+		CF_CAN_BE_EXPLAINED;
+	sql_command_flags[SQLCOM_DELETE] = CF_CHANGES_DATA | CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE |
+		CF_CAN_BE_EXPLAINED;
+	sql_command_flags[SQLCOM_DELETE_MULTI] = CF_CHANGES_DATA | CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE |
+		CF_CAN_BE_EXPLAINED;
+	sql_command_flags[SQLCOM_REPLACE] = CF_CHANGES_DATA | CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE |
+		CF_CAN_BE_EXPLAINED;
+	sql_command_flags[SQLCOM_REPLACE_SELECT] = CF_CHANGES_DATA | CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE |
+		CF_CAN_BE_EXPLAINED;
+	sql_command_flags[SQLCOM_SELECT] = CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE |
+		CF_CAN_BE_EXPLAINED;
+	// (1) so that subquery is traced when doing "SET @var = (subquery)"
+	/*
+	@todo SQLCOM_SET_OPTION should have CF_CAN_GENERATE_ROW_EVENTS
+	set, because it may invoke a stored function that generates row
+	events. /Sven
+	*/
+	sql_command_flags[SQLCOM_SET_OPTION] = CF_REEXECUTION_FRAGILE |
+		CF_AUTO_COMMIT_TRANS |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE; // (1)
+	// (1) so that subquery is traced when doing "DO @var := (subquery)"
+	sql_command_flags[SQLCOM_DO] = CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE; // (1)
+
+	sql_command_flags[SQLCOM_SHOW_STATUS_PROC] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_STATUS] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_DATABASES] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_TRIGGERS] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_EVENTS] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_OPEN_TABLES] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_PLUGINS] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_FIELDS] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_KEYS] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_VARIABLES] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_CHARSETS] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_COLLATIONS] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_BINLOGS] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_SLAVE_HOSTS] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_BINLOG_EVENTS] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_STORAGE_ENGINES] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_PRIVILEGES] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_WARNS] = CF_STATUS_COMMAND | CF_DIAGNOSTIC_STMT;
+	sql_command_flags[SQLCOM_SHOW_ERRORS] = CF_STATUS_COMMAND | CF_DIAGNOSTIC_STMT;
+	sql_command_flags[SQLCOM_SHOW_ENGINE_STATUS] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_ENGINE_MUTEX] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_ENGINE_LOGS] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_PROCESSLIST] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_GRANTS] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_CREATE_DB] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_CREATE] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_MASTER_STAT] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_SLAVE_STAT] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_CREATE_PROC] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_CREATE_FUNC] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_CREATE_TRIGGER] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_STATUS_FUNC] = CF_STATUS_COMMAND | CF_REEXECUTION_FRAGILE;
+	sql_command_flags[SQLCOM_SHOW_PROC_CODE] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_FUNC_CODE] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_CREATE_EVENT] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_PROFILES] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_SHOW_PROFILE] = CF_STATUS_COMMAND;
+	sql_command_flags[SQLCOM_BINLOG_BASE64_EVENT] = CF_STATUS_COMMAND |
+		CF_CAN_GENERATE_ROW_EVENTS;
+
+	sql_command_flags[SQLCOM_SHOW_TABLES] = (CF_STATUS_COMMAND |
+		CF_SHOW_TABLE_COMMAND |
+		CF_REEXECUTION_FRAGILE);
+	sql_command_flags[SQLCOM_SHOW_TABLE_STATUS] = (CF_STATUS_COMMAND |
+		CF_SHOW_TABLE_COMMAND |
+		CF_REEXECUTION_FRAGILE);
+
+	sql_command_flags[SQLCOM_CREATE_USER] = CF_CHANGES_DATA;
+	sql_command_flags[SQLCOM_RENAME_USER] = CF_CHANGES_DATA;
+	sql_command_flags[SQLCOM_DROP_USER] = CF_CHANGES_DATA;
+	sql_command_flags[SQLCOM_ALTER_USER] = CF_CHANGES_DATA;
+	sql_command_flags[SQLCOM_GRANT] = CF_CHANGES_DATA;
+	sql_command_flags[SQLCOM_REVOKE] = CF_CHANGES_DATA;
+	sql_command_flags[SQLCOM_REVOKE_ALL] = CF_CHANGES_DATA;
+	sql_command_flags[SQLCOM_OPTIMIZE] = CF_CHANGES_DATA;
+	sql_command_flags[SQLCOM_ALTER_INSTANCE] = CF_CHANGES_DATA;
+	sql_command_flags[SQLCOM_CREATE_FUNCTION] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_CREATE_PROCEDURE] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_CREATE_SPFUNCTION] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_DROP_PROCEDURE] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_DROP_FUNCTION] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_ALTER_PROCEDURE] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_ALTER_FUNCTION] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_INSTALL_PLUGIN] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_UNINSTALL_PLUGIN] = CF_CHANGES_DATA | CF_AUTO_COMMIT_TRANS;
+
+	/* Does not change the contents of the Diagnostics Area. */
+	sql_command_flags[SQLCOM_GET_DIAGNOSTICS] = CF_DIAGNOSTIC_STMT;
+
+	/*
+	(1): without it, in "CALL some_proc((subq))", subquery would not be
+	traced.
+	*/
+	sql_command_flags[SQLCOM_CALL] = CF_REEXECUTION_FRAGILE |
+		CF_CAN_GENERATE_ROW_EVENTS |
+		CF_OPTIMIZER_TRACE; // (1)
+	sql_command_flags[SQLCOM_EXECUTE] = CF_CAN_GENERATE_ROW_EVENTS;
+
+	/*
+	The following admin table operations are allowed
+	on log tables.
+	*/
+	sql_command_flags[SQLCOM_REPAIR] = CF_WRITE_LOGS_COMMAND | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_OPTIMIZE] |= CF_WRITE_LOGS_COMMAND | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_ANALYZE] = CF_WRITE_LOGS_COMMAND | CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_CHECK] = CF_WRITE_LOGS_COMMAND | CF_AUTO_COMMIT_TRANS;
+
+	sql_command_flags[SQLCOM_CREATE_USER] |= CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_DROP_USER] |= CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_RENAME_USER] |= CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_ALTER_USER] |= CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_REVOKE] |= CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_REVOKE_ALL] |= CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_GRANT] |= CF_AUTO_COMMIT_TRANS;
+
+	sql_command_flags[SQLCOM_ASSIGN_TO_KEYCACHE] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_PRELOAD_KEYS] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_ALTER_INSTANCE] |= CF_AUTO_COMMIT_TRANS;
+
+	sql_command_flags[SQLCOM_FLUSH] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_RESET] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_CREATE_SERVER] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_ALTER_SERVER] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_DROP_SERVER] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_CHANGE_MASTER] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_CHANGE_REPLICATION_FILTER] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_SLAVE_START] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_SLAVE_STOP] = CF_AUTO_COMMIT_TRANS;
+	sql_command_flags[SQLCOM_ALTER_TABLESPACE] |= CF_AUTO_COMMIT_TRANS;
+
+	/*
+	The following statements can deal with temporary tables,
+	so temporary tables should be pre-opened for those statements to
+	simplify privilege checking.
+
+	There are other statements that deal with temporary tables and open
+	them, but which are not listed here. The thing is that the order of
+	pre-opening temporary tables for those statements is somewhat custom.
+	*/
+	sql_command_flags[SQLCOM_CREATE_TABLE] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_DROP_TABLE] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_CREATE_INDEX] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_ALTER_TABLE] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_TRUNCATE] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_LOAD] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_DROP_INDEX] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_UPDATE] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_UPDATE_MULTI] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_INSERT_SELECT] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_DELETE] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_DELETE_MULTI] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_REPLACE_SELECT] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_SELECT] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_SET_OPTION] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_DO] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_CALL] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_CHECKSUM] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_ANALYZE] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_CHECK] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_OPTIMIZE] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_REPAIR] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_PRELOAD_KEYS] |= CF_PREOPEN_TMP_TABLES;
+	sql_command_flags[SQLCOM_ASSIGN_TO_KEYCACHE] |= CF_PREOPEN_TMP_TABLES;
+
+	/*
+	DDL statements that should start with closing opened handlers.
+
+	We use this flag only for statements for which open HANDLERs
+	have to be closed before emporary tables are pre-opened.
+	*/
+	sql_command_flags[SQLCOM_CREATE_TABLE] |= CF_HA_CLOSE;
+	sql_command_flags[SQLCOM_DROP_TABLE] |= CF_HA_CLOSE;
+	sql_command_flags[SQLCOM_ALTER_TABLE] |= CF_HA_CLOSE;
+	sql_command_flags[SQLCOM_TRUNCATE] |= CF_HA_CLOSE;
+	sql_command_flags[SQLCOM_REPAIR] |= CF_HA_CLOSE;
+	sql_command_flags[SQLCOM_OPTIMIZE] |= CF_HA_CLOSE;
+	sql_command_flags[SQLCOM_ANALYZE] |= CF_HA_CLOSE;
+	sql_command_flags[SQLCOM_CHECK] |= CF_HA_CLOSE;
+	sql_command_flags[SQLCOM_CREATE_INDEX] |= CF_HA_CLOSE;
+	sql_command_flags[SQLCOM_DROP_INDEX] |= CF_HA_CLOSE;
+	sql_command_flags[SQLCOM_PRELOAD_KEYS] |= CF_HA_CLOSE;
+	sql_command_flags[SQLCOM_ASSIGN_TO_KEYCACHE] |= CF_HA_CLOSE;
+
+	/*
+	Mark statements that always are disallowed in read-only
+	transactions. Note that according to the SQL standard,
+	even temporary table DDL should be disallowed.
+	*/
+	sql_command_flags[SQLCOM_CREATE_TABLE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_ALTER_TABLE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_DROP_TABLE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_RENAME_TABLE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_CREATE_INDEX] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_DROP_INDEX] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_CREATE_COMPRESSION_DICTIONARY] |=
+		CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_DROP_COMPRESSION_DICTIONARY] |=
+		CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_CREATE_DB] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_DROP_DB] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_ALTER_DB_UPGRADE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_ALTER_DB] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_CREATE_VIEW] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_DROP_VIEW] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_CREATE_TRIGGER] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_DROP_TRIGGER] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_CREATE_EVENT] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_ALTER_EVENT] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_DROP_EVENT] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_CREATE_USER] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_RENAME_USER] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_ALTER_USER] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_DROP_USER] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_CREATE_SERVER] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_ALTER_SERVER] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_DROP_SERVER] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_CREATE_FUNCTION] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_CREATE_PROCEDURE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_CREATE_SPFUNCTION] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_DROP_PROCEDURE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_DROP_FUNCTION] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_ALTER_PROCEDURE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_ALTER_FUNCTION] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_TRUNCATE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_ALTER_TABLESPACE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_REPAIR] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_OPTIMIZE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_GRANT] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_REVOKE] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_REVOKE_ALL] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_INSTALL_PLUGIN] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_UNINSTALL_PLUGIN] |= CF_DISALLOW_IN_RO_TRANS;
+	sql_command_flags[SQLCOM_ALTER_INSTANCE] |= CF_DISALLOW_IN_RO_TRANS;
+
+	/*
+	Mark statements that are allowed to be executed by the plugins.
+	*/
+	sql_command_flags[SQLCOM_SELECT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CREATE_TABLE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CREATE_INDEX] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ALTER_TABLE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_UPDATE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_INSERT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_INSERT_SELECT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DELETE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_TRUNCATE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DROP_TABLE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DROP_INDEX] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_DATABASES] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_TABLES] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_FIELDS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_KEYS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_VARIABLES] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_STATUS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_ENGINE_LOGS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_ENGINE_STATUS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_ENGINE_MUTEX] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_PROCESSLIST] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_MASTER_STAT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_SLAVE_STAT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_GRANTS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_CREATE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_CHARSETS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_COLLATIONS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_CREATE_DB] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_TABLE_STATUS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_TRIGGERS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_LOAD] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SET_OPTION] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_LOCK_TABLES] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_UNLOCK_TABLES] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_GRANT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CHANGE_DB] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CREATE_DB] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DROP_DB] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ALTER_DB] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_REPAIR] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_REPLACE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_REPLACE_SELECT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CREATE_FUNCTION] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DROP_FUNCTION] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_REVOKE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_OPTIMIZE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CHECK] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ASSIGN_TO_KEYCACHE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_PRELOAD_KEYS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_FLUSH] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_KILL] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ANALYZE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ROLLBACK] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ROLLBACK_TO_SAVEPOINT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_COMMIT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SAVEPOINT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_RELEASE_SAVEPOINT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SLAVE_START] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SLAVE_STOP] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_BEGIN] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CHANGE_MASTER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CHANGE_REPLICATION_FILTER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_RENAME_TABLE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_RESET] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_PURGE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_PURGE_BEFORE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_BINLOGS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_OPEN_TABLES] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_HA_OPEN] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_HA_CLOSE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_HA_READ] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_SLAVE_HOSTS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DELETE_MULTI] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_UPDATE_MULTI] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_BINLOG_EVENTS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DO] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_WARNS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_EMPTY_QUERY] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_ERRORS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_STORAGE_ENGINES] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_PRIVILEGES] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_HELP] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CREATE_USER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DROP_USER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_RENAME_USER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_REVOKE_ALL] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CHECKSUM] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CREATE_PROCEDURE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CREATE_SPFUNCTION] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CALL] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DROP_PROCEDURE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ALTER_PROCEDURE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ALTER_FUNCTION] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_CREATE_PROC] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_CREATE_FUNC] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_STATUS_PROC] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_STATUS_FUNC] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_PREPARE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_EXECUTE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DEALLOCATE_PREPARE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CREATE_VIEW] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DROP_VIEW] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CREATE_TRIGGER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DROP_TRIGGER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_XA_START] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_XA_END] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_XA_PREPARE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_XA_COMMIT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_XA_ROLLBACK] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_XA_RECOVER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_PROC_CODE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_FUNC_CODE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ALTER_TABLESPACE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_BINLOG_BASE64_EVENT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_PLUGINS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CREATE_SERVER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DROP_SERVER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ALTER_SERVER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_CREATE_EVENT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ALTER_EVENT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_DROP_EVENT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_CREATE_EVENT] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_EVENTS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_CREATE_TRIGGER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ALTER_DB_UPGRADE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_PROFILE] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_PROFILES] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SIGNAL] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_RESIGNAL] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_RELAYLOG_EVENTS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_GET_DIAGNOSTICS] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_ALTER_USER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_EXPLAIN_OTHER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_SHOW_CREATE_USER] |= CF_ALLOW_PROTOCOL_PLUGIN;
+	sql_command_flags[SQLCOM_END] |= CF_ALLOW_PROTOCOL_PLUGIN;
+}
+
+
+#endif

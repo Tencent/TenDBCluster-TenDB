@@ -118,7 +118,9 @@ When one supplies long data for a placeholder:
 #endif
 #include "sql_query_rewrite.h"
 
+#ifndef _WIN32
 #include <sys/time.h>
+#endif
 
 #include <algorithm>
 using std::max;

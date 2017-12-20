@@ -73,7 +73,7 @@ size_t vio_read_pipe(Vio *vio, uchar *buf, size_t count)
   size_t ret= (size_t) -1;
   DBUG_ENTER("vio_read_pipe");
 
-  disable_iocp_notification(&vio->pipe_overlapped);
+  disable_iocp_notification(&vio->overlapped);
 
   /* Attempt to read from the pipe (overlapped I/O). */
   if (ReadFile(vio->hPipe, buf, (DWORD)count, &transferred, &vio->overlapped))
@@ -85,7 +85,7 @@ size_t vio_read_pipe(Vio *vio, uchar *buf, size_t count)
   else if (GetLastError() == ERROR_IO_PENDING)
     ret= wait_overlapped_result(vio, vio->read_timeout);
 
-  enable_iocp_notification(&vio->pipe_overlapped);
+  enable_iocp_notification(&vio->overlapped);
 
   DBUG_RETURN(ret);
 }
@@ -97,7 +97,7 @@ size_t vio_write_pipe(Vio *vio, const uchar *buf, size_t count)
   size_t ret= (size_t) -1;
   DBUG_ENTER("vio_write_pipe");
 
-  disable_iocp_notification(&vio->pipe_overlapped);
+  disable_iocp_notification(&vio->overlapped);
 
   /* Attempt to write to the pipe (overlapped I/O). */
   if (WriteFile(vio->hPipe, buf, (DWORD)count, &transferred, &vio->overlapped))
@@ -109,7 +109,7 @@ size_t vio_write_pipe(Vio *vio, const uchar *buf, size_t count)
   else if (GetLastError() == ERROR_IO_PENDING)
     ret= wait_overlapped_result(vio, vio->write_timeout);
 
-  enable_iocp_notification(&vio->pipe_overlapped);
+  enable_iocp_notification(&vio->overlapped);
 
   DBUG_RETURN(ret);
 }
@@ -153,5 +153,3 @@ int vio_cancel_pipe(Vio *vio, int how)
 
   DBUG_RETURN(0);
 }
-
-#endif

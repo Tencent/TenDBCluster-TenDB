@@ -69,7 +69,7 @@ File my_open(const char *FileName, int Flags, myf MyFlags)
     File descriptor
 */
 
-#ifndef __WIN__
+#ifndef _WIN32
 File my_unix_socket_connect(const char *FileName, myf MyFlags)
         /* Path-name of file */
         /* Read | write .. */

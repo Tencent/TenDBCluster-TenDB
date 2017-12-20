@@ -3480,27 +3480,7 @@ os_file_create_simple_func(
 	return(file);
 }
 
-/** NOTE! Use the corresponding macro os_file_flush(), not directly this
-function!
-Truncates a file at the specified position.
-@param[in]	file	file to truncate
-@param[in]	new_len	new file length
-@return true if success */
-bool
-os_file_set_eof_at_func(
-	os_file_t	file,
-	ib_uint64_t	new_len)
-{
-#ifdef __WIN__
-	LARGE_INTEGER li, li2;
-	li.QuadPart = new_len;
-	return(SetFilePointerEx(file, li, &li2,FILE_BEGIN)
-	       && SetEndOfFile(file));
-#else
-	/* TODO: works only with -D_FILE_OFFSET_BITS=64 ? */
-	return(!ftruncate(file, new_len));
-#endif
-}
+
 
 /** This function attempts to create a directory named pathname. The new
 directory gets default permissions. On Unix the permissions are
@@ -4052,44 +4032,7 @@ os_file_close_func(
 	return(true);
 }
 
-/** Announces an intention to access file data in a specific pattern in the
-future.
-@param[in, own]	file	handle to a file
-@param[in]	offset	file region offset
-@param[in]	len	file region length
-@param[in]	advice	advice for access pattern
-@return true if success */
-bool
-os_file_advise(
-	pfs_os_file_t   file,   /*!< in, own: handle to a file */
-	os_offset_t     offset, /*!< in: file region offset  */
-	os_offset_t     len,    /*!< in: file region length  */
-	ulint		advice)	/*!< in: advice for access pattern */
-{
-#ifdef __WIN__
-	return(true);
-#else
-#ifdef UNIV_LINUX
-	int     native_advice = 0;
-	if ((advice & OS_FILE_ADVISE_NORMAL) != 0)
-		native_advice |= POSIX_FADV_NORMAL;
-	if ((advice & OS_FILE_ADVISE_RANDOM) != 0)
-		native_advice |= POSIX_FADV_RANDOM;
-	if ((advice & OS_FILE_ADVISE_SEQUENTIAL) != 0)
-		native_advice |= POSIX_FADV_SEQUENTIAL;
-	if ((advice & OS_FILE_ADVISE_WILLNEED) != 0)
-		native_advice |= POSIX_FADV_WILLNEED;
-	if ((advice & OS_FILE_ADVISE_DONTNEED) != 0)
-		native_advice |= POSIX_FADV_DONTNEED;
-	if ((advice & OS_FILE_ADVISE_NOREUSE) != 0)
-		native_advice |= POSIX_FADV_NOREUSE;
 
-	return(posix_fadvise(file.m_file, offset, len, native_advice) == 0);
-#else
-	return(true);
-#endif
-#endif /* __WIN__ */
-}
 
 
 /** Gets a file size.
@@ -5004,7 +4947,7 @@ os_file_create_func(
 #ifdef UNIV_NON_BUFFERED_IO
 	// TODO: Create a bug, this looks wrong. The flush log
 	// parameter is dynamic.
-	if (type == OS_LOG_FILE && srv_flush_log_at_trx_commit == 2) {
+	if (type == OS_LOG_FILE && thd_flush_log_at_trx_commit(current_thd) == 2) {
 
 		/* Do not use unbuffered i/o for the log files because
 		value 2 denotes that we do not flush the log at every
@@ -5621,6 +5564,67 @@ AIO::simulated_put_read_threads_to_sleep()
 
 #endif /* !_WIN32*/
 
+/** NOTE! Use the corresponding macro os_file_flush(), not directly this
+function!
+Truncates a file at the specified position.
+@param[in]	file	file to truncate
+@param[in]	new_len	new file length
+@return true if success */
+bool
+os_file_set_eof_at_func(
+os_file_t	file,
+ib_uint64_t	new_len)
+{
+#ifdef _WIN32
+	LARGE_INTEGER li, li2;
+	li.QuadPart = new_len;
+	return(SetFilePointerEx(file, li, &li2, FILE_BEGIN)
+		&& SetEndOfFile(file));
+#else
+	/* TODO: works only with -D_FILE_OFFSET_BITS=64 ? */
+	return(!ftruncate(file, new_len));
+#endif
+}
+
+/** Announces an intention to access file data in a specific pattern in the
+future.
+@param[in, own]	file	handle to a file
+@param[in]	offset	file region offset
+@param[in]	len	file region length
+@param[in]	advice	advice for access pattern
+@return true if success */
+bool
+os_file_advise(
+pfs_os_file_t   file,   /*!< in, own: handle to a file */
+os_offset_t     offset, /*!< in: file region offset  */
+os_offset_t     len,    /*!< in: file region length  */
+ulint		advice)	/*!< in: advice for access pattern */
+{
+#ifdef _WIN32
+	return(true);
+#else
+#ifdef UNIV_LINUX
+	int     native_advice = 0;
+	if ((advice & OS_FILE_ADVISE_NORMAL) != 0)
+		native_advice |= POSIX_FADV_NORMAL;
+	if ((advice & OS_FILE_ADVISE_RANDOM) != 0)
+		native_advice |= POSIX_FADV_RANDOM;
+	if ((advice & OS_FILE_ADVISE_SEQUENTIAL) != 0)
+		native_advice |= POSIX_FADV_SEQUENTIAL;
+	if ((advice & OS_FILE_ADVISE_WILLNEED) != 0)
+		native_advice |= POSIX_FADV_WILLNEED;
+	if ((advice & OS_FILE_ADVISE_DONTNEED) != 0)
+		native_advice |= POSIX_FADV_DONTNEED;
+	if ((advice & OS_FILE_ADVISE_NOREUSE) != 0)
+		native_advice |= POSIX_FADV_NOREUSE;
+
+	return(posix_fadvise(file.m_file, offset, len, native_advice) == 0);
+#else
+	return(true);
+#endif
+#endif /* __WIN__ */
+}
+
 /** Does a syncronous read or write depending upon the type specified
 In case of partial reads/writes the function tries
 NUM_RETRIES_ON_PARTIAL_IO times to read/write the complete data.
@@ -5828,7 +5832,9 @@ os_file_write_page(
 
 		ib::info() << OPERATING_SYSTEM_ERROR_MSG;
 
+#ifndef _WIN32
 		os_diagnose_all_o_direct_einval(errno);
+#endif
 
 		os_has_said_disk_full = true;
 	}
