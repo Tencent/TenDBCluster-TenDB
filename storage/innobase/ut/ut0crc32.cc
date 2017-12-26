@@ -119,7 +119,7 @@ ut_crc32_swap_byteorder(
 /* Flag that tells whether the CPU supports CRC32 or not */
 bool	ut_crc32_sse2_enabled = false;
 
-#if defined(__GNUC__) && defined(__x86_64__)
+#if defined(__GNUC__) && defined(__x86_64__) && 0
 /********************************************************************//**
 Fetches CPU info */
 static
@@ -688,7 +688,7 @@ void
 ut_crc32_init()
 /*===========*/
 {
-#if defined(__GNUC__) && defined(__x86_64__)
+#if defined(__GNUC__) && defined(__x86_64__) && 0
 	uint32_t	vend[3];
 	uint32_t	model;
 	uint32_t	family;

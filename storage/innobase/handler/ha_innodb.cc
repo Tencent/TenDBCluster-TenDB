@@ -21545,6 +21545,7 @@ static MYSQL_SYSVAR_BOOL(track_changed_pages, srv_track_changed_pages,
 #else
   NULL,
 #endif
+  NULL, FALSE);
 #endif
 
 static MYSQL_SYSVAR_ULONGLONG(max_bitmap_file_size, srv_max_bitmap_file_size,
