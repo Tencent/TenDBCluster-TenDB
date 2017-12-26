@@ -256,9 +256,11 @@ public:
     max_binlog_size.
   */
 
+#ifndef _WIN32
   // overridden new and delete operators for 64 byte alignment
   static void* operator new(size_t request);
   static void operator delete(void * ptr);
+#endif
 
 protected:
   char group_relay_log_name[FN_REFLEN];

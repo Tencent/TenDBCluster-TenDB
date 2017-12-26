@@ -3088,6 +3088,7 @@ void Relay_log_info::detach_engine_ha_data(THD *thd)
                  MYSQL_STORAGE_ENGINE_PLUGIN, NULL);
 }
 
+#ifndef _WIN32 
 void* Relay_log_info::operator new(size_t request)
 {
   void* ptr;
@@ -3100,4 +3101,4 @@ void* Relay_log_info::operator new(size_t request)
 void Relay_log_info::operator delete(void * ptr) {
   free(ptr);
 }
-
+#endif // !

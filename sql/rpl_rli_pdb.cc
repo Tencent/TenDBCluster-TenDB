@@ -1716,6 +1716,7 @@ void Slave_worker::do_report(loglevel level, int err_code, const char *msg,
   this->va_report(level, err_code, buff_coord, msg, args);
 }
 
+#ifndef _WIN32 
 void* Slave_worker::operator new(size_t request)
 {
   void* ptr;
@@ -1729,6 +1730,7 @@ void Slave_worker::operator delete(void * ptr)
 {
   free(ptr);
 }
+#endif
 
 #ifndef DBUG_OFF
 static bool may_have_timestamp(Log_event *ev)
