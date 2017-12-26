@@ -29,6 +29,11 @@ Created 2012-09-23 Sunny Bains (split from os0sync.h)
 
 #ifndef UNIV_INNOCHECKSUM
 
+#ifdef _WIN32
+#define count_mask 0x7fffffffffffffffULL 
+#define set_mask 0x8000000000000000ULL
+#endif
+
 #include "sync0types.h"
 
 typedef OSMutex EventMutex;
@@ -209,10 +214,13 @@ private:
 
 private:
 
+#ifndef _WIN32
+	/* Because the biggest enum is 4 bytes */
 	/** Masks for the event signal count and set flag in the count_and_set
 	field */
 	enum { count_mask = 0x7fffffffffffffffULL,
 	       set_mask   = 0x8000000000000000ULL};
+#endif // _WIN32
 
 	/** The MSB is set whenever when the event is in the signaled state,
 	i.e. a thread does not stop if it tries to wait for this event.

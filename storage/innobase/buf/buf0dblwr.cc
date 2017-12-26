@@ -1482,7 +1482,6 @@ static MY_ATTRIBUTE((warn_unused_result))
 dberr_t
 buf_parallel_dblwr_file_create(void)
 {
-#ifndef _WIN32
 	ut_ad(!srv_read_only_mode);
 	/* The buffer size is two doublewrite batches (one for LRU, one for
 	flush list flusher) per buffer pool instance. */
@@ -1499,9 +1498,13 @@ buf_parallel_dblwr_file_create(void)
 	ut_ad(parallel_dblwr_buf.file.is_closed());
 	ut_ad(parallel_dblwr_buf.recovery_buf_unaligned == NULL);
 
+#ifdef _WIN32
+	ulint o_sync = 0;
+#else
 	/* Set O_SYNC if innodb_flush_method == O_DSYNC. */
 	ulint o_sync = (srv_unix_file_flush_method == SRV_UNIX_O_DSYNC)
 		? OS_FILE_O_SYNC : 0;
+#endif // _WIN32
 
 	bool success;
 	parallel_dblwr_buf.file
@@ -1522,6 +1525,9 @@ buf_parallel_dblwr_file_create(void)
 		= os_file_set_nocache(parallel_dblwr_buf.file,
 				      parallel_dblwr_buf.path,
 				      "create", false);
+#ifdef _WIN32
+	parallel_dblwr_buf.needs_flush = true;
+#else
 	switch (srv_unix_file_flush_method) {
 	case SRV_UNIX_NOSYNC:
 	case SRV_UNIX_O_DSYNC:
@@ -1535,6 +1541,7 @@ buf_parallel_dblwr_file_create(void)
 		parallel_dblwr_buf.needs_flush = true;
 		break;
 	}
+#endif // _WIN32
 
 	success = os_file_set_size(parallel_dblwr_buf.path,
 				   parallel_dblwr_buf.file, size, false);
@@ -1548,7 +1555,6 @@ buf_parallel_dblwr_file_create(void)
 		   << parallel_dblwr_buf.path << ", size "
 		   << os_file_get_size(parallel_dblwr_buf.file) << " bytes";
 
-#endif
 	return(DB_SUCCESS);
 }
 
