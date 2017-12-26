@@ -821,7 +821,7 @@ done:
 
 void print_cmdline_password_warning()
 {
-  static my_bool password_warning_announced= FALSE;
+  static my_bool password_warning_announced= TRUE;
 
   if (!password_warning_announced)
   {
