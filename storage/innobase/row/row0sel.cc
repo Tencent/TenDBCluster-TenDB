@@ -3199,9 +3199,11 @@ row_sel_store_mysql_field_func(
 			cluster index */
 			ut_ad(dict_index_is_clust(index));
 			ut_ad(index->is_instant());
+            const dict_index_t* clust_index
+                            = dict_table_get_first_index(prebuilt->table);
 
-			data = rec_get_nth_cfield(rec, offsets, field_no, index,
-				NULL, &len);
+			data = rec_get_nth_cfield(rec, offsets, field_no, clust_index, 
+                NULL, &len);
 		} else {
 			data = rec_get_nth_field(rec, offsets, field_no, &len);
 		}
