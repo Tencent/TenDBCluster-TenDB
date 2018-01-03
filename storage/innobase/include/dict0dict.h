@@ -2177,6 +2177,69 @@ dict_drop_zip_dict(
 	const char*	name,		/*!< in: zip_dict name */
 	ulint		name_len);	/*!< in: zip_dict name length*/
 
+/*********************************************************************//**
+Sets default value of added columns  */
+UNIV_INLINE
+void
+dict_col_set_added_column_default(
+/*===============*/
+	dict_col_t*		col,			/*!< in/out: column */
+	const	byte*	def_val,		/*!< in: pointer of default value */
+	ulint			def_val_len,	/*!< in: length of default value */
+	mem_heap_t*		heap );			/*!< in: mem_heap_t for default value in col */
+
+/********************************************************************//**
+@return	 nullable count of n_core_fields */
+UNIV_INLINE
+ulint 
+dict_index_get_first_n_field_n_nullable(
+/*================*/
+	const dict_index_t*     index,  		/*!< in: index */
+	ulint                   first_n_fields)	/*!< in: Precede n fields */
+	MY_ATTRIBUTE((nonnull, warn_unused_result));
+
+/********************************************************************//**
+Get the default value of column from dict
+@return	default value*/
+UNIV_INLINE
+const byte*
+dict_index_get_nth_field_def(
+/*===================*/
+	const dict_index_t*	index,	/*!< in: index */
+	ulint		pos,	/*!< in: position of the field */
+	ulint*		len );  /*!< out: length of default value */
+
+/*********************************************************************//**
+Gets the column is nullable.
+@return	TRUE if nullable */
+UNIV_INLINE
+ibool
+dict_col_is_nullable(
+	const dict_col_t*	col);	/*!< in: column */
+
+/** encode flags2 and number of core columns in one
+4 bytes value. We could do this because the number of columns in
+InnoDB is limited to 1017
+@param[in]  flags2	
+@param[in]	n_cols_core column number before first time instant add column	
+@return encoded value */
+UNIV_INLINE
+ulint
+dict_table_encode_mix_len(
+	ulint	flags2,
+	ulint	n_cols_core);
+
+/** Decode number of flags2 and number of core columns in one 4 bytes value.
+@param[in]	encoded	encoded value
+@param[in,out]	flags2 
+@param[in,out]	n_cols_core column number before first time instant add column*/
+UNIV_INLINE
+void
+dict_table_decode_mix_len(
+	ulint	encoded,
+	ulint*	flags2,
+	ulint*	n_cols_core);
+
 #ifndef UNIV_NONINL
 #include "dict0dict.ic"
 #endif

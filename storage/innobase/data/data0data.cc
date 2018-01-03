@@ -834,6 +834,7 @@ dfield_t::clone(
 	dfield_t* obj = static_cast<dfield_t*>(
 		mem_heap_alloc(heap, sizeof(dfield_t) + size));
 
+  ut_ad(len != UNIV_SQL_DEFAULT);
 	obj->ext  = ext;
 	obj->len  = len;
 	obj->type = type;

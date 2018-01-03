@@ -10757,7 +10757,7 @@ create_table_info_t::create_table_def()
 	}
 
 	table = dict_mem_table_create(m_table_name, space_id,
-				      actual_n_cols, num_v, m_flags, m_flags2);
+				      actual_n_cols, 0, num_v, m_flags, m_flags2);
 
 	/* Set the hidden doc_id column. */
 	if (m_flags2 & DICT_TF2_FTS) {
@@ -11152,6 +11152,24 @@ err_col:
 
 error_ret:
 	DBUG_RETURN(convert_error_code_to_mysql(err, m_flags, m_thd));
+}
+
+/****************************************************************//**
+whether the table can do the instant alter. */
+bool ha_innobase::check_instant_alter(
+/*===========================*/
+	const Alter_inplace_info* 	inplace_info	/*!< in: in-place alter */
+) const
+{
+	if (inplace_info->handler_flags == Alter_inplace_info::ADD_STORED_BASE_COLUMN 
+		|| inplace_info->handler_flags == Alter_inplace_info::ADD_INSTANT_COLUMN) {
+		
+		dict_table_t* table = this->m_prebuilt->table;
+		if (table && dict_table_is_comp(table) && !DICT_TF_GET_ZIP_SSIZE(table->flags)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /*****************************************************************//**
@@ -22007,6 +22025,7 @@ i_s_innodb_sys_tables,
 i_s_innodb_sys_tablestats,
 i_s_innodb_sys_indexes,
 i_s_innodb_sys_columns,
+i_s_innodb_sys_columns_added,
 i_s_innodb_sys_fields,
 i_s_innodb_sys_foreign,
 i_s_innodb_sys_foreign_cols,

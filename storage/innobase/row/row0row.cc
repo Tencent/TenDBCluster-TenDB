@@ -511,8 +511,18 @@ row_build_low(
 
 		dfield_t*	dfield = dtuple_get_nth_field(row, col_no);
 
-		const byte*	field = rec_get_nth_field(
-			copy, offsets, i, &len);
+    const byte*	field;
+
+    if (rec_offs_nth_default(offsets, i)) {
+      field = rec_get_nth_cfield(copy, offsets, i, index, NULL, &len);
+
+      if (len != UNIV_SQL_NULL && type != ROW_COPY_POINTERS) {
+        field = static_cast<const byte*>(mem_heap_dup(heap, field, len));
+      }
+    }
+    else {
+      field = rec_get_nth_field(copy, offsets, i, &len);
+    }
 
 		dfield_set_data(dfield, field, len);
 
@@ -697,7 +707,7 @@ row_rec_to_index_entry_low(
 	for (i = 0; i < rec_len; i++) {
 
 		dfield = dtuple_get_nth_field(entry, i);
-		field = rec_get_nth_field(rec, offsets, i, &len);
+    field = rec_get_nth_cfield(rec, offsets, i, index, heap, &len);
 
 		dfield_set_data(dfield, field, len);
 
@@ -1230,6 +1240,8 @@ row_raw_format(
 	ulint	prtype;
 	ulint	ret;
 	ibool	format_in_hex;
+
+  ut_ad(data_len != UNIV_SQL_DEFAULT);
 
 	if (buf_size == 0) {
 

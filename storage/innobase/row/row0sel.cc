@@ -247,8 +247,8 @@ row_sel_sec_rec_is_for_clust_rec(
 		} else {
 			clust_pos = dict_col_get_clust_pos(col, clust_index);
 
-			clust_field = rec_get_nth_field(
-				clust_rec, clust_offs, clust_pos, &clust_len);
+			clust_field = rec_get_nth_cfield(
+				clust_rec, clust_offs, clust_pos, clust_index, NULL, &clust_len);
 		}
 
 		sec_field = rec_get_nth_field(sec_rec, sec_offs, i, &sec_len);
@@ -537,10 +537,13 @@ row_sel_fetch_columns(
 
 				needs_copy = TRUE;
 			} else {
-				data = rec_get_nth_field(rec, offsets,
-							 field_no, &len);
-
-				needs_copy = column->copy_val;
+				data = rec_get_nth_cfield(rec, offsets,
+					field_no, index, NULL, &len);
+				if (rec_offs_nth_default(offsets, field_no)) {
+					needs_copy = TRUE;
+				} else {
+					needs_copy = column->copy_val;
+				}
 			}
 
 			if (needs_copy) {
@@ -2889,7 +2892,7 @@ row_sel_field_store_in_mysql_format_func(
 	bool	clust_templ_for_sec = (sec_field != ULINT_UNDEFINED);
 #endif /* UNIV_DEBUG */
 
-	ut_ad(len != UNIV_SQL_NULL);
+	ut_ad(len_is_stored(len));
 	UNIV_MEM_ASSERT_RW(data, len);
 	UNIV_MEM_ASSERT_W(dest, templ->mysql_col_len);
 	UNIV_MEM_INVALID(dest, templ->mysql_col_len);
@@ -3178,7 +3181,7 @@ row_sel_store_mysql_field_func(
 			DBUG_RETURN(FALSE);
 		}
 
-		ut_a(len != UNIV_SQL_NULL);
+		ut_a(len_is_stored(len));
 
 		row_sel_field_store_in_mysql_format(
 			mysql_rec + templ->mysql_col_offset,
@@ -3191,7 +3194,17 @@ row_sel_store_mysql_field_func(
 	} else {
 		/* Field is stored in the row. */
 
-		data = rec_get_nth_field(rec, offsets, field_no, &len);
+		if (rec_offs_nth_default(offsets, field_no)) {
+			/* There is default value of added column only in
+			cluster index */
+			ut_ad(dict_index_is_clust(index));
+			ut_ad(index->is_instant());
+
+			data = rec_get_nth_cfield(rec, offsets, field_no, index,
+				NULL, &len);
+		} else {
+			data = rec_get_nth_field(rec, offsets, field_no, &len);
+		}
 
 		if (len == UNIV_SQL_NULL) {
 			/* MySQL assumes that the field for an SQL
@@ -3248,7 +3261,7 @@ row_sel_store_mysql_field_func(
 			sec_field_no);
 	}
 
-	ut_ad(len != UNIV_SQL_NULL);
+	ut_ad(len_is_stored(len));
 
 	if (templ->mysql_null_bit_mask) {
 		/* It is a nullable column with a non-NULL
@@ -4225,6 +4238,7 @@ rec_field_len_in_chars(const dict_col_t &col,
 	const ulint cset = dtype_get_charset_coll(col.prtype);
 	const CHARSET_INFO* cs = all_charsets[cset];
 	ulint rec_field_len;
+  ut_ad(!rec_offs_nth_default(offsets, field_no));
 	const char* rec_field = reinterpret_cast<const char *>(
 		rec_get_nth_field(
 			rec, offsets, field_no, &rec_field_len));
@@ -4614,7 +4628,7 @@ row_sel_fill_vrow(
 
 			data = rec_get_nth_field(rec, offsets, i, &len);
 
-                        const dict_v_col_t*     vcol = reinterpret_cast<
+      const dict_v_col_t*     vcol = reinterpret_cast<
 				const dict_v_col_t*>(col);
 
 			dfield_t* dfield = dtuple_get_nth_v_field(
@@ -5866,6 +5880,7 @@ locks_ok:
 					into the index prefix, calculate length
 					to find out */
 
+          ut_ad(!dict_index_is_clust(index));
 					if (rec_field_len_in_chars(
 						    *field->col,
 						    secondary_index_field_no,

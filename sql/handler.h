@@ -1348,10 +1348,6 @@ public:
   static const HA_ALTER_FLAGS ADD_STORED_BASE_COLUMN     = 1ULL << 7;
   // Stored generated column
   static const HA_ALTER_FLAGS ADD_STORED_GENERATED_COLUMN= 1ULL << 8;
-  // Add generic column (convience constant).
-  static const HA_ALTER_FLAGS ADD_COLUMN= ADD_VIRTUAL_COLUMN |
-                                          ADD_STORED_BASE_COLUMN |
-                                          ADD_STORED_GENERATED_COLUMN;
 
   // Drop column
   static const HA_ALTER_FLAGS DROP_VIRTUAL_COLUMN        = 1ULL << 9;
@@ -1460,6 +1456,14 @@ public:
 
   // New/changed virtual generated column require validation
   static const HA_ALTER_FLAGS VALIDATE_VIRTUAL_COLUMN    = 1ULL << 41;
+
+  // Instant generated column
+	static const HA_ALTER_FLAGS ADD_INSTANT_COLUMN          = 1ULL << 42;
+	// Add generic column (convience constant).
+	static const HA_ALTER_FLAGS ADD_COLUMN = ADD_VIRTUAL_COLUMN |
+		ADD_STORED_BASE_COLUMN |
+		ADD_STORED_GENERATED_COLUMN |
+		ADD_INSTANT_COLUMN;
 
   /**
     Create options (like MAX_ROWS) for the new version of table.
@@ -3643,6 +3647,20 @@ public:
    notify_table_changed();
  }
 
+ /**
+ Check the storage engine support instant alter table
+ @param    ha_alter_info     Structure describing changes to be done
+ by ALTER TABLE and holding data used
+ during in-place alter.
+
+ @retval   false             Not supported.
+ @retval   true              Supported.
+ */
+ /* return false, mean it can't instant alter default */
+ virtual bool check_instant_alter(const Alter_inplace_info* inplace_info) const
+ {
+   return false;
+ }
 
 protected:
  /**

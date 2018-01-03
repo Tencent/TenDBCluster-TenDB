@@ -1427,6 +1427,9 @@ row_truncate_update_table_id(
 		"UPDATE SYS_ZIP_DICT_COLS\n"
 		" SET TABLE_ID = :new_id_narrow\n"
 		" WHERE TABLE_ID = :old_id_narrow;\n"
+    "UPDATE SYS_COLUMNS_ADDED"
+    " SET TABLE_ID = :new_id\n"
+    " WHERE TABLE_ID = :old_id;\n"
 		"END;\n", reserve_dict_mutex, trx);
 
 	return(err);

@@ -58,6 +58,9 @@ Smart ALTER TABLE
 #include "partition_info.h"
 #include "ha_innopart.h"
 
+#include "sql_time.h"
+#include "sql_class.h"
+
 /** Operations for creating secondary indexes (no rebuild needed) */
 static const Alter_inplace_info::HA_ALTER_FLAGS INNOBASE_ONLINE_CREATE
 	= Alter_inplace_info::ADD_INDEX
@@ -110,6 +113,7 @@ static const Alter_inplace_info::HA_ALTER_FLAGS INNOBASE_ALTER_NOREBUILD
 	| Alter_inplace_info::ALTER_INDEX_COMMENT
 	| Alter_inplace_info::ADD_VIRTUAL_COLUMN
 	| Alter_inplace_info::DROP_VIRTUAL_COLUMN
+	| Alter_inplace_info::ADD_INSTANT_COLUMN
 	| Alter_inplace_info::ALTER_VIRTUAL_COLUMN_ORDER;
 	/* | Alter_inplace_info::ALTER_VIRTUAL_COLUMN_TYPE; */
 
@@ -177,6 +181,8 @@ struct ha_innobase_inplace_ctx : public inplace_alter_handler_ctx
 	/** virtual columns to be dropped */
 	dict_v_col_t*	drop_vcol;
 	const char**	drop_vcol_name;
+	/** number of instant columns to be added */
+	ulint		num_to_add_instant_col;
 	/** ALTER TABLE stage progress recorder */
 	ut_stage_alter_t* m_stage;
 
@@ -221,6 +227,7 @@ struct ha_innobase_inplace_ctx : public inplace_alter_handler_ctx
 		num_to_drop_vcol(0),
 		drop_vcol(0),
 		drop_vcol_name(0),
+		num_to_add_instant_col(0),
 		m_stage(NULL)
 	{
 #ifdef UNIV_DEBUG
@@ -1631,7 +1638,7 @@ null_field:
 			continue;
 		}
 
-		ifield = rec_get_nth_field(rec, offsets, ipos, &ilen);
+		ifield = rec_get_nth_cfield(rec, offsets, ipos, index, NULL, &ilen);
 
 		/* Assign the NULL flag */
 		if (ilen == UNIV_SQL_NULL) {
@@ -3403,6 +3410,33 @@ innobase_check_gis_columns(
 	DBUG_RETURN(DB_SUCCESS);
 }
 
+/** Collect instant column info for its addition
+@param[in] ha_alter_info	Data used during in-place alter
+@param[in] altered_table	MySQL table that is being altered to
+@param[in] table		MySQL table as it is before the ALTER operation
+@retval true Failure
+@retval false Success */
+static
+bool
+prepare_inplace_add_instant(
+Alter_inplace_info*	ha_alter_info,
+const TABLE*		altered_table,
+const TABLE*		table)
+{
+	ha_innobase_inplace_ctx*	ctx;
+
+	ctx = static_cast<ha_innobase_inplace_ctx*>
+		(ha_alter_info->handler_ctx);
+
+	ut_ad(altered_table->s->fields > table->s->fields);
+
+	ctx->num_to_add_instant_col = altered_table->s->fields -
+		table->s->fields;
+
+	return false;
+
+}
+
 /** Collect virtual column info for its addition
 @param[in] ha_alter_info	Data used during in-place alter
 @param[in] altered_table	MySQL table that is being altered to
@@ -3860,6 +3894,324 @@ innobase_add_virtual_try(
 	return(false);
 }
 
+/** Get the default value
+@param[in] table			MySQL table
+@param[in] col				dict_col_t
+@param[in] pos_in_mysql		The field position in MySQL table
+@param[in] comp				true: compact table
+@param[in] heap				memory heap for def
+@param[in/out] def			the default value, maybe NULL
+@param[out] def_length		the length of default value
+@retval DB_SUCCESS Success */
+static
+dberr_t
+innobase_get_field_def_value(
+const TABLE*        table,
+dict_col_t*         col,
+ulint               pos_in_mysql,
+ulint               comp,
+mem_heap_t*         heap,
+byte**              def,
+ulint*              def_length
+)
+{
+	Field*              field;
+
+	DBUG_ENTER("innobase_get_field_def_value");
+	ut_ad(pos_in_mysql < table->s->fields);
+
+	field = table->field[pos_in_mysql];
+
+	ut_ad(field->stored_in_db);
+
+	if (field->is_real_null()) {
+		// DEFAULT NULL
+		*def = NULL;
+		*def_length = UNIV_SQL_NULL;
+	}	else {
+		dfield_t			dfield;
+#define DATA_INT_MAX_LEN 8
+		unsigned char       int_buff[DATA_INT_MAX_LEN + 1];
+
+		ulint					len = field->pack_length();
+		byte*					ptr = field->ptr;
+
+		dict_col_copy_type(col, dfield_get_type(&dfield));
+		ut_a(dfield.type.mtype != DATA_INT || len <= DATA_INT_MAX_LEN);
+
+		row_mysql_store_col_in_innobase_format(&dfield, (unsigned char *)&int_buff[0], TRUE,
+			ptr, len, comp, false, 0, 0, 0);
+
+		// maybe default value is ''
+		ut_ad(dfield.len <= field->pack_length());
+
+		*def = (byte*)mem_heap_dup(heap, dfield.data, dfield.len);
+		*def_length = dfield.len;
+
+	}
+
+	DBUG_RETURN(DB_SUCCESS);
+}
+
+/** Update INNODB SYS_COLUMNS on new virtual columns
+@param[in] table	InnoDB table
+@param[in] altered_table MySQL table
+@param[in] field	added field
+@param[in] pos		position of table
+@param[in] trx		transaction
+@return DB_SUCCESS if successful, otherwise error code */
+static
+dberr_t
+innobase_add_one_instant(
+const dict_table_t*	table,
+const TABLE*		altered_table,
+const Field*		field,
+uint				pos_in_innodb,
+trx_t*				trx)
+{
+	ulint	col_len;
+	ulint	is_unsigned;
+	ulint	field_type;
+	ulint	charset_no;
+	dberr_t error;
+	mem_heap_t*	heap = NULL;
+	dict_col_t	tmp_col;
+	ulint 		prtype;
+	pars_info_t*    info;
+	byte*		def_val = NULL;
+	ulint		def_val_len = 0;
+
+
+	ulint	col_type
+		= get_innobase_type_from_mysql_type(
+		&is_unsigned, field);
+
+	ut_ad(!innobase_is_v_fld(field));
+
+	/* First check whether the column to be added has a
+	system reserved name. */
+	if (dict_col_name_is_reserved(field->field_name)){
+		my_error(ER_WRONG_COLUMN_NAME, MYF(0),
+			field->field_name);
+
+		error = DB_ERROR;
+		goto err_exit;
+	}
+
+	col_len = field->pack_length();
+	field_type = (ulint)field->type();
+
+	if (!field->real_maybe_null()) {
+		field_type |= DATA_NOT_NULL;
+	}
+
+	if (field->binary()) {
+		field_type |= DATA_BINARY_TYPE;
+	}
+
+	if (is_unsigned) {
+		field_type |= DATA_UNSIGNED;
+	}
+
+	if (dtype_is_string_type(col_type)) {
+		charset_no = (ulint)field->charset()->number;
+
+		if (charset_no > MAX_CHAR_COLL_NUM) {
+			my_error(ER_WRONG_KEY_COLUMN, MYF(0), "InnoDB",
+				field->field_name);
+			error = DB_ERROR;
+			goto err_exit;
+		}
+	}
+	else {
+		charset_no = 0;
+	}
+
+	if (field->type() == MYSQL_TYPE_VARCHAR) {
+		uint32  length_bytes
+			= static_cast<const Field_varstring*>(
+			field)->length_bytes;
+
+		col_len -= length_bytes;
+
+		if (length_bytes == 2) {
+			field_type |= DATA_LONG_TRUE_VARCHAR;
+		}
+	}
+
+
+	prtype = dtype_form_prtype(field_type, charset_no);
+
+	info = pars_info_create();
+
+	pars_info_add_ull_literal(info, "id", table->id);
+	pars_info_add_int4_literal(info, "pos", pos_in_innodb);
+	pars_info_add_str_literal(info, "name", field->field_name);
+	pars_info_add_int4_literal(info, "mtype", col_type);
+	pars_info_add_int4_literal(info, "prtype", prtype);
+	pars_info_add_int4_literal(info, "len", col_len);
+	pars_info_add_int4_literal(info, "prec", 0);
+
+	error = que_eval_sql(
+		info,
+		"PROCEDURE P () IS\n"
+		"BEGIN\n"
+		"INSERT INTO SYS_COLUMNS VALUES"
+		"(:id, :pos, :name, :mtype, :prtype, :len, :prec);\n"
+		"END;\n",
+		FALSE, trx);
+
+	if (error != DB_SUCCESS) {
+		goto err_exit;
+	}
+
+	memset((byte*)&tmp_col, 0, sizeof(dict_col_t));
+	dict_mem_fill_column_struct(&tmp_col, pos_in_innodb, col_type, prtype, col_len);
+
+	heap = mem_heap_create(1024);
+
+	// Note: field->field_index is not always equal to pos(because of virtual columns)
+	error = innobase_get_field_def_value(altered_table, &tmp_col, field->field_index, dict_table_is_comp(table), heap, &def_val, &def_val_len);
+	if (error != DB_SUCCESS) {
+		goto err_exit;
+	}
+
+	info = pars_info_create();
+
+	pars_info_add_ull_literal(info, "id", table->id);
+	pars_info_add_int4_literal(info, "pos", pos_in_innodb);
+	pars_info_add_literal(info, "default_value", def_val, def_val_len, DATA_BLOB, DATA_BINARY_TYPE);
+
+	error = que_eval_sql(
+		info,
+		"PROCEDURE P () IS\n"
+		"BEGIN\n"
+		"INSERT INTO SYS_COLUMNS_ADDED VALUES"
+		"(:id, :pos, :default_value);\n"
+		"END;\n",
+		FALSE, trx);
+
+	if (error != DB_SUCCESS) {
+		goto err_exit;
+	}
+
+
+err_exit:
+	if (heap) {
+		mem_heap_free(heap);
+	}
+	return(error);
+}
+
+/** Update INNODB SYS_TABLES on number of instant added columns
+@param[in] user_table	InnoDB table
+@param[in] n_col	number of columns
+@param[in] trx		transaction
+@return DB_SUCCESS if successful, otherwise error code */
+static
+dberr_t
+innobase_update_n_instant(
+const dict_table_t*	table,
+ulint			n_col,
+trx_t*			trx)
+{
+	dberr_t		err = DB_SUCCESS;
+	pars_info_t*    info = pars_info_create();
+
+	ulint mix_len = dict_table_encode_mix_len(table->flags2,
+		table->n_core_cols - dict_table_get_n_sys_cols(table));
+
+	pars_info_add_int4_literal(info, "num_col", n_col);
+	pars_info_add_int4_literal(info, "mix_len", mix_len);
+	pars_info_add_ull_literal(info, "id", table->id);
+
+	err = que_eval_sql(
+		info,
+		"PROCEDURE RENUMBER_TABLE_ID_PROC () IS\n"
+		"BEGIN\n"
+		"UPDATE SYS_TABLES"
+		" SET N_COLS = :num_col,\n"
+		" MIX_LEN = :mix_len\n"
+		" WHERE ID = :id;\n"
+		"END;\n", FALSE, trx);
+
+	return(err);
+}
+
+/** Update system table for instant adding column(s)
+@param[in]	ha_alter_info	Data used during in-place alter
+@param[in]	altered_table	MySQL table that is being altered
+@param[in]	table		MySQL table as it is before the ALTER operation
+@param[in]	user_table	InnoDB table
+@param[in]	trx		transaction
+@retval true Failure
+@retval false Success */
+static
+bool
+innobase_add_instant_try(
+Alter_inplace_info*	ha_alter_info,
+const TABLE*		altered_table,
+const TABLE*		table,
+const dict_table_t*     user_table,
+trx_t*			trx)
+{
+	dberr_t				err = DB_SUCCESS;
+
+	ut_ad(altered_table->s->fields > table->s->fields);
+
+	Field *field = NULL;
+	ulint i = 0, j = 0;
+	ulint pos_in_innodb = 0;
+	ulint added_column = 0;
+
+	for (i = 0; i < altered_table->s->fields; i++)
+	{
+		field = altered_table->field[i];
+		// ignore virtual field
+		if (innobase_is_v_fld(field)) {
+			// It doesn't support add virtual columns when instant adding columns.
+			ut_ad(i < table->s->fields);
+			continue;
+		}
+
+		pos_in_innodb = j++;
+		// find the first instant add columns
+		if (i < table->s->fields) {
+			continue;
+		}
+
+		// instant add columns
+		err = innobase_add_one_instant(user_table,
+			altered_table, field, pos_in_innodb, trx);
+		if (err != DB_SUCCESS) {
+			my_error(ER_INTERNAL_ERROR, MYF(0),
+				"InnoDB: ADD COLUMN...INSTANT");
+			return(true);
+		}
+		added_column++;
+	}
+
+	ulint	n_col = user_table->n_cols;
+	ulint	n_v_col = user_table->n_v_cols;
+
+	n_col -= dict_table_get_n_sys_cols(user_table);
+
+	n_col += added_column;
+
+	ulint	new_n = dict_table_encode_n_col(n_col, n_v_col)
+		+ ((user_table->flags & DICT_TF_COMPACT) << 31);
+
+	err = innobase_update_n_instant(user_table, new_n, trx);
+
+	if (err != DB_SUCCESS) {
+		my_error(ER_INTERNAL_ERROR, MYF(0),
+			"InnoDB: ADD COLUMN...INSTANT");
+		return(true);
+	}
+
+	return(false);
+}
+
 /** Update INNODB SYS_COLUMNS on new virtual column's position
 @param[in]	table	InnoDB table
 @param[in]	old_pos	old position
@@ -4266,6 +4618,14 @@ prepare_inplace_alter_table_dict(
 		}
 	}
 
+	if (ha_alter_info->handler_flags
+		& Alter_inplace_info::ADD_INSTANT_COLUMN) {
+		if (prepare_inplace_add_instant(
+			ha_alter_info, altered_table, old_table)) {
+			DBUG_RETURN(true);
+		}
+	}
+
 	/* There should be no order change for virtual columns coming in
 	here */
 	ut_ad(check_v_col_in_order(old_table, altered_table, ha_alter_info));
@@ -4449,7 +4809,7 @@ prepare_inplace_alter_table_dict(
 		/* The initial space id 0 may be overridden later if this
 		table is going to be a file_per_table tablespace. */
 		ctx->new_table = dict_mem_table_create(
-			new_table_name, space_id, n_cols + n_v_cols, n_v_cols,
+			new_table_name, space_id, n_cols + n_v_cols, 0, n_v_cols,
 			flags, flags2);
 		/* The rebuilt indexed_table will use the renamed
 		column names. */
@@ -6000,6 +6360,14 @@ err_exit:
 		    && prepare_inplace_add_virtual(
 			    ha_alter_info, altered_table, table)) {
 			DBUG_RETURN(true);
+		}
+
+		if (ha_alter_info->handler_flags
+			& Alter_inplace_info::ADD_INSTANT_COLUMN) {
+			if (prepare_inplace_add_instant(
+				ha_alter_info, altered_table, table)) {
+				DBUG_RETURN(true);
+			}
 		}
 
 		DBUG_RETURN(false);
@@ -7909,6 +8277,14 @@ commit_try_norebuild(
 		DBUG_RETURN(true);
 	}
 
+	if ((ha_alter_info->handler_flags
+		& Alter_inplace_info::ADD_INSTANT_COLUMN)
+		&& innobase_add_instant_try(
+		ha_alter_info, altered_table, old_table,
+		ctx->old_table, trx)) {
+		DBUG_RETURN(true);
+	}
+
 	DBUG_RETURN(false);
 }
 
@@ -8711,7 +9087,8 @@ foreign_fail:
 		DBUG_RETURN(true);
 	}
 
-	if (ctx0->num_to_drop_vcol || ctx0->num_to_add_vcol) {
+	if (ctx0->num_to_drop_vcol || ctx0->num_to_add_vcol 
+		|| ctx0->num_to_add_instant_col) {
 
 		if (ctx0->old_table->get_ref_count() > 1) {
 

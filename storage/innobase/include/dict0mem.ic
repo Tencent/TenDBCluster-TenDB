@@ -67,6 +67,7 @@ dict_mem_fill_index_struct(
 #endif /* !UNIV_HOTBACKUP */
 	index->table_name = table_name;
 	index->n_fields = (unsigned int) n_fields;
+  index->n_core_fields = (unsigned int)n_fields;
 	/* The '1 +' above prevents allocation
 	of an empty mem block */
 	index->allow_duplicates = false;

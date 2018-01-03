@@ -377,7 +377,7 @@ ib_read_tuple(
 			dfield = dtuple_get_nth_field(dtuple, i);
 		}
 
-		data = rec_get_nth_field(copy, offsets, i, &len);
+    data = rec_get_nth_cfield(copy, offsets, i, index, tuple->heap, &len);
 
 		/* Fetch and copy any externally stored column. */
 		if (rec_offs_nth_extern(offsets, i)) {

@@ -262,6 +262,7 @@ page_cur_rec_field_extends(
 	const dtuple_t*	tuple,	/*!< in: data tuple */
 	const rec_t*	rec,	/*!< in: record */
 	const ulint*	offsets,/*!< in: array returned by rec_get_offsets() */
+  const dict_index_t*		index, /*!< in: index of rec */
 	ulint		n)	/*!< in: compare nth field */
 {
 	const dtype_t*	type;
@@ -274,7 +275,7 @@ page_cur_rec_field_extends(
 
 	type = dfield_get_type(dfield);
 
-	rec_f = rec_get_nth_field(rec, offsets, n, &rec_f_len);
+  rec_f = rec_get_nth_cfield(rec, offsets, n, index, NULL, &rec_f_len);
 
 	if (type->mtype == DATA_VARCHAR
 	    || type->mtype == DATA_CHAR
@@ -546,7 +547,7 @@ low_slot_match:
 #ifdef PAGE_CUR_LE_OR_EXTENDS
 			if (mode == PAGE_CUR_LE_OR_EXTENDS
 			    && page_cur_rec_field_extends(
-				    tuple, mid_rec, offsets,
+				    tuple, mid_rec, offsets, index, 
 				    cur_matched_fields)) {
 
 				goto low_slot_match;
@@ -608,7 +609,7 @@ low_rec_match:
 #ifdef PAGE_CUR_LE_OR_EXTENDS
 			if (mode == PAGE_CUR_LE_OR_EXTENDS
 			    && page_cur_rec_field_extends(
-				    tuple, mid_rec, offsets,
+				    tuple, mid_rec, offsets, index,
 				    cur_matched_fields)) {
 
 				goto low_rec_match;
@@ -802,7 +803,7 @@ low_slot_match:
 #ifdef PAGE_CUR_LE_OR_EXTENDS
 			if (mode == PAGE_CUR_LE_OR_EXTENDS
 			    && page_cur_rec_field_extends(
-				    tuple, mid_rec, offsets,
+				    tuple, mid_rec, offsets, index, 
 				    cur_matched_fields)) {
 
 				goto low_slot_match;
@@ -859,7 +860,7 @@ low_rec_match:
 #ifdef PAGE_CUR_LE_OR_EXTENDS
 			if (mode == PAGE_CUR_LE_OR_EXTENDS
 			    && page_cur_rec_field_extends(
-				    tuple, mid_rec, offsets,
+				    tuple, mid_rec, offsets, index, 
 				    cur_matched_fields)) {
 
 				goto low_rec_match;

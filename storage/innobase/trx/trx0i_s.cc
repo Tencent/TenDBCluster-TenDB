@@ -646,6 +646,9 @@ put_nth_field(
 
 	/* now buf_size >= 1 */
 
+  ut_ad(!rec_offs_nth_default(offsets, n));
+  /* Key columns can never be instantly added, and the only caller
+  fill_lock_data() is restricting the n_fields to the key columns. */
 	data = rec_get_nth_field(rec, offsets, n, &data_len);
 
 	dict_field = dict_index_get_nth_field(index, n);

@@ -230,10 +230,17 @@ created with old versions of InnoDB that only implemented
 ROW_FORMAT=REDUNDANT.  InnoDB engines do not check these flags
 for unknown bits in order to protect backward incompatibility. */
 /* @{ */
+/* The higher two bytes of SYS_TABLES.MIX_LEN is used by
+instant add columns */
+#define DICT_TF2_MAX_BITS 16
 /** Total number of bits in table->flags2. */
 #define DICT_TF2_BITS			9
 #define DICT_TF2_UNUSED_BIT_MASK	(~0U << DICT_TF2_BITS)
 #define DICT_TF2_BIT_MASK		~DICT_TF2_UNUSED_BIT_MASK
+
+#if DICT_TF2_BITS > DICT_TF2_MAX_BITS 
+#error "DICT_TF2_BITS > DICT_TF2_MAX_BITS"
+#endif
 
 /** TEMPORARY; TRUE for tables from CREATE TEMPORARY TABLE. */
 #define DICT_TF2_TEMPORARY		1
@@ -307,6 +314,9 @@ dict_mem_table_create(
 	ulint		n_cols,		/*!< in: total number of columns
 					including virtual and non-virtual
 					columns */
+	ulint		n_cols_core, /*!< in: total number of columns before 
+					first time instant add column. 
+					If zero, means non-instant */
 	ulint		n_v_cols,	/*!< in: number of virtual columns */
 	ulint		flags,		/*!< in: table flags */
 	ulint		flags2);	/*!< in: table flags2 */
@@ -316,6 +326,16 @@ void
 dict_mem_table_free(
 /*================*/
 	dict_table_t*	table);		/*!< in: table */
+/**********************************************************************//**
+Fake column default values for recovery */
+void
+dict_mem_table_fake_nth_col_default(
+/*================*/
+	dict_table_t*			table,	/*!< in/out: table, set the default values 
+									for the nth columns */
+	ulint					pos,	/*!< in: the position of column in table */
+	mem_heap_t*				heap	/*!< in: mem_heap for default value */
+);
 /**********************************************************************//**
 Adds a column definition to a table. */
 void
@@ -554,6 +574,13 @@ struct table_name_t
 	char*	m_name;
 };
 
+/** Data structure for a column added default value */
+struct dict_col_def_t {
+	dict_col_t*		col;
+	byte*			def_val;
+	unsigned		def_val_len;
+};
+
 /** Data structure for a column in a table */
 struct dict_col_t{
 	/*----------------------*/
@@ -597,6 +624,8 @@ struct dict_col_t{
 	unsigned	max_prefix:12;	/*!< maximum index prefix length on
 					this column. Our current max limit is
 					3072 for Barracuda table */
+
+	dict_col_def_t*	def_val;/*!< default value of added columns */
 };
 
 /** Index information put in a list of virtual column structure. Index
@@ -909,6 +938,10 @@ struct dict_index_t{
 	unsigned	n_def:10;/*!< number of fields defined so far */
 	unsigned	n_fields:10;/*!< number of fields in the index */
 	unsigned	n_nullable:10;/*!< number of nullable fields */
+	unsigned	n_core_fields:10;/*!< number of fields in the index
+				(before the first time of instant add columns) */
+	unsigned	n_core_nullable:10;/*!< number of nullable fields 
+				(before the first time of instant add columns) */
 	unsigned	cached:1;/*!< TRUE if the index object is in the
 				dictionary cache */
 	unsigned	to_be_dropped:1;
@@ -1023,6 +1056,10 @@ struct dict_index_t{
 		uncommitted = !committed;
 	}
 #endif /* !UNIV_HOTBACKUP */
+	/** @return whether the index is the clustered index of instant table.
+	@retval true if clustered index of instant table
+	@retval false otherwise */
+	inline bool is_instant() const;
 };
 
 /** The status of online index creation */
@@ -1333,6 +1370,14 @@ struct dict_table_t {
 	/** Release the table handle. */
 	inline void release();
 
+	/** @return whether the table has been instant added columns.
+	@retval true if table has been instant added columns
+	@retval false if table hasn't been instant added columns */
+	bool is_instant() const
+	{
+		return (n_core_cols < n_cols);
+	}
+
 	/** Id of the table. */
 	table_id_t				id;
 
@@ -1409,6 +1454,10 @@ struct dict_table_t {
 
 	/** Number of non-virtual columns. */
 	unsigned				n_cols:10;
+
+	/** Number of non-virtual columns before the first time instant add columns.
+	If n_cols_core < n_cols, means dict_table_is_instant return TRUE */
+	unsigned				n_core_cols : 10;
 
 	/** Number of total columns (inlcude virtual and non-virtual) */
 	unsigned				n_t_cols:10;

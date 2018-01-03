@@ -416,6 +416,8 @@ cmp_data(
 	const byte*	data2,
 	ulint		len2)
 {
+	ut_ad(len1 != UNIV_SQL_DEFAULT && len2 != UNIV_SQL_DEFAULT);
+
 	if (len1 == UNIV_SQL_NULL || len2 == UNIV_SQL_NULL) {
 		if (len1 == len2) {
 			return(0);
@@ -721,6 +723,12 @@ cmp_dtuple_rec_with_match_low(
 		(primary key fields) should already differ. */
 		ut_ad(!rec_offs_nth_extern(offsets, cur_field));
 
+		/* We should never compare against instant add columns.
+		Columns can only be instantly added to clustered index
+		leaf page records, and the first fields (primary key fields)
+		should already differ.*/
+		ut_ad(!rec_offs_nth_default(offsets, cur_field));
+
 		rec_b_ptr = rec_get_nth_field(rec, offsets, cur_field,
 					      &rec_f_len);
 
@@ -836,6 +844,8 @@ cmp_dtuple_rec_with_match_bytes(
 
 		dtuple_b_ptr = static_cast<const byte*>(
 			dfield_get_data(dfield));
+
+		ut_ad(!rec_offs_nth_default(offsets, cur_field));
 		rec_b_ptr = rec_get_nth_field(rec, offsets,
 					      cur_field, &rec_f_len);
 		ut_ad(!rec_offs_nth_extern(offsets, cur_field));
@@ -1022,8 +1032,8 @@ cmp_rec_rec_simple_field(
 	ut_ad(!rec_offs_nth_extern(offsets1, n));
 	ut_ad(!rec_offs_nth_extern(offsets2, n));
 
-	rec1_b_ptr = rec_get_nth_field(rec1, offsets1, n, &rec1_f_len);
-	rec2_b_ptr = rec_get_nth_field(rec2, offsets2, n, &rec2_f_len);
+	rec1_b_ptr = rec_get_nth_cfield(rec1, offsets1, n, index, NULL, &rec1_f_len);
+	rec2_b_ptr = rec_get_nth_cfield(rec2, offsets2, n, index, NULL, &rec2_f_len);
 
 	return(cmp_data(col->mtype, col->prtype,
 			rec1_b_ptr, rec1_f_len, rec2_b_ptr, rec2_f_len));
@@ -1211,10 +1221,10 @@ cmp_rec_rec_with_match(
 		ut_ad(!rec_offs_nth_extern(offsets1, cur_field));
 		ut_ad(!rec_offs_nth_extern(offsets2, cur_field));
 
-		rec1_b_ptr = rec_get_nth_field(rec1, offsets1,
-					       cur_field, &rec1_f_len);
-		rec2_b_ptr = rec_get_nth_field(rec2, offsets2,
-					       cur_field, &rec2_f_len);
+		rec1_b_ptr = rec_get_nth_cfield(rec1, offsets1,
+			cur_field, index, NULL, &rec1_f_len);
+		rec2_b_ptr = rec_get_nth_cfield(rec2, offsets2,
+			cur_field, index, NULL, &rec2_f_len);
 
 		if (nulls_unequal
 		    && rec1_f_len == UNIV_SQL_NULL

@@ -53,6 +53,7 @@ enum dict_system_id_t {
 	SYS_VIRTUAL,
 	SYS_ZIP_DICT,
 	SYS_ZIP_DICT_COLS,
+  SYS_COLUMNS_ADDED,
 
 	/* This must be last item. Defines the number of system tables. */
 	SYS_NUM_SYSTEM_TABLES
@@ -464,6 +465,25 @@ dict_replace_tablespace_and_filepath(
 	const char*	name,
 	const char*	filepath,
 	ulint		fsp_flags);
+
+/** This function parses a SYS_COLUMNS_ADDED record and extracts added column
+information
+@param[in,out]	heap		heap memory
+@param[in]	rec		current SYS_COLUMNS_ADDED rec
+@param[in]	index	cluster index of SYS_COLUMNS_ADDED 
+@param[in,out]	table_id	table id
+@param[in,out]	pos				column position
+@param[in,out]	def_val		default value of column	
+@return error message, or NULL on success */
+const char*
+dict_process_sys_columns_added_rec(
+	mem_heap_t*		heap,
+	const rec_t*	rec,
+	dict_index_t*	index,
+	table_id_t*		table_id,
+	ulint*			pos,
+	char**			def_val,
+	ulint*			def_val_len);
 
 #ifndef UNIV_NONINL
 #include "dict0load.ic"

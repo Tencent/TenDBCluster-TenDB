@@ -1546,7 +1546,7 @@ row_log_table_apply_convert_mrec(
 blob_done:
 			rw_lock_x_unlock(dict_index_get_lock(index));
 		} else {
-			data = rec_get_nth_field(mrec, offsets, i, &len);
+			data = rec_get_nth_cfield(mrec, offsets, i, index, heap, &len);
 			dfield_set_data(dfield, data, len);
 		}
 
@@ -1882,14 +1882,14 @@ row_log_table_apply_delete(
 	dict_index_copy_types(old_pk, index, index->n_uniq);
 
 	if (num_v) {
-                dict_table_copy_v_types(old_pk, index->table);
-        }
+		dict_table_copy_v_types(old_pk, index->table);
+	}
 
 	for (ulint i = 0; i < index->n_uniq; i++) {
 		ulint		len;
 		const void*	field;
 		field = rec_get_nth_field(mrec, moffsets, i, &len);
-		ut_ad(len != UNIV_SQL_NULL);
+		ut_ad(len_is_stored(len));
 		dfield_set_data(dtuple_get_nth_field(old_pk, i),
 				field, len);
 	}
@@ -2560,7 +2560,7 @@ row_log_table_apply_op(
 
 				field = rec_get_nth_field(
 					mrec, offsets, i, &len);
-				ut_ad(len != UNIV_SQL_NULL);
+				ut_ad(len_is_stored(len));
 
 				dfield = dtuple_get_nth_field(old_pk, i);
 				dfield_set_data(dfield, field, len);
@@ -2607,7 +2607,7 @@ row_log_table_apply_op(
 
 				field = rec_get_nth_field(
 					mrec, offsets, i, &len);
-				ut_ad(len != UNIV_SQL_NULL);
+				ut_ad(len_is_stored(len));
 
 				dfield = dtuple_get_nth_field(old_pk, i);
 				dfield_set_data(dfield, field, len);

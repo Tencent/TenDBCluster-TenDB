@@ -1808,7 +1808,7 @@ fts_create_in_mem_aux_table(
 	ulint			n_cols)
 {
 	dict_table_t*	new_table = dict_mem_table_create(
-		aux_table_name, table->space, n_cols, 0, table->flags,
+		aux_table_name, table->space, n_cols, 0, 0, table->flags,
 		fts_get_table_flags2_for_aux_tables(table->flags2));
 
 	if (DICT_TF_HAS_SHARED_SPACE(table->flags)) {
@@ -3490,9 +3490,14 @@ fts_fetch_doc_from_rec(
 					static_cast<mem_heap_t*>(
 						doc->self_heap->arg));
 		} else {
-			doc->text.f_str = (byte*) rec_get_nth_field(
-				clust_rec, offsets, clust_pos,
-				&doc->text.f_len);
+      ut_ad(rec_offs_validate(clust_rec, clust_index, offsets));
+      /* Instant ADD COLUMN is never invoked on
+      the internal tables that are created for implementing FULLTEXT INDEX
+      for InnoDB tables. Use the low-level physical access to the fields. */
+      doc->text.f_str = (byte*)rec_get_nth_cfield(
+        clust_rec, offsets, clust_pos, clust_index,
+        static_cast<mem_heap_t*>(doc->self_heap->arg),
+        &doc->text.f_len);
 		}
 
 		doc->found = TRUE;
