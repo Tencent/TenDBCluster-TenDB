@@ -350,6 +350,8 @@ row_log_online_op(
 		*b++ = (byte) extra_size;
 	}
 
+	// secondary index never be instant 
+	ut_ad(!index->is_instant() && !dict_index_is_clust(index));
 	rec_convert_dtuple_to_temp(
 		b + extra_size, index, tuple->fields, tuple->n_fields, NULL);
 	b += size;
@@ -688,6 +690,9 @@ row_log_table_delete(
 		mach_write_to_4(b, ext_size);
 		b += 4;
 
+		/* The ROW_T_DELETE record was converted by
+		rec_convert_dtuple_to_temp() using new_index. */
+		ut_ad(!new_index->is_instant());
 		rec_convert_dtuple_to_temp(
 			b + old_pk_extra_size, new_index,
 			old_pk->fields, old_pk->n_fields, NULL);
@@ -723,10 +728,10 @@ row_log_table_delete(
 
 		/* log virtual columns */
 		if (ventry->n_v_fields > 0) {
-                        rec_convert_dtuple_to_temp(
-                                b, new_index, NULL, 0, ventry);
-                        b += mach_read_from_2(b);
-                }
+			rec_convert_dtuple_to_temp(
+				b, new_index, NULL, 0, ventry);
+			b += mach_read_from_2(b);
+		}
 
 		row_log_table_close(
 			index->online_log, b, mrec_size, avail_size);
@@ -960,6 +965,10 @@ row_log_table_low(
 	ut_ad(rec_get_status(rec) == REC_STATUS_ORDINARY);
 
 	omit_size = REC_N_NEW_EXTRA_BYTES;
+	if (index->is_instant()) {
+		// it need to copy the info_bit also
+		omit_size -= REC_N_TMP_EXTRA_BYTES;
+	}
 
 	extra_size = rec_offs_extra_size(offsets) - omit_size;
 
@@ -993,6 +1002,9 @@ row_log_table_low(
 		ut_ad(DATA_ROLL_PTR_LEN == dtuple_get_nth_field(
 			      old_pk, old_pk->n_fields - 1)->len);
 
+		/* The old_pk prefix was converted by
+		rec_convert_dtuple_to_temp() using new_index. */
+		ut_ad(!new_index->is_instant());
 		old_pk_size = rec_get_converted_size_temp(
 			new_index, old_pk->fields, old_pk->n_fields,
 			NULL, &old_pk_extra_size);
@@ -1005,6 +1017,7 @@ row_log_table_low(
 		*b++ = insert ? ROW_T_INSERT : ROW_T_UPDATE;
 
 		if (old_pk_size) {
+			ut_ad(!insert);
 			*b++ = static_cast<byte>(old_pk_extra_size);
 
 			rec_convert_dtuple_to_temp(
@@ -2458,6 +2471,9 @@ row_log_table_apply_op(
 		For fixed-length PRIMARY key columns, it is 0. */
 		mrec += extra_size;
 
+		/* The ROW_T_DELETE record was converted by
+		rec_convert_dtuple_to_temp() using new_index. */
+		ut_ad(!new_index->is_instant());
 		rec_offs_set_n_fields(offsets, new_index->n_uniq + 2);
 		rec_init_offsets_temp(mrec, new_index, offsets);
 		next_mrec = mrec + rec_offs_data_size(offsets) + ext_size;
@@ -2576,6 +2592,9 @@ row_log_table_apply_op(
 
 			/* Get offsets for PRIMARY KEY,
 			DB_TRX_ID, DB_ROLL_PTR. */
+			/* The old_pk prefix was converted by
+			rec_convert_dtuple_to_temp() using new_index. */
+			ut_ad(!new_index->is_instant());
 			rec_offs_set_n_fields(offsets, new_index->n_uniq + 2);
 			rec_init_offsets_temp(mrec, new_index, offsets);
 

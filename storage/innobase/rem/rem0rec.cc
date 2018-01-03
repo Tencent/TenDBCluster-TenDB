@@ -243,17 +243,10 @@ Get the bit number of nullable bitmap. */
 ulint
 rec_get_n_nullable(
 /*=======================*/
-	const rec_t*		rec,	/*!< in: gcs_record */
-	const dict_index_t*	index)	/*!< in: clustered index */
+	const rec_t*		rec,	/*!< in: instant record */
+	const dict_index_t*	index,	/*!< in: clustered index */
+	const ulint			field_count)/*!< in: field count */
 {
-	ulint           field_count = 0;
-	ulint           field_count_len = 0;
-    
-	ut_ad(rec_is_instant(index, rec));
-
-	field_count = rec_get_field_count(rec, &field_count_len);
-	ut_ad(field_count_len == rec_get_field_count_len(field_count));
-
 	return dict_index_get_first_n_field_n_nullable(index, field_count);
 }
 
@@ -283,17 +276,27 @@ rec_init_offsets_comp_ordinary(
 	ulint		field_count = ULINT_UNDEFINED;      /* Init as a big value */
 	ulint		n_null = ULINT_UNDEFINED;
 	ulint		null_mask	= 1;
-	ulint		extra_bytes = temp ? 0 : REC_N_NEW_EXTRA_BYTES;
+	ulint		extra_bytes = 0;
+	bool		is_instant = false;
+	if (temp) {
+		if (index->is_instant()) {
+			extra_bytes = REC_N_TMP_EXTRA_BYTES;
+			is_instant = rec_is_instant_tmp(index, rec);
+		}
+	} else {
+		extra_bytes = REC_N_NEW_EXTRA_BYTES;
+		is_instant = rec_is_instant(index, rec);
+	}
 
-	if (!temp && rec_is_instant(index, rec)) {
+	if (is_instant) {
 		ulint field_count_len;
 
-		field_count = rec_get_field_count(rec, &field_count_len);
+		ut_ad(index->is_instant());
+		field_count = rec_get_field_count_low(rec, extra_bytes, &field_count_len);
 
-		ut_a(extra_bytes == REC_N_NEW_EXTRA_BYTES);
 		nulls = (byte*)rec - (1 + extra_bytes + field_count_len);
 
-		n_null = rec_get_n_nullable(rec, index);
+		n_null = rec_get_n_nullable(rec, index, field_count);
 		lens = nulls - UT_BITS_IN_BYTES(n_null);
 
 	} else if (index->is_instant()) {
@@ -341,7 +344,7 @@ rec_init_offsets_comp_ordinary(
 		if (i >= field_count) {
 			ulint def_len;
 
-			ut_ad(rec_is_instant(index, rec) || index->is_instant());
+			ut_ad(is_instant || index->is_instant());
 			if (!dict_index_get_nth_field_def(index, i, &def_len)) {
 				len = offs | REC_OFFS_SQL_NULL;
 				ut_ad(def_len == UNIV_SQL_NULL);
@@ -1681,6 +1684,7 @@ rec_get_converted_size_temp(
 					data */
 	ulint*			extra)	/*!< out: extra size */
 {
+	ut_ad(!index->is_instant());
 	return(rec_get_converted_size_comp_prefix_low(
 		       index, fields, n_fields, v_entry, extra, REC_FLAG_NONE, true));
 }
@@ -1712,6 +1716,7 @@ rec_convert_dtuple_to_temp(
 	const dtuple_t*		v_entry)	/*!< in: dtuple contains
 						virtual column data */
 {
+	ut_ad(!index->is_instant());
 	rec_convert_dtuple_to_rec_comp(rec, index, fields, n_fields, v_entry,
 				       REC_STATUS_ORDINARY, true);
 }
@@ -1873,7 +1878,7 @@ rec_copy_prefix_to_buf(
 		ut_ad(field_count_len == rec_get_field_count_len(field_count));
 		ut_ad(field_count >= n_fields);
 
-		n_nullable = rec_get_n_nullable(rec, index);
+		n_nullable = rec_get_n_nullable(rec, index, field_count);
 		ut_ad(n_nullable <= index->n_nullable);
 
 		nulls = rec - (REC_N_NEW_EXTRA_BYTES + field_count_len + 1);

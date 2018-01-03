@@ -52,6 +52,9 @@ in addition to the data and the offsets */
 /* Number of extra bytes in a new-style record,
 in addition to the data and the offsets */
 #define REC_N_NEW_EXTRA_BYTES	5
+/* Number of extra bytes in a new-style temp record,
+in addition to the data and the offsets(after instant add columns) */
+#define REC_N_TMP_EXTRA_BYTES	1
 
 /* Record status values */
 #define REC_STATUS_ORDINARY	0
@@ -1046,12 +1049,19 @@ rec_is_instant_func(
 #ifdef UNIV_DEBUG
 	const dict_index_t*	index, /*!< in: index of rec */
 #endif
-	const rec_t*	rec);	/*!< in: new-style physical record */
+	const rec_t*	rec,				 /*!< in: new-style physical record */
+	const ulint		extra_bytes);/*!< in: extra_bytes */
 
 #ifdef UNIV_DEBUG
-# define rec_is_instant(index, rec) rec_is_instant_func(index, rec)
+# define rec_is_instant(index, rec) rec_is_instant_func(index, rec, REC_N_NEW_EXTRA_BYTES)
 #else
-# define rec_is_instant(index, rec) rec_is_instant_func(rec)
+# define rec_is_instant(index, rec) rec_is_instant_func(rec, REC_N_NEW_EXTRA_BYTES)
+#endif
+
+#ifdef UNIV_DEBUG
+# define rec_is_instant_tmp(index, rec) rec_is_instant_func(index, rec, REC_N_TMP_EXTRA_BYTES)
+#else
+# define rec_is_instant_tmp(index, rec) rec_is_instant_func(rec, REC_N_TMP_EXTRA_BYTES)
 #endif
 
 /**********************************************************//**
@@ -1071,6 +1081,17 @@ rec_get_field_count(
 /*==========*/
 	const rec_t*    rec,                /*!< in: the record ptr */
 	ulint*	        field_count_len);   /*!< out: occupy size of field count */
+
+/**********************************************************//**
+Returns field count of ptr 
+@return	size */
+UNIV_INLINE
+ulint
+rec_get_field_count_low(
+/*==========*/
+    const rec_t*    rec,				/*!< in: the record ptr */
+    const ulint		extra_size,			/*!< in: the extra size */
+    ulint*	        field_count_len);   /*!< out: occupy size of field count */
     
 /**********************************************************//**
 Set field count of instant record
