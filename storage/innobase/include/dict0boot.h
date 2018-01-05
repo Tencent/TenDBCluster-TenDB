@@ -375,21 +375,23 @@ enum dict_fld_sys_virtual_enum {
 	DICT_NUM_FIELDS__SYS_VIRTUAL		= 5
 };
 
-/* The columns in SYS_COLUMNS_ADDED */
-enum dict_col_sys_columns_added_enum {
-  DICT_COL__SYS_COLUMNS_ADDED__TABLE_ID = 0,
-  DICT_COL__SYS_COLUMNS_ADDED__POS = 1,
-  DICT_COL__SYS_COLUMNS_ADDED__DEFAULT_VALUE = 2,
-  DICT_NUM_COLS__SYS_COLUMNS_ADDED = 3
+/* The columns in SYS_ADDED_COLS_DEFAULT */
+enum dict_col_sys_added_cols_default_enum {
+  DICT_COL__SYS_ADDED_COLS_DEFAULT__TABLE_ID = 0,
+  DICT_COL__SYS_ADDED_COLS_DEFAULT__POS = 1,
+  DICT_COL__SYS_ADDED_COLS_DEFAULT__DEF_VAL = 2,
+  DICT_COL__SYS_ADDED_COLS_DEFAULT__DEF_VAL_LEN = 3,
+  DICT_NUM_COLS__SYS_ADDED_COLS_DEFAULT = 4
 };
-/* The field numbers in the SYS_COLUMNS_ADDED clustered index */
-enum dict_fld_sys_columns_added_enum {
-  DICT_FLD__SYS_COLUMNS_ADDED__TABLE_ID = 0,
-  DICT_FLD__SYS_COLUMNS_ADDED__POS = 1,
-  DICT_FLD__SYS_COLUMNS_ADDED__DB_TRX_ID = 2,
-  DICT_FLD__SYS_COLUMNS_ADDED__DB_ROLL_PTR = 3,
-  DICT_FLD__SYS_COLUMNS_ADDED__DEFAULT_VALUE = 4,
-  DICT_NUM_FIELDS__SYS_COLUMNS_ADDED = 5
+/* The field numbers in the SYS_ADDED_COLS_DEFAULT clustered index */
+enum dict_fld_sys_added_cols_default_enum {
+  DICT_FLD__SYS_ADDED_COLS_DEFAULT__TABLE_ID = 0,
+  DICT_FLD__SYS_ADDED_COLS_DEFAULT__POS = 1,
+  DICT_FLD__SYS_ADDED_COLS_DEFAULT__DB_TRX_ID = 2,
+  DICT_FLD__SYS_ADDED_COLS_DEFAULT__DB_ROLL_PTR = 3,
+  DICT_FLD__SYS_ADDED_COLS_DEFAULT__DEF_VAL = 4,
+  DICT_FLD__SYS_ADDED_COLS_DEFAULT__DEF_VAL_LEN = 5,
+  DICT_NUM_FIELDS__SYS_ADDED_COLS_DEFAULT = 6
 };
 
 /* A number of the columns above occur in multiple tables.  These are the

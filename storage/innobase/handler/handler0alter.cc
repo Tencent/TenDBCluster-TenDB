@@ -3981,7 +3981,6 @@ trx_t*				trx)
 	byte*		def_val = NULL;
 	ulint		def_val_len = 0;
 
-
 	ulint	col_type
 		= get_innobase_type_from_mysql_type(
 		&is_unsigned, field);
@@ -4076,25 +4075,34 @@ trx_t*				trx)
 		goto err_exit;
 	}
 
-	info = pars_info_create();
+	if (!def_val) {
+		// for compatile with tendb 1.x and 2.x
+		// NULL default value can't insert into SYS_ADDED_COLS_DEFAULT(ROW_SIZE_TOO_BIG)
+		ut_ad(dict_col_is_nullable(&tmp_col));
+		ut_ad(def_val_len == UNIV_SQL_NULL);
+	} else{
+		ut_ad(def_val_len != UNIV_SQL_NULL);
 
-	pars_info_add_ull_literal(info, "id", table->id);
-	pars_info_add_int4_literal(info, "pos", pos_in_innodb);
-	pars_info_add_literal(info, "default_value", def_val, def_val_len, DATA_BLOB, DATA_BINARY_TYPE);
+		info = pars_info_create();
 
-	error = que_eval_sql(
-		info,
-		"PROCEDURE P () IS\n"
-		"BEGIN\n"
-		"INSERT INTO SYS_COLUMNS_ADDED VALUES"
-		"(:id, :pos, :default_value);\n"
-		"END;\n",
-		FALSE, trx);
+		pars_info_add_ull_literal(info, "id", table->id);
+		pars_info_add_int4_literal(info, "pos", pos_in_innodb);
+		pars_info_add_literal(info, "default_value", def_val, def_val_len, DATA_BLOB, DATA_BINARY_TYPE);
+		pars_info_add_int4_literal(info, "def_val_len", def_val_len);
 
-	if (error != DB_SUCCESS) {
-		goto err_exit;
+		error = que_eval_sql(
+			info,
+			"PROCEDURE P () IS\n"
+			"BEGIN\n"
+			"INSERT INTO SYS_ADDED_COLS_DEFAULT VALUES"
+			"(:id, :pos, :default_value, :def_val_len);\n"
+			"END;\n",
+			FALSE, trx);
+
+		if (error != DB_SUCCESS) {
+			goto err_exit;
+		}
 	}
-
 
 err_exit:
 	if (heap) {

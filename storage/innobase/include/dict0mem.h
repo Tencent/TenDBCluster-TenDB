@@ -116,6 +116,8 @@ are described in fsp0fsp.h. */
 /** This bitmask is used in SYS_TABLES.N_COLS to set and test whether
 the Compact page format is used, i.e ROW_FORMAT != REDUNDANT */
 #define DICT_N_COLS_COMPACT	0x80000000UL
+#define DICT_N_COLS_GCS 0x40000000UL    // represent the GCS/GCS_Dynamic row format in TenDB 1.x and 2.x
+#define DICT_N_COLS_MASK (DICT_N_COLS_COMPACT | DICT_N_COLS_GCS) 
 
 #endif /* !UNIV_INNOCHECKSUM */
 
@@ -1448,6 +1450,9 @@ struct dict_table_t {
 	update system tables for the drop. It is protected by
 	dict_operation_lock. */
 	unsigned				to_be_dropped:1;
+
+  /* Whether gcs table for TenDB 1.x and TenDB 2.x */
+  unsigned        is_gcs:1;
 
 	/** Number of non-virtual columns defined so far. */
 	unsigned				n_def:10;

@@ -6426,6 +6426,15 @@ static ST_FIELD_INFO	innodb_sys_tables_fields_info[] =
 	 STRUCT_FLD(old_name,		""),
 	 STRUCT_FLD(open_method,	SKIP_OPEN_TABLE)},
 
+#define SYS_TABLES_CORE_NUM_COLUMN	9
+	{STRUCT_FLD(field_name, "N_CORE_COLS"),
+	 STRUCT_FLD(field_length, MY_INT32_NUM_DECIMAL_DIGITS),
+	 STRUCT_FLD(field_type, MYSQL_TYPE_LONG),
+	 STRUCT_FLD(value, 0),
+	 STRUCT_FLD(field_flags, 0),
+	 STRUCT_FLD(old_name, ""),
+	 STRUCT_FLD(open_method, SKIP_OPEN_TABLE) },
+
 	END_OF_ST_FIELD_INFO
 };
 
@@ -6454,11 +6463,21 @@ i_s_dict_fill_sys_tables(
 	if (!compact) {
 		row_format = "Redundant";
 	} else if (!atomic_blobs) {
-		row_format = "Compact";
+    if (table->is_gcs) {
+		  row_format = "GCS";
+    }
+    else {
+      row_format = "Compact";
+    }
 	} else if (DICT_TF_GET_ZIP_SSIZE(table->flags)) {
 		row_format = "Compressed";
 	} else {
-		row_format = "Dynamic";
+    if (table->is_gcs) {
+      row_format = "GCS_Dynamic";
+    } 
+    else {
+      row_format = "Dynamic";
+    }
 	}
 
 	if (is_system_tablespace(table->space)) {
@@ -6492,6 +6511,8 @@ i_s_dict_fill_sys_tables(
 						   : 0, true));
 
 	OK(field_store_string(fields[SYS_TABLES_SPACE_TYPE], space_type));
+
+	OK(fields[SYS_TABLES_CORE_NUM_COLUMN]->store(table->n_core_cols));
 
 	OK(schema_table_store_record(thd, table_to_fill));
 
@@ -9414,11 +9435,11 @@ i_s_files_table_fill(
 }
 
 
-/**  SYS_COLUMNS_ADDED **************************************************/
-/** Fields of the dynamic table INFORMATION_SCHEMA.INNODB_SYS_COLUMNS_ADDED */
-static ST_FIELD_INFO	innodb_sys_columns_added_fields_info[] =
+/**  SYS_ADDED_COLS_DEFAULT **************************************************/
+/** Fields of the dynamic table INFORMATION_SCHEMA.INNODB_SYS_ADDED_COLS_DEFAULT */
+static ST_FIELD_INFO	innodb_sys_added_cols_default_fields_info[] =
 {
-#define SYS_COLUMNS_ADDED_TABLE_ID		0
+#define SYS_ADDED_COLS_DEFAULT_TABLE_ID		0
   { STRUCT_FLD(field_name, "TABLE_ID"),
   STRUCT_FLD(field_length, MY_INT64_NUM_DECIMAL_DIGITS),
   STRUCT_FLD(field_type, MYSQL_TYPE_LONGLONG),
@@ -9427,7 +9448,7 @@ static ST_FIELD_INFO	innodb_sys_columns_added_fields_info[] =
   STRUCT_FLD(old_name, ""),
   STRUCT_FLD(open_method, SKIP_OPEN_TABLE) },
 
-#define SYS_COLUMNS_ADDED_POS			1
+#define SYS_ADDED_COLS_DEFAULT_POS			1
   { STRUCT_FLD(field_name, "POS"),
   STRUCT_FLD(field_length, MY_INT32_NUM_DECIMAL_DIGITS),
   STRUCT_FLD(field_type, MYSQL_TYPE_LONG),
@@ -9436,8 +9457,8 @@ static ST_FIELD_INFO	innodb_sys_columns_added_fields_info[] =
   STRUCT_FLD(old_name, ""),
   STRUCT_FLD(open_method, SKIP_OPEN_TABLE) },
 
-#define SYS_COLUMNS_ADDED_DEFAULT_VALUE		2
-  { STRUCT_FLD(field_name, "DEFAULT_VALUE"),
+#define SYS_ADDED_COLS_DEFAULT_DEF_VAL		2
+  { STRUCT_FLD(field_name, "DEF_VAL"),
   STRUCT_FLD(field_length, 65535),
   STRUCT_FLD(field_type, MYSQL_TYPE_BLOB),
   STRUCT_FLD(value, 0),
@@ -9445,10 +9466,19 @@ static ST_FIELD_INFO	innodb_sys_columns_added_fields_info[] =
   STRUCT_FLD(old_name, ""),
   STRUCT_FLD(open_method, SKIP_OPEN_TABLE) },
 
+#define SYS_ADDED_COLS_DEFAULT_DEF_VAL_LEN			3
+  { STRUCT_FLD(field_name, "DEF_VAL_LEN"),
+  STRUCT_FLD(field_length, MY_INT32_NUM_DECIMAL_DIGITS),
+  STRUCT_FLD(field_type, MYSQL_TYPE_LONG),
+  STRUCT_FLD(value, 0),
+  STRUCT_FLD(field_flags, MY_I_S_UNSIGNED),
+  STRUCT_FLD(old_name, ""),
+  STRUCT_FLD(open_method, SKIP_OPEN_TABLE) },
+
   END_OF_ST_FIELD_INFO
 };
 
-/** Function to populate the information_schema.innodb_sys_columns_added with
+/** Function to populate the information_schema.innodb_sys_added_cols_default with
 related information
 param[in]	thd		thread
 param[in]	table_id	table ID
@@ -9458,7 +9488,7 @@ param[in,out]	table_to_fill	fill this table
 @return 0 on success */
 static
 int
-i_s_dict_fill_sys_columns_added(
+i_s_dict_fill_sys_added_cols_default(
 THD*		thd,
 table_id_t	table_id,
 ulint		pos,
@@ -9468,30 +9498,32 @@ TABLE*		table_to_fill)
 {
   Field**		fields;
 
-  DBUG_ENTER("i_s_dict_fill_sys_columns_added");
+  DBUG_ENTER("i_s_dict_fill_sys_added_cols_default");
 
   fields = table_to_fill->field;
 
-  OK(fields[SYS_COLUMNS_ADDED_TABLE_ID]->store((longlong)table_id, TRUE));
+  OK(fields[SYS_ADDED_COLS_DEFAULT_TABLE_ID]->store((longlong)table_id, TRUE));
 
-  OK(fields[SYS_COLUMNS_ADDED_POS]->store(pos));
+  OK(fields[SYS_ADDED_COLS_DEFAULT_POS]->store(pos));
 
-  OK(field_store_blob(fields[SYS_COLUMNS_ADDED_DEFAULT_VALUE], def_val, def_val_len));
+  OK(field_store_blob(fields[SYS_ADDED_COLS_DEFAULT_DEF_VAL], def_val, def_val_len));
+
+  OK(fields[SYS_ADDED_COLS_DEFAULT_DEF_VAL_LEN]->store(def_val_len));
 
   OK(schema_table_store_record(thd, table_to_fill));
 
   DBUG_RETURN(0);
 }
 
-/** Function to fill information_schema.innodb_sys_columns_added with information
-collected by scanning SYS_COLUMNS_ADDED table.
+/** Function to fill information_schema.innodb_sys_added_cols_default with information
+collected by scanning SYS_ADDED_COLS_DEFAULT table.
 param[in]	thd		thread
 param[in,out]	tables		tables to fill
 param[in]	item		condition (not used)
 @return 0 on success */
 static
 int
-i_s_sys_columns_added_fill_table(
+i_s_sys_added_cols_default_fill_table(
 THD*		thd,
 TABLE_LIST*	tables,
 Item*)
@@ -9502,7 +9534,7 @@ Item*)
   mem_heap_t*	heap;
   mtr_t		mtr;
 
-  DBUG_ENTER("i_s_sys_columns_added_fill_table");
+  DBUG_ENTER("i_s_sys_added_cols_defaultfill_table");
   RETURN_IF_INNODB_NOT_STARTED(tables->schema_table_name);
 
   /* deny access to user without PROCESS_ACL privilege */
@@ -9514,7 +9546,7 @@ Item*)
   mutex_enter(&dict_sys->mutex);
   mtr_start(&mtr);
 
-  rec = dict_startscan_system(&pcur, &mtr, SYS_COLUMNS_ADDED);
+  rec = dict_startscan_system(&pcur, &mtr, SYS_ADDED_COLS_DEFAULT);
 
   while (rec) {
     const char*	err_msg;
@@ -9524,8 +9556,8 @@ Item*)
 
 
     /* populate a dict_col_t structure with information from
-    a SYS_COLUMNS_ADDED row */
-    err_msg = dict_process_sys_columns_added_rec(heap, rec, pcur.index(),
+    a SYS_ADDED_COLS_DEFAULT row */
+    err_msg = dict_process_sys_added_cols_default_rec(heap, rec, pcur.index(),
       &table_id, &pos,
       &def_val, &def_val_len);
 
@@ -9533,7 +9565,7 @@ Item*)
     mutex_exit(&dict_sys->mutex);
 
     if (!err_msg) {
-      i_s_dict_fill_sys_columns_added(thd, table_id, pos, def_val, def_val_len,
+      i_s_dict_fill_sys_added_cols_default(thd, table_id, pos, def_val, def_val_len,
         tables->table);
     }
     else {
@@ -9557,27 +9589,27 @@ Item*)
   DBUG_RETURN(0);
 }
 
-/** Bind the dynamic table INFORMATION_SCHEMA.innodb_sys_columns_added
+/** Bind the dynamic table INFORMATION_SCHEMA.innodb_sys_added_cols_default
 param[in,out]	p	table schema object
 @return 0 on success */
 static
 int
-innodb_sys_columns_added_init(
+innodb_sys_added_cols_default_init(
 void*	p)
 {
   ST_SCHEMA_TABLE*	schema;
 
-  DBUG_ENTER("innodb_sys_columns_added_init");
+  DBUG_ENTER("innodb_sys_added_cols_default_init");
 
   schema = (ST_SCHEMA_TABLE*)p;
 
-  schema->fields_info = innodb_sys_columns_added_fields_info;
-  schema->fill_table = i_s_sys_columns_added_fill_table;
+  schema->fields_info = innodb_sys_added_cols_default_fields_info;
+  schema->fill_table = i_s_sys_added_cols_default_fill_table;
 
   DBUG_RETURN(0);
 }
 
-struct st_mysql_plugin	i_s_innodb_sys_columns_added =
+struct st_mysql_plugin	i_s_innodb_sys_added_cols_default =
 {
   /* the plugin type (a MYSQL_XXX_PLUGIN value) */
   /* int */
@@ -9589,7 +9621,7 @@ struct st_mysql_plugin	i_s_innodb_sys_columns_added =
 
   /* plugin name */
   /* const char* */
-  STRUCT_FLD(name, "INNODB_SYS_COLUMNS_ADDED"),
+  STRUCT_FLD(name, "INNODB_SYS_ADDED_COLS_DEFAULT"),
 
   /* plugin author (for SHOW PLUGINS) */
   /* const char* */
@@ -9597,7 +9629,7 @@ struct st_mysql_plugin	i_s_innodb_sys_columns_added =
 
   /* general descriptive text (for SHOW PLUGINS) */
   /* const char* */
-  STRUCT_FLD(descr, "InnoDB SYS_COLUMNS_ADDED"),
+  STRUCT_FLD(descr, "InnoDB SYS_ADDED_COLS_DEFAULT"),
 
   /* the plugin license (PLUGIN_LICENSE_XXX) */
   /* int */
@@ -9605,7 +9637,7 @@ struct st_mysql_plugin	i_s_innodb_sys_columns_added =
 
   /* the function to invoke when plugin is loaded */
   /* int (*)(void*); */
-  STRUCT_FLD(init, innodb_sys_columns_added_init),
+  STRUCT_FLD(init, innodb_sys_added_cols_default_init),
 
   /* the function to invoke when plugin is unloaded */
   /* int (*)(void*); */

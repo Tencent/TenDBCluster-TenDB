@@ -1347,6 +1347,7 @@ dict_col_set_added_column_default(
 	mem_heap_t*		heap )		/*!< in: memory heap for dict object */
 {
 	ut_a(col);
+	ut_ad(!col->def_val);
 	
 	col->def_val = (dict_col_def_t*)mem_heap_alloc(heap, sizeof(*col->def_val));
 	col->def_val->col = col;

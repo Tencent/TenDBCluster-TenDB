@@ -2672,11 +2672,11 @@ files_checked:
 		return(err);
 	}
 
-  /* Create the SYS_COLUMNS_ADDED system tables */
-  err = dict_create_or_check_sys_columns_added();
-  if (err != DB_SUCCESS) {
-    return(err);;
-  }
+	/* Create the SYS_ADDED_COLS_DEFAULT system tables */
+	err = dict_create_or_check_sys_added_cols_default();
+	if (err != DB_SUCCESS) {
+		return(err);;
+	}
 
 	srv_is_being_started = false;
 

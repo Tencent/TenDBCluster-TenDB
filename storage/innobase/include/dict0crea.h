@@ -222,12 +222,12 @@ dict_foreigns_has_s_base_col(
 	const dict_table_t*	table);
 
 /****************************************************************//**
-Creates the sys_columns_added system tables inside InnoDB at server 
+Creates the sys_added_cols_default system tables inside InnoDB at server 
 bootstrap or server start if they are not found or are not of the 
 right form.
 @return DB_SUCCESS or error code */
 dberr_t
-dict_create_or_check_sys_columns_added();
+dict_create_or_check_sys_added_cols_default();
 
 /****************************************************************//**
 Creates the tablespaces and datafiles system tables inside InnoDB

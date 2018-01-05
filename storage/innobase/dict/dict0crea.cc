@@ -2653,26 +2653,26 @@ dict_create_or_check_sys_zip_dict(void)
 }
 
 /****************************************************************//**
-Creates the sys_columns_added system tables inside InnoDB at server 
+Creates the sys_added_cols_default system tables inside InnoDB at server 
 bootstrap or server start if they are not found or are not of the 
 right form.
 @return DB_SUCCESS or error code */
 dberr_t
-dict_create_or_check_sys_columns_added(void)
+dict_create_or_check_sys_added_cols_default(void)
 /*=====================================*/
 {
 	trx_t*		trx;
 	my_bool		srv_file_per_table_backup;
 	dberr_t		err;
-	dberr_t		sys_columns_added_err;
+	dberr_t		sys_added_cols_default_err;
 
 	ut_a(srv_get_active_thread_type() == SRV_NONE);
 
 	/* Note: The master thread has not been started at this point. */
-	sys_columns_added_err = dict_check_if_system_table_exists(
-		"SYS_COLUMNS_ADDED", DICT_NUM_FIELDS__SYS_COLUMNS_ADDED + 1, 1);
+	sys_added_cols_default_err = dict_check_if_system_table_exists(
+		"SYS_ADDED_COLS_DEFAULT", DICT_NUM_FIELDS__SYS_ADDED_COLS_DEFAULT + 1, 1);
 
-	if (sys_columns_added_err == DB_SUCCESS) {
+	if (sys_added_cols_default_err == DB_SUCCESS) {
 		return(DB_SUCCESS);
 	}
 
@@ -2685,19 +2685,19 @@ dict_create_or_check_sys_columns_added(void)
 
 	trx_set_dict_operation(trx, TRX_DICT_OP_TABLE);
 
-	trx->op_info = "creating sys_columns_added sys tables";
+	trx->op_info = "creating SYS_ADDED_COLS_DEFAULT sys tables";
 
 	row_mysql_lock_data_dictionary(trx);
 
 	/* Check which incomplete table definition to drop. */
-	if (sys_columns_added_err == DB_CORRUPTION) {
+	if (sys_added_cols_default_err == DB_CORRUPTION) {
 		ib::warn() << "Dropping incompletely created"
-			" SYS_COLUMNS_ADDED table.";
+			" SYS_ADDED_COLS_DEFAULT table.";
 
-		row_drop_table_for_mysql("SYS_COLUMNS_ADDED", trx, TRUE, TRUE);
+		row_drop_table_for_mysql("SYS_ADDED_COLS_DEFAULT", trx, TRUE, TRUE);
 	}
 
-	ib::info() << "Creating sys_columns_added system tables.";
+	ib::info() << "Creating SYS_ADDED_COLS_DEFAULT system tables.";
 
 	/* We always want SYSTEM tables to be created inside the system
 	tablespace. */
@@ -2706,26 +2706,26 @@ dict_create_or_check_sys_columns_added(void)
 
 	err = que_eval_sql(
 		NULL,
-		"PROCEDURE CREATE_SYS_COLUMNS_ADDED_PROC () IS\n"
-		"BEGIN\n"
-		"CREATE TABLE SYS_COLUMNS_ADDED(\n"
-		"TABLE_ID BIGINT UNSIGNED NOT NULL,\n"
-		"POS INT NOT NULL,\n"
-		"DEFAULT_VALUE CHAR);\n"
-		"CREATE UNIQUE CLUSTERED INDEX COL_IND ON SYS_COLUMNS_ADDED (TABLE_ID, POS);\n"
-		"END;\n",
-		FALSE, trx);
+    "PROCEDURE CREATE_ADDED_COLS_DEFAULT_SYS_TABLES_PROC () IS\n"
+    "BEGIN\n"
+    "CREATE TABLE\n"
+    "SYS_ADDED_COLS_DEFAULT(TABLE_ID BINARY(8), POS INT,"
+    " DEF_VAL BINARY(65535), DEF_VAL_LEN INT);\n"
+    "CREATE UNIQUE CLUSTERED INDEX TID_POS"
+    " ON SYS_ADDED_COLS_DEFAULT (TABLE_ID,POS);\n"
+    "END;\n"
+		, FALSE, trx);
 
 	if (err != DB_SUCCESS) {
 
-		ib::error() << "Creation of SYS_COLUMNS_ADDED"
+		ib::error() << "Creation of SYS_ADDED_COLS_DEFAULT"
 			" has failed with error " << ut_strerr(err)
 			<< ". Dropping incompletely created tables.";
 
 		ut_a(err == DB_OUT_OF_FILE_SPACE
 		     || err == DB_TOO_MANY_CONCURRENT_TRXS);
 
-		row_drop_table_for_mysql("SYS_COLUMNS_ADDED", trx, TRUE, TRUE);
+		row_drop_table_for_mysql("SYS_ADDED_COLS_DEFAULT", trx, TRUE, TRUE);
 
 		if (err == DB_OUT_OF_FILE_SPACE) {
 			err = DB_MUST_GET_MORE_FILE_SPACE;
@@ -2743,9 +2743,9 @@ dict_create_or_check_sys_columns_added(void)
 	if (err == DB_SUCCESS) {
 		/* Note: The master thread has not been started at this point. */
 		/* Confirm and move to the non-LRU part of the table LRU list. */
-		sys_columns_added_err = dict_check_if_system_table_exists(
-			"SYS_COLUMNS_ADDED", DICT_NUM_FIELDS__SYS_COLUMNS_ADDED + 1, 1);
-		ut_a(sys_columns_added_err == DB_SUCCESS);
+    sys_added_cols_default_err = dict_check_if_system_table_exists(
+      "SYS_ADDED_COLS_DEFAULT", DICT_NUM_FIELDS__SYS_ADDED_COLS_DEFAULT + 1, 1);
+    ut_a(sys_added_cols_default_err == DB_SUCCESS);
 	}
 
 	return(err);

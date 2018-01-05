@@ -59,7 +59,7 @@ extern struct st_mysql_plugin	i_s_innodb_sys_tablespaces;
 extern struct st_mysql_plugin	i_s_innodb_sys_datafiles;
 extern struct st_mysql_plugin	i_s_innodb_changed_pages;
 extern struct st_mysql_plugin	i_s_innodb_sys_virtual;
-extern struct st_mysql_plugin	i_s_innodb_sys_columns_added;
+extern struct st_mysql_plugin	i_s_innodb_sys_added_cols_default;
 
 /** Fill handlerton based INFORMATION_SCHEMA.FILES table.
 @param[in,out]	thd	thread/connection descriptor

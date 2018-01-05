@@ -678,6 +678,8 @@ bool my_yyoverflow(short **a, YYSTYPE **b, YYLTYPE **c, ulong *yystacksize);
 %token  FULL                          /* SQL-2003-R */
 %token  FULLTEXT_SYM
 %token  FUNCTION_SYM                  /* SQL-2003-R */
+%token  GCS_SYM			      /* TenDB 1.x/2.x only */
+%token  GCS_DYNAMIC_SYM               /* TenDB 1.x/2.x only */
 %token  GE
 %token  GENERAL
 %token  GENERATED
@@ -6274,6 +6276,8 @@ row_types:
         | COMPRESSED_SYM { $$= ROW_TYPE_COMPRESSED; }
         | REDUNDANT_SYM  { $$= ROW_TYPE_REDUNDANT; }
         | COMPACT_SYM    { $$= ROW_TYPE_COMPACT; }
+        | GCS_SYM        { $$= ROW_TYPE_COMPACT; }
+        | GCS_DYNAMIC_SYM       { $$= ROW_TYPE_DYNAMIC; }
         | TOKU_UNCOMPRESSED_SYM { $$= ROW_TYPE_TOKU_UNCOMPRESSED; }
         | TOKU_ZLIB_SYM         { $$= ROW_TYPE_TOKU_ZLIB; }
         | TOKU_SNAPPY_SYM       { $$= ROW_TYPE_TOKU_SNAPPY; }
@@ -13674,6 +13678,8 @@ keyword_sp:
         | FILTER_SYM               {}
         | FIRST_SYM                {}
         | FIXED_SYM                {}
+        | GCS_SYM                  {}
+        | GCS_DYNAMIC_SYM          {}
         | GENERAL                  {}
         | GEOMETRY_SYM             {}
         | GEOMETRYCOLLECTION       {}

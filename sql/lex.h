@@ -257,6 +257,8 @@ static const SYMBOL symbols[] = {
   { SYM("FULL",                     FULL)},
   { SYM("FULLTEXT",                 FULLTEXT_SYM)},
   { SYM("FUNCTION",                 FUNCTION_SYM)},
+  { SYM("GCS",                      GCS_SYM)},
+  { SYM("GCS_DYNAMIC",              GCS_DYNAMIC_SYM)},
   { SYM("GENERAL",                  GENERAL)},
   { SYM("GROUP_REPLICATION",        GROUP_REPLICATION)},
   { SYM("GEOMETRY",                 GEOMETRY_SYM)},

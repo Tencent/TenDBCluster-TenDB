@@ -65,7 +65,7 @@ static const char* SYSTEM_TABLE_NAME[] = {
 	"SYS_VIRTUAL",
 	"SYS_ZIP_DICT",
 	"SYS_ZIP_DICT_COLS",
-  "SYS_COLUMNS_ADDED"
+	"SYS_ADDED_COLS_DEFAULT",
 };
 
 /** Loads a table definition and also all its index definitions.
@@ -1404,6 +1404,8 @@ dict_check_sys_tablespaces(
 @param[out]	table_id	Pointer to the table_id for this table
 @param[out]	space_id	Pointer to the space_id for this table
 @param[out]	n_cols		Pointer to number of columns for this table.
+@param[out]	n_core_cols		Pointer to number of instant add columns for this table.
+@param[out]	is_gcs	Pointer to whether gcs table.
 @param[out]	flags		Pointer to table flags
 @param[out]	flags2		Pointer to table flags2
 @return true if the record was read correctly, false if not. */
@@ -1415,7 +1417,8 @@ dict_sys_tables_rec_read(
 	table_id_t*		table_id,
 	ulint*			space_id,
 	ulint*			n_cols,
-  ulint*			n_cols_core,
+	ulint*			n_cols_core,
+	ulint*      is_gcs,
 	ulint*			flags,
 	ulint*			flags2)
 {
@@ -1470,15 +1473,18 @@ dict_sys_tables_rec_read(
 	/* Get flags2 from SYS_TABLES.MIX_LEN */
 	field = rec_get_nth_field_old(
 		rec, DICT_FLD__SYS_TABLES__MIX_LEN, &len);
-  ulint mix_len = mach_read_from_4(field);
-  dict_table_decode_mix_len(mix_len, flags2, n_cols_core);
-  ut_ad(*n_cols_core <= *n_cols);
+	ulint mix_len = mach_read_from_4(field);
+	dict_table_decode_mix_len(mix_len, flags2, n_cols_core);
 
 	/* DICT_TF2_FTS will be set when indexes are being loaded */
 	*flags2 &= ~DICT_TF2_FTS;
 
+	*is_gcs = !!(*n_cols & DICT_N_COLS_GCS);
+
 	/* Now that we have used this bit, unset it. */
-	*n_cols &= ~DICT_N_COLS_COMPACT;
+	*n_cols &= ~DICT_N_COLS_MASK;
+
+	ut_ad(*n_cols_core <= *n_cols);
 
 	return(true);
 }
@@ -1526,7 +1532,8 @@ dict_check_sys_tables(
 		table_id_t	table_id;
 		ulint		space_id;
 		ulint		n_cols;
-    ulint		n_cols_core;
+		ulint		n_cols_core;
+		ulint		is_gcs;
 		ulint		flags;
 		ulint		flags2;
 
@@ -1546,7 +1553,7 @@ dict_check_sys_tables(
 
 		dict_sys_tables_rec_read(rec, table_name,
 					 &table_id, &space_id,
-					 &n_cols, &n_cols_core, &flags, &flags2);
+					 &n_cols, &n_cols_core, &is_gcs, &flags, &flags2);
 		if (flags == ULINT_UNDEFINED
 		    || is_system_tablespace(space_id)) {
 			ut_free(table_name.m_name);
@@ -1955,14 +1962,14 @@ err_len:
 }
 
 /** Error message for a delete-marked record in dict_load_column_added_low() */
-static const char* dict_load_column_added_del = "delete-marked record in SYS_COLUMNS_ADDED";
+static const char* dict_load_column_added_del = "delete-marked record in SYS_ADDED_COLS_DEFAULT";
 
-/** Load a table added column definition from a SYS_COLUMNS_ADDED
+/** Load a table added column definition from a SYS_ADDED_COLS_DEFAULT
 record.
-@param[in,out]	table			table
+@param[in,out]	table			table, can be NULL
 @param[in,out]	heap			memory heap
-@param[in]		rec				current SYS_COLUMNS_ADDED rec
-@param[in]		sys_index		cluster index of SYS_COLUMNS_ADDED
+@param[in]		rec				current SYS_ADDED_COLS_DEFAULT rec
+@param[in]		sys_index		cluster index of SYS_ADDED_COLS_DEFAULT
 @param[in,out]	table_id_out	table id
 @param[in,out]	pos_out			added column position
 @param[in,out]	def_val_out		the pointer of default value
@@ -1971,7 +1978,7 @@ record.
 @retval	NULL on success */
 static
 const char*
-dict_load_column_added_low(
+dict_load_added_cols_default_low(
 dict_table_t*	table,
 mem_heap_t*		heap,
 const rec_t*	rec,
@@ -1992,24 +1999,24 @@ ulint*			def_val_len_out)
     return(dict_load_column_added_del);
   }
 
-  if (rec_get_n_fields_old(rec) != DICT_NUM_FIELDS__SYS_COLUMNS_ADDED) {
-    return("wrong number of columns in SYS_COLUMNS_ADDED record");
+  if (rec_get_n_fields_old(rec) != DICT_NUM_FIELDS__SYS_ADDED_COLS_DEFAULT) {
+    return("wrong number of columns in SYS_ADDED_COLS_DEFAULT record");
   }
 
   field = rec_get_nth_field_old(
-    rec, DICT_FLD__SYS_COLUMNS_ADDED__TABLE_ID, &len);
+    rec, DICT_FLD__SYS_ADDED_COLS_DEFAULT__TABLE_ID, &len);
   if (len != 8) {
   err_len:
-    return("incorrect column length in SYS_COLUMNS_ADDED");
+    return("incorrect column length in SYS_ADDED_COLS_DEFAULT");
   }
 
   table_id = mach_read_from_8(field);
   if (table && table->id != mach_read_from_8(field)) {
-    return("SYS_COLUMNS_ADDED.TABLE_ID mismatch");
+    return("SYS_ADDED_COLS_DEFAULT.TABLE_ID mismatch");
   }
 
   field = rec_get_nth_field_old(
-    rec, DICT_FLD__SYS_COLUMNS_ADDED__POS, &len);
+    rec, DICT_FLD__SYS_ADDED_COLS_DEFAULT__POS, &len);
   if (len != 4) {
     goto err_len;
   }
@@ -2017,37 +2024,45 @@ ulint*			def_val_len_out)
   pos = mach_read_from_4(field);
 
   rec_get_nth_field_offs_old(
-    rec, DICT_FLD__SYS_COLUMNS_ADDED__DB_TRX_ID, &len);
+    rec, DICT_FLD__SYS_ADDED_COLS_DEFAULT__DB_TRX_ID, &len);
   if (len != DATA_TRX_ID_LEN && len != UNIV_SQL_NULL) {
     goto err_len;
   }
   rec_get_nth_field_offs_old(
-    rec, DICT_FLD__SYS_COLUMNS_ADDED__DB_ROLL_PTR, &len);
+    rec, DICT_FLD__SYS_ADDED_COLS_DEFAULT__DB_ROLL_PTR, &len);
   if (len != DATA_ROLL_PTR_LEN && len != UNIV_SQL_NULL) {
     goto err_len;
   }
 
   if (UNIV_UNLIKELY(rec_offs_nth_extern_old(rec,
-    DICT_FLD__SYS_COLUMNS_ADDED__DEFAULT_VALUE))) {
+    DICT_FLD__SYS_ADDED_COLS_DEFAULT__DEF_VAL))) {
     ulint       offsets_[REC_OFFS_NORMAL_SIZE];
     ulint *     offsets = offsets_;
 
     ut_a(rec);
     rec_offs_init(offsets_);
 
+    if (!table) {
+      table = dict_load_table_on_id(table_id, DICT_ERR_IGNORE_ALL);
+    }
+
+    if (!table) {
+      return("Invalid table id on dict_load_added_cols_default_low");
+    }
+
     offsets = rec_get_offsets(rec, sys_index, offsets, ULINT_UNDEFINED, &heap);
 
     def_val = btr_rec_copy_externally_stored_field(
       rec, offsets,
       dict_table_page_size(table),
-      DICT_FLD__SYS_COLUMNS_ADDED__DEFAULT_VALUE, &def_val_len, heap);
+      DICT_FLD__SYS_ADDED_COLS_DEFAULT__DEF_VAL, &def_val_len, heap);
     ut_ad(def_val_len);
     ut_a(def_val);
 
   }
   else {
     field = rec_get_nth_field_old(
-      rec, DICT_FLD__SYS_COLUMNS_ADDED__DEFAULT_VALUE, &len);
+      rec, DICT_FLD__SYS_ADDED_COLS_DEFAULT__DEF_VAL, &len);
 
     if (len == UNIV_SQL_NULL) {
       def_val = NULL;
@@ -2059,30 +2074,32 @@ ulint*			def_val_len_out)
     }
   }
 
-  if (table) {
-    dict_col_t* col = dict_table_get_nth_col(table, pos);
+  field = rec_get_nth_field_old(
+    rec, DICT_FLD__SYS_ADDED_COLS_DEFAULT__DEF_VAL_LEN, &len);
+  if (len != 4) {
+    goto err_len;
+  }
 
-    dict_col_set_added_column_default(col, def_val, def_val_len, table->heap);
+  if (def_val_len != mach_read_from_4(field)) {
+    goto err_len;
   }
 
   *table_id_out = table_id;
   *pos_out = pos;
-  if (def_val_out && def_val_len_out) {
-    *def_val_out = def_val ?
-      (char*)mem_heap_strdupl(heap, (char*)def_val, def_val_len) :
-      (char*)def_val;
-    *def_val_len_out = def_val_len;
-  }
+  *def_val_out = def_val ?
+    (char*)mem_heap_strdupl(heap, (char*)def_val, def_val_len) :
+    (char*)def_val;
+  *def_val_len_out = def_val_len;
   return(NULL);
 }
 
 static
 void
-dict_load_columns_added(
+dict_load_added_cols_default(
 dict_table_t*	table,
 mem_heap_t*		heap)
 {
-  dict_table_t*	sys_columns_added;
+  dict_table_t*	sys_added_cols_default;
   dict_index_t*	sys_index;
   btr_pcur_t	pcur;
   dtuple_t*	tuple;
@@ -2096,21 +2113,20 @@ mem_heap_t*		heap)
     return;
 
   ut_ad(mutex_own(&dict_sys->mutex));
-  mtr_start(&mtr);
 
-  sys_columns_added = dict_table_get_low("SYS_COLUMNS_ADDED");
-  sys_index = UT_LIST_GET_FIRST(sys_columns_added->indexes);
-  ut_ad(!dict_table_is_comp(sys_columns_added));
+  sys_added_cols_default = dict_table_get_low("SYS_ADDED_COLS_DEFAULT");
+  sys_index = UT_LIST_GET_FIRST(sys_added_cols_default->indexes);
+  ut_ad(!dict_table_is_comp(sys_added_cols_default));
 
-  ut_ad(name_of_col_is(sys_columns_added, sys_index,
-    DICT_FLD__SYS_COLUMNS_ADDED__TABLE_ID, "TABLE_ID"));
-  ut_ad(name_of_col_is(sys_columns_added, sys_index,
-    DICT_FLD__SYS_COLUMNS_ADDED__POS, "POS"));
+  ut_ad(name_of_col_is(sys_added_cols_default, sys_index,
+    DICT_FLD__SYS_ADDED_COLS_DEFAULT__TABLE_ID, "TABLE_ID"));
+  ut_ad(name_of_col_is(sys_added_cols_default, sys_index,
+    DICT_FLD__SYS_ADDED_COLS_DEFAULT__POS, "POS"));
 
   tuple = dtuple_create(heap, 2);
 
   /* TABLE_ID */
-  dfield = dtuple_get_nth_field(tuple, 0);
+  dfield = dtuple_get_nth_field(tuple, DICT_FLD__SYS_ADDED_COLS_DEFAULT__TABLE_ID);
   buf = static_cast<byte*>(mem_heap_alloc(heap, 8));
   mach_write_to_8(buf, table->id);
   dfield_set_data(dfield, buf, 8);
@@ -2119,67 +2135,91 @@ mem_heap_t*		heap)
   ulint last_added_pos = table->n_cols - dict_table_get_n_sys_cols(table);
 
   /* POS */
-  dfield = dtuple_get_nth_field(tuple, 1);
+  dfield = dtuple_get_nth_field(tuple, DICT_FLD__SYS_ADDED_COLS_DEFAULT__POS);
   buf = static_cast<byte*>(mem_heap_alloc(heap, 4));
-  // first instant add columns
-  mach_write_to_4(buf, first_added_pos);
-  dfield_set_data(dfield, buf, 4);
 
   dict_index_copy_types(tuple, sys_index, 2);
 
-  btr_pcur_open_on_user_rec(sys_index, tuple, PAGE_CUR_GE,
-    BTR_SEARCH_LEAF, &pcur, &mtr);
-
   for (i = first_added_pos;
-    i < last_added_pos;)
+    i < last_added_pos; i++)
   {
     const char*	err_msg;
     table_id_t	table_id;
     ulint				pos;
+    char*			  def_val;
+    ulint			  def_val_len;
 
-    ut_a(btr_pcur_is_on_user_rec(&pcur));
+    dict_col_t* col = dict_table_get_nth_col(table, i);
+
+    mach_write_to_4(buf, i);
+    dfield_set_data(dfield, buf, 4);
+
+    mtr_start(&mtr);
+
+    btr_pcur_open_on_user_rec(sys_index, tuple, PAGE_CUR_GE,
+        BTR_SEARCH_LEAF, &pcur, &mtr);
+
+next_rec:
+    if (!btr_pcur_is_on_user_rec(&pcur)) {
+
+      // only not null columns has default values
+      ut_ad(dict_col_is_nullable(col));
+
+      dict_col_set_added_column_default(col, NULL, UNIV_SQL_NULL, table->heap);
+      goto end;
+    }
+
     rec = btr_pcur_get_rec(&pcur);
 
-    err_msg = dict_load_column_added_low(table, heap, rec, sys_index, &table_id, &pos, NULL, NULL);
+    err_msg = dict_load_added_cols_default_low(table, heap, rec, sys_index, &table_id, &pos, &def_val, &def_val_len);
 
     if (!err_msg) {
+
       if (table_id != table->id) {
-        err_msg = "SYS_COLUMNS_ADDED.TABLE_ID mismatch";
+        err_msg = "SYS_ADDED_COLS_DEFAULT.TABLE_ID mismatch";
       }
       else if (pos != i){
-        err_msg = "SYS_COLUMNS_ADDED.POS mismatch";
+        err_msg = "SYS_ADDED_COLS_DEFAULT.POS mismatch";
       }
+
+      if (err_msg) {
+        if (dict_col_is_nullable(col)) {
+          // only not null columns has default values
+          dict_col_set_added_column_default(col, NULL, UNIV_SQL_NULL, table->heap);
+          goto end;
+        }
+      } 
     }
 
     if (err_msg == dict_load_column_added_del) {
+      btr_pcur_move_to_next_user_rec(&pcur, &mtr);
       goto next_rec;
     }
     else if (err_msg) {
-      ib::fatal() << err_msg;
+      ib::fatal() << err_msg << "table_id: " << table->id << "pos:" << i;
+    }
+    else {
+      dict_col_set_added_column_default(col, (const byte*)def_val, def_val_len, table->heap);
     }
 
-    i++;
-
-  next_rec:
-    btr_pcur_move_to_next_user_rec(&pcur, &mtr);
+end:
+    btr_pcur_close(&pcur);
+    mtr_commit(&mtr);
   }
-
-  btr_pcur_close(&pcur);
-  mtr_commit(&mtr);
 }
 
-/** This function parses a SYS_COLUMNS_ADDED record and extracts added column
+/** This function parses a SYS_ADDED_COLS_DEFAULT record and extracts added column
 information
 @param[in,out]	heap			heap memory
-@param[in]		rec				current SYS_COLUMNS_ADDED rec
-@param[in]		index			cluster index of SYS_COLUMNS_ADDED
+@param[in]		rec				current SYS_ADDED_COLS_DEFAULT rec
+@param[in]		index			cluster index of SYS_ADDED_COLS_DEFAULT
 @param[in,out]	table_id	table id
 @param[in,out]	pos				column position
 @param[in,out]	def_val		default value of column
 @param[in,out]	def_val_len	the length of default value
 @return error message, or NULL on success */
 const char*
-dict_process_sys_columns_added_rec(
+dict_process_sys_added_cols_default_rec(
 mem_heap_t*	heap,
 const rec_t*	rec,
 dict_index_t*	index,
@@ -2191,7 +2231,7 @@ ulint*			def_val_len)
   const char*	err_msg;
 
   /* Parse the record, and get "dict_col_def_t" struct filled */
-  err_msg = dict_load_column_added_low(NULL, heap, rec, index,
+  err_msg = dict_load_added_cols_default_low(NULL, heap, rec, index,
     table_id, pos, def_val, def_val_len);
 
   return(err_msg);
@@ -3066,7 +3106,8 @@ dict_load_table_low(
 	table_id_t	table_id;
 	ulint		space_id;
 	ulint		n_cols;
-  ulint		n_cols_core;
+	ulint		n_cols_core;
+	ulint   is_gcs;
 	ulint		t_num;
 	ulint		flags;
 	ulint		flags2;
@@ -3078,7 +3119,7 @@ dict_load_table_low(
 	}
 
 	dict_sys_tables_rec_read(rec, name, &table_id, &space_id,
-				 &t_num, &n_cols_core, &flags, &flags2);
+				 &t_num, &n_cols_core, &is_gcs, &flags, &flags2);
 
 	if (flags == ULINT_UNDEFINED) {
 		return("incorrect flags in SYS_TABLES");
@@ -3090,6 +3131,7 @@ dict_load_table_low(
 		name.m_name, space_id, n_cols + n_v_col, n_cols_core, n_v_col, flags, flags2);
 	(*table)->id = table_id;
 	(*table)->ibd_file_missing = FALSE;
+	(*table)->is_gcs = is_gcs ? TRUE : FALSE;
 
 	return(NULL);
 }
@@ -3518,7 +3560,7 @@ err_exit:
 
 	dict_load_virtual(table, heap);
 
-  dict_load_columns_added(table, heap);
+	dict_load_added_cols_default(table, heap);
 
 	if (cached) {
 		dict_table_add_to_cache(table, TRUE, heap);
