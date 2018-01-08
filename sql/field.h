@@ -4540,6 +4540,18 @@ public:
     flags&= ~(FIELD_FLAGS_COLUMN_FORMAT_MASK);
     flags|= (column_format_arg << FIELD_FLAGS_COLUMN_FORMAT);
   }
+
+  bool has_insert_default_function() const
+  {
+    return unireg_check == Field::TIMESTAMP_DN_FIELD ||
+      unireg_check == Field::TIMESTAMP_DNUN_FIELD;
+  }
+
+  bool has_update_default_function() const
+  {
+    return unireg_check == Field::TIMESTAMP_UN_FIELD ||
+      unireg_check == Field::TIMESTAMP_DNUN_FIELD;
+  }
 };
 
 
