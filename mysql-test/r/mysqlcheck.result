@@ -448,7 +448,6 @@ DROP TABLE bug47205;
 #
 DROP DATABASE IF EXISTS b12688860_db;
 CREATE DATABASE b12688860_db;
-mysqlcheck: [Warning] Using a password on the command line interface can be insecure.
 WARNING: --fix-db-names is deprecated and will be removed in a future version
 DROP DATABASE b12688860_db;
 #
