@@ -9106,6 +9106,8 @@ foreign_fail:
 			DBUG_RETURN(true);
 		}
 
+		// save the trx id before commit
+		trx_id_t trx_id = m_prebuilt->trx->id;
 		trx_commit_for_mysql(m_prebuilt->trx);
 
 		if (btr_search_enabled) {
@@ -9122,6 +9124,7 @@ foreign_fail:
 		dict_table_remove_from_cache(m_prebuilt->table);
 		m_prebuilt->table = dict_table_open_on_name(
 			tb_name, TRUE, TRUE, DICT_ERR_IGNORE_NONE);
+		dict_table_set_trx_id(m_prebuilt->table, trx_id);
 
 		/* Drop outdated table stats. */
 		char	errstr[1024];

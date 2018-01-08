@@ -1359,6 +1359,34 @@ dict_table_add_system_columns(
 	}
 }
 
+/**********************************************************************//**
+Set trx id for dict table after online DDL */
+void
+dict_table_set_trx_id(
+/*==========================*/
+  dict_table_t*	table,	/*!< in/out: table */
+  trx_id_t      trx_id)	/*!< in: trx id */
+{
+  dict_index_t* index;
+
+  ut_ad(mutex_own(&dict_sys->mutex));
+
+  if (table->def_trx_id < trx_id) {
+    table->def_trx_id = trx_id;
+  }
+
+  index = dict_table_get_first_index(table);
+
+  while (index) {
+
+    if (index->trx_id < trx_id) {
+      index->trx_id = trx_id;
+    }
+
+    index = dict_table_get_next_index(index);
+  }
+}
+
 #ifndef UNIV_HOTBACKUP
 /** Mark if table has big rows.
 @param[in,out]	table	table handler */

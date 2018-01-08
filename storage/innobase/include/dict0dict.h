@@ -360,6 +360,15 @@ dict_table_add_system_columns(
 /*==========================*/
 	dict_table_t*	table,	/*!< in/out: table */
 	mem_heap_t*	heap);	/*!< in: temporary heap */
+
+/**********************************************************************//**
+Set trx id for dict table after online DDL */
+void
+dict_table_set_trx_id(
+/*==========================*/
+	dict_table_t*	table,	/*!< in/out: table */
+	trx_id_t      trx_id);	/*!< in: trx id */
+
 #ifndef UNIV_HOTBACKUP
 /** Mark if table has big rows.
 @param[in,out]	table	table handler */
