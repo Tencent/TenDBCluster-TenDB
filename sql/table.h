@@ -1482,6 +1482,11 @@ public:
   */
   void update_compressed_columns_info(const List<Create_field>& fields);
 
+  bool is_partition() const
+  {
+    return s && s->partition_info_str && s->partition_info_str_len > 0;
+  }
+
 private:
   bool should_binlog_drop_if_temp_flag;
 
