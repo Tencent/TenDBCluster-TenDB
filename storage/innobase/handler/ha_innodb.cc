@@ -120,6 +120,8 @@ enum_tx_isolation thd_get_trx_isolation(const THD* thd);
 /* for ha_innopart, Native InnoDB Partitioning. */
 #include "ha_innopart.h"
 
+#include "handler0alter.h"
+
 /** to protect innobase_open_files */
 static mysql_mutex_t innobase_share_mutex;
 /** to force correct commit order in binlog */
@@ -11163,6 +11165,10 @@ bool ha_innobase::check_instant_alter(
 {
 	if (inplace_info->handler_flags == Alter_inplace_info::ADD_STORED_BASE_COLUMN 
 		|| inplace_info->handler_flags == Alter_inplace_info::ADD_INSTANT_COLUMN) {
+
+		if (innobase_fulltext_exist(this->table) 
+			|| innobase_spatial_exist(this->table))
+			return false;
 		
 		dict_table_t* table = this->m_prebuilt->table;
 		if (table && dict_table_is_comp(table) && !DICT_TF_GET_ZIP_SSIZE(table->flags)) {

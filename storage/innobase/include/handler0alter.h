@@ -61,6 +61,22 @@ innobase_rec_reset(
 	struct TABLE*		table)		/*!< in/out: MySQL table */
 	MY_ATTRIBUTE((nonnull));
 
+/** Determine if fulltext indexes exist in a given table.
+ * @param table MySQL table
+ * @return whether fulltext indexes exist on the table */
+bool
+innobase_fulltext_exist(
+/*====================*/
+        const TABLE*    table);
+
+/** Determine if spatial indexes exist in a given table.
+ * @param table MySQL table
+ * @return whether spatial indexes exist on the table */
+bool
+innobase_spatial_exist(
+/*===================*/
+        const   TABLE*  table);
+
 /** Generate the next autoinc based on a snapshot of the session
 auto_increment_increment and auto_increment_offset variables. */
 struct ib_sequence_t {

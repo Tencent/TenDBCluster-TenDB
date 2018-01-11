@@ -344,7 +344,6 @@ my_error_innodb(
 /** Determine if fulltext indexes exist in a given table.
 @param table MySQL table
 @return whether fulltext indexes exist on the table */
-static
 bool
 innobase_fulltext_exist(
 /*====================*/
@@ -362,7 +361,6 @@ innobase_fulltext_exist(
 /** Determine if spatial indexes exist in a given table.
 @param table MySQL table
 @return whether spatial indexes exist on the table */
-static
 bool
 innobase_spatial_exist(
 /*===================*/

@@ -1482,8 +1482,8 @@ ibuf_dummy_index_create(
 	dict_index_t*	index;
 
 	table = dict_mem_table_create("IBUF_DUMMY",
-				      DICT_HDR_SPACE, n, 0,
-				      comp ? DICT_TF_COMPACT : 0, 0, 0);
+				      DICT_HDR_SPACE, n, 0, 0, 
+				      comp ? DICT_TF_COMPACT : 0, 0);
 
 	index = dict_mem_index_create("IBUF_DUMMY", "IBUF_DUMMY",
 				      DICT_HDR_SPACE, 0, n);
