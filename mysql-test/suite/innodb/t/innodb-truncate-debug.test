@@ -96,7 +96,7 @@ select * from t3 where f1=40;
 truncate table t2;
 
 --echo Concurrent alters on the other tables
-alter table t2 add column f4 int;
+alter table t2 add column f4 int default 0;
 
 --echo check if index can be created on the other table
 create index idx1 on t2(f3);

@@ -78,6 +78,7 @@ information_schema	PROCESSLIST	Dynamic	{valid}	0
 information_schema	ROUTINES	Dynamic	{valid}	0
 information_schema	TRIGGERS	Dynamic	{valid}	0
 information_schema	VIEWS	Dynamic	{valid}	0
+information_schema	INNODB_SYS_ADDED_COLS_DEFAULT	Dynamic	{valid}	0
 test	t0	Dynamic	{valid}	0
 test	t00	Dynamic	{valid}	0
 test	t1	Dynamic	{valid}	0
@@ -109,6 +110,7 @@ information_schema	PROCESSLIST	Dynamic	{valid}	0
 information_schema	ROUTINES	Dynamic	{valid}	0
 information_schema	TRIGGERS	Dynamic	{valid}	0
 information_schema	VIEWS	Dynamic	{valid}	0
+information_schema	INNODB_SYS_ADDED_COLS_DEFAULT	Dynamic	{valid}	0
 test	t1	Dynamic	{valid}	0
 alter table t1 row_format=compact;
 SELECT table_schema, table_name, row_format, data_length, index_length FROM information_schema.tables WHERE engine='innodb' AND table_schema != 'mysql' AND table_schema != 'sys' AND table_name NOT LIKE 'xtradb_%';
@@ -123,6 +125,7 @@ information_schema	PROCESSLIST	Dynamic	{valid}	0
 information_schema	ROUTINES	Dynamic	{valid}	0
 information_schema	TRIGGERS	Dynamic	{valid}	0
 information_schema	VIEWS	Dynamic	{valid}	0
+information_schema	INNODB_SYS_ADDED_COLS_DEFAULT	Dynamic	{valid}	0
 test	t1	Compact	{valid}	0
 alter table t1 row_format=redundant;
 SELECT table_schema, table_name, row_format, data_length, index_length FROM information_schema.tables WHERE engine='innodb' AND table_schema != 'mysql' AND table_schema != 'sys' AND table_name NOT LIKE 'xtradb_%';
@@ -137,6 +140,7 @@ information_schema	PROCESSLIST	Dynamic	{valid}	0
 information_schema	ROUTINES	Dynamic	{valid}	0
 information_schema	TRIGGERS	Dynamic	{valid}	0
 information_schema	VIEWS	Dynamic	{valid}	0
+information_schema	INNODB_SYS_ADDED_COLS_DEFAULT	Dynamic	{valid}	0
 test	t1	Redundant	{valid}	0
 drop table t1;
 create table t1(a int not null, b text, index(b(10))) engine=innodb
@@ -172,6 +176,7 @@ information_schema	PROCESSLIST	Dynamic	{valid}	0
 information_schema	ROUTINES	Dynamic	{valid}	0
 information_schema	TRIGGERS	Dynamic	{valid}	0
 information_schema	VIEWS	Dynamic	{valid}	0
+information_schema	INNODB_SYS_ADDED_COLS_DEFAULT	Dynamic	{valid}	0
 test	t1	Compressed	2048	1024
 test	t2	Dynamic	{valid}	0
 drop table t1,t2;
@@ -258,6 +263,7 @@ information_schema	PROCESSLIST	Dynamic	{valid}	0
 information_schema	ROUTINES	Dynamic	{valid}	0
 information_schema	TRIGGERS	Dynamic	{valid}	0
 information_schema	VIEWS	Dynamic	{valid}	0
+information_schema	INNODB_SYS_ADDED_COLS_DEFAULT	Dynamic	{valid}	0
 test	t1	Dynamic	{valid}	0
 test	t10	Compact	{valid}	0
 test	t11	Redundant	{valid}	0
@@ -304,6 +310,7 @@ information_schema	PROCESSLIST	Dynamic	{valid}	0
 information_schema	ROUTINES	Dynamic	{valid}	0
 information_schema	TRIGGERS	Dynamic	{valid}	0
 information_schema	VIEWS	Dynamic	{valid}	0
+information_schema	INNODB_SYS_ADDED_COLS_DEFAULT	Dynamic	{valid}	0
 test	t1	Compressed	{valid}	0
 test	t5	Compressed	{valid}	0
 drop table t1, t5;
@@ -343,6 +350,7 @@ information_schema	PROCESSLIST	Dynamic	{valid}	0
 information_schema	ROUTINES	Dynamic	{valid}	0
 information_schema	TRIGGERS	Dynamic	{valid}	0
 information_schema	VIEWS	Dynamic	{valid}	0
+information_schema	INNODB_SYS_ADDED_COLS_DEFAULT	Dynamic	{valid}	0
 set global innodb_file_per_table = off;
 create table t1 (id int primary key) engine = innodb key_block_size = 1;
 ERROR HY000: Table storage engine for 't1' doesn't have this option
@@ -384,6 +392,7 @@ information_schema	PROCESSLIST	Dynamic	{valid}	0
 information_schema	ROUTINES	Dynamic	{valid}	0
 information_schema	TRIGGERS	Dynamic	{valid}	0
 information_schema	VIEWS	Dynamic	{valid}	0
+information_schema	INNODB_SYS_ADDED_COLS_DEFAULT	Dynamic	{valid}	0
 test	t8	Compact	{valid}	0
 test	t9	Redundant	{valid}	0
 drop table t8, t9;
@@ -431,6 +440,7 @@ information_schema	PROCESSLIST	Dynamic	{valid}	0
 information_schema	ROUTINES	Dynamic	{valid}	0
 information_schema	TRIGGERS	Dynamic	{valid}	0
 information_schema	VIEWS	Dynamic	{valid}	0
+information_schema	INNODB_SYS_ADDED_COLS_DEFAULT	Dynamic	{valid}	0
 test	t8	Compact	{valid}	0
 test	t9	Redundant	{valid}	0
 drop table t8, t9;

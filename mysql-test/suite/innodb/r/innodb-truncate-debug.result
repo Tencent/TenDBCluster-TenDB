@@ -69,7 +69,7 @@ f1	f2
 Concurrent truncate on other tables
 truncate table t2;
 Concurrent alters on the other tables
-alter table t2 add column f4 int;
+alter table t2 add column f4 int default 0;
 check if index can be created on the other table
 create index idx1 on t2(f3);
 Check if we can turn off persistent stats off entire instance

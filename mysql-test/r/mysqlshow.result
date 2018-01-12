@@ -117,13 +117,13 @@ Database: information_schema
 | USER_PRIVILEGES                       |
 | USER_STATISTICS                       |
 | VIEWS                                 |
-| INNODB_CMP                            |
+| INNODB_SYS_ADDED_COLS_DEFAULT         |
 | INNODB_CMP_RESET                      |
 | INNODB_SYS_DATAFILES                  |
 | XTRADB_READ_VIEW                      |
-| INNODB_SYS_VIRTUAL                    |
+| INNODB_SYS_TABLESTATS                 |
 | XTRADB_RSEG                           |
-| INNODB_BUFFER_PAGE                    |
+| INNODB_FT_CONFIG                      |
 | INNODB_TRX                            |
 | INNODB_CMP_PER_INDEX                  |
 | INNODB_METRICS                        |
@@ -138,7 +138,7 @@ Database: information_schema
 | INNODB_CHANGED_PAGES                  |
 | INNODB_TEMP_TABLE_INFO                |
 | INNODB_FT_INDEX_TABLE                 |
-| INNODB_CMPMEM                         |
+| INNODB_BUFFER_PAGE_LRU                |
 | INNODB_SYS_TABLESPACES                |
 | INNODB_CMP_PER_INDEX_RESET            |
 | INNODB_SYS_FOREIGN_COLS               |
@@ -146,13 +146,14 @@ Database: information_schema
 | INNODB_BUFFER_POOL_STATS              |
 | INNODB_FT_BEING_DELETED               |
 | INNODB_SYS_FOREIGN                    |
-| INNODB_BUFFER_PAGE_LRU                |
+| INNODB_CMP                            |
 | INNODB_FT_DEFAULT_STOPWORD            |
+| INNODB_CMPMEM                         |
 | INNODB_SYS_TABLES                     |
 | INNODB_SYS_COLUMNS                    |
-| INNODB_FT_CONFIG                      |
 | XTRADB_ZIP_DICT_COLS                  |
-| INNODB_SYS_TABLESTATS                 |
+| INNODB_BUFFER_PAGE                    |
+| INNODB_SYS_VIRTUAL                    |
 +---------------------------------------+
 Database: INFORMATION_SCHEMA
 +---------------------------------------+
@@ -196,13 +197,13 @@ Database: INFORMATION_SCHEMA
 | USER_PRIVILEGES                       |
 | USER_STATISTICS                       |
 | VIEWS                                 |
-| INNODB_CMP                            |
+| INNODB_SYS_ADDED_COLS_DEFAULT         |
 | INNODB_CMP_RESET                      |
 | INNODB_SYS_DATAFILES                  |
 | XTRADB_READ_VIEW                      |
-| INNODB_SYS_VIRTUAL                    |
+| INNODB_SYS_TABLESTATS                 |
 | XTRADB_RSEG                           |
-| INNODB_BUFFER_PAGE                    |
+| INNODB_FT_CONFIG                      |
 | INNODB_TRX                            |
 | INNODB_CMP_PER_INDEX                  |
 | INNODB_METRICS                        |
@@ -217,7 +218,7 @@ Database: INFORMATION_SCHEMA
 | INNODB_CHANGED_PAGES                  |
 | INNODB_TEMP_TABLE_INFO                |
 | INNODB_FT_INDEX_TABLE                 |
-| INNODB_CMPMEM                         |
+| INNODB_BUFFER_PAGE_LRU                |
 | INNODB_SYS_TABLESPACES                |
 | INNODB_CMP_PER_INDEX_RESET            |
 | INNODB_SYS_FOREIGN_COLS               |
@@ -225,13 +226,14 @@ Database: INFORMATION_SCHEMA
 | INNODB_BUFFER_POOL_STATS              |
 | INNODB_FT_BEING_DELETED               |
 | INNODB_SYS_FOREIGN                    |
-| INNODB_BUFFER_PAGE_LRU                |
+| INNODB_CMP                            |
 | INNODB_FT_DEFAULT_STOPWORD            |
+| INNODB_CMPMEM                         |
 | INNODB_SYS_TABLES                     |
 | INNODB_SYS_COLUMNS                    |
-| INNODB_FT_CONFIG                      |
 | XTRADB_ZIP_DICT_COLS                  |
-| INNODB_SYS_TABLESTATS                 |
+| INNODB_BUFFER_PAGE                    |
+| INNODB_SYS_VIRTUAL                    |
 +---------------------------------------+
 Wildcard: inf_rmation_schema
 +--------------------+
