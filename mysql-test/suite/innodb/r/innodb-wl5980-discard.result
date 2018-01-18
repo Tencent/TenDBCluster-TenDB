@@ -65,13 +65,13 @@ a	b
 2	Remote table has been FLUSHed and UNLOCKed
 12	Transactional record inserted
 ALTER TABLE t5980 DROP PRIMARY KEY;
-ALTER TABLE t5980 ADD COLUMN c VARCHAR(50) DEFAULT NULL;
+ALTER TABLE t5980 ADD COLUMN c VARCHAR(50) DEFAULT 'abc';
 INSERT INTO t5980(a,b,c) VALUES (2,'Duplicate value since primary key has been dropped','third column added');
 SELECT * FROM t5980;
 a	b	c
-1	Create the tablespace	NULL
-2	Remote table has been FLUSHed and UNLOCKed	NULL
-12	Transactional record inserted	NULL
+1	Create the tablespace	abc
+2	Remote table has been FLUSHed and UNLOCKed	abc
+12	Transactional record inserted	abc
 2	Duplicate value since primary key has been dropped	third column added
 #
 # Make a second backup of the cfg and ibd files.
@@ -79,9 +79,9 @@ a	b	c
 FLUSH TABLES t5980 FOR EXPORT;
 SELECT * FROM t5980;
 a	b	c
-1	Create the tablespace	NULL
-2	Remote table has been FLUSHed and UNLOCKed	NULL
-12	Transactional record inserted	NULL
+1	Create the tablespace	abc
+2	Remote table has been FLUSHed and UNLOCKed	abc
+12	Transactional record inserted	abc
 2	Duplicate value since primary key has been dropped	third column added
 UNLOCK TABLES;
 ### files in MYSQLD_DATADIR/test
@@ -201,13 +201,13 @@ a	b
 2	Inserted record after IMPORT
 12	Transactional record inserted
 ALTER TABLE t5980 DROP PRIMARY KEY;
-ALTER TABLE t5980 ADD COLUMN c VARCHAR(50) DEFAULT NULL;
+ALTER TABLE t5980 ADD COLUMN c VARCHAR(50) DEFAULT 'abc';
 INSERT INTO t5980(a,b,c) VALUES (2,'Duplicate value since primary key has been dropped','third column added');
 SELECT * FROM t5980;
 a	b	c
-1	Create the tablespace	NULL
-2	Inserted record after IMPORT	NULL
-12	Transactional record inserted	NULL
+1	Create the tablespace	abc
+2	Inserted record after IMPORT	abc
+12	Transactional record inserted	abc
 2	Duplicate value since primary key has been dropped	third column added
 #
 # Show that the system tables have this table in them correctly.
@@ -843,10 +843,10 @@ ERROR HY000: Tablespace has been discarded for table 't5980b'
 #
 # ALTER TABLE ALGORITHM=INPLACE can use a discarded tablespace.
 #
-ALTER TABLE t5980a ADD COLUMN c CHAR(20), ALGORITHM=INPLACE;
+ALTER TABLE t5980a ADD COLUMN c CHAR(20) default 'abc', ALGORITHM=INPLACE;
 Warnings:
 Warning	1814	InnoDB: Tablespace has been discarded for table 't5980a'
-ALTER TABLE t5980b ADD COLUMN c CHAR(20), ALGORITHM=INPLACE;
+ALTER TABLE t5980b ADD COLUMN c CHAR(20) default 'abc', ALGORITHM=INPLACE;
 Warnings:
 Warning	1814	InnoDB: Tablespace has been discarded for table 't5980b'
 #

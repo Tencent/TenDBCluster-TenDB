@@ -7714,6 +7714,21 @@ ER_CANT_EXECUTE_WITH_BACKUP_LOCK
   rus "Запрос не может быть выполнен из-за конфликтующей блокировки резервного копирования"
 
 #
+# Start of TenDB specific messages
+#
+start-error-number 6000
+
+ER_CANNOT_DISCARD_INSATNT_TABLE
+  eng "Cannot DISCARD/IMPORT tablespace associated with instant table"
+
+ER_CANNOT_EXPORT_INSATNT_TABLE
+  eng "Cannot EXPORT tablespace associated with instant table"
+
+#
+#  End of TenDB specific messages
+#
+
+#
 # Start of MyRocks specific messages
 #
 

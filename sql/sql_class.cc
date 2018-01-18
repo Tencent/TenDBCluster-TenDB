@@ -843,6 +843,12 @@ int thd_sql_command(const THD *thd)
 }
 
 extern "C"
+ulong thd_get_lex_type(THD *thd)
+{
+  return thd->lex->type;
+}
+
+extern "C"
 int thd_tx_isolation(const THD *thd)
 {
   return (int) thd->tx_isolation;

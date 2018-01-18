@@ -13192,6 +13192,15 @@ ha_innobase::discard_or_import_tablespace(
 		DBUG_RETURN(HA_ERR_TABLE_NEEDS_UPGRADE);
 	}
 
+	/* Can't discard instant table */
+	if (dict_table->is_instant()) {
+		ib_senderrf(
+			m_prebuilt->trx->mysql_thd, IB_LOG_LEVEL_ERROR,
+			ER_CANNOT_DISCARD_INSATNT_TABLE);
+
+		DBUG_RETURN(HA_ERR_TABLE_NEEDS_UPGRADE);
+	}
+
 	if (DICT_TF_HAS_SHARED_SPACE(dict_table->flags)) {
 		my_printf_error(ER_NOT_ALLOWED_COMMAND,
 			"InnoDB: Cannot %s table `%s` because it is in"
@@ -16605,6 +16614,14 @@ ha_innobase::external_lock(
 				DBUG_RETURN(HA_ERR_NO_SUCH_TABLE);
 			}
 
+			/* Can't flush instant tables for export */
+			if ((thd_get_lex_type(thd) & REFRESH_FOR_EXPORT) &&
+        			m_prebuilt->table->is_instant()) {
+				ib_senderrf(trx->mysql_thd, IB_LOG_LEVEL_ERROR,
+					    ER_CANNOT_EXPORT_INSATNT_TABLE);
+
+				DBUG_RETURN(HA_ERR_NO_SUCH_TABLE);
+			}
 			row_quiesce_table_start(m_prebuilt->table, trx);
 
 			/* Use the transaction instance to track UNLOCK

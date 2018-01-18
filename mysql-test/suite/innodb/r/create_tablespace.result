@@ -960,13 +960,13 @@ t_in_def	CREATE TABLE `t_in_def` (
   PRIMARY KEY (`a`),
   UNIQUE KEY `a` (`a`)
 ) /*!50100 TABLESPACE `s_def` */ ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC
-ALTER TABLE t_in_def ADD COLUMN (c int);
+ALTER TABLE t_in_def ADD COLUMN (c int default 10);
 SHOW CREATE TABLE t_in_def;
 Table	Create Table
 t_in_def	CREATE TABLE `t_in_def` (
   `a` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `b` text,
-  `c` int(11) DEFAULT NULL,
+  `c` int(11) DEFAULT '10',
   PRIMARY KEY (`a`),
   UNIQUE KEY `a` (`a`)
 ) /*!50100 TABLESPACE `s_def` */ ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC
@@ -976,7 +976,7 @@ Table	Create Table
 t_in_def	CREATE TABLE `t_in_def` (
   `a` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `b` text,
-  `c` int(11) DEFAULT NULL,
+  `c` int(11) DEFAULT '10',
   PRIMARY KEY (`a`),
   UNIQUE KEY `a` (`a`),
   KEY `c` (`c`)
@@ -987,7 +987,7 @@ Table	Create Table
 t_in_def	CREATE TABLE `t_in_def` (
   `a` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `b` text,
-  `c` int(11) DEFAULT NULL,
+  `c` int(11) DEFAULT '10',
   PRIMARY KEY (`a`),
   UNIQUE KEY `a` (`a`)
 ) /*!50100 TABLESPACE `s_def` */ ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC

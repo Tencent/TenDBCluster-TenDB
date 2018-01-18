@@ -1377,7 +1377,8 @@ struct dict_table_t {
 	@retval false if table hasn't been instant added columns */
 	bool is_instant() const
 	{
-		return (n_core_cols < n_cols);
+		return (n_core_cols < n_cols)  
+		 	|| is_gcs; /* For old version tendb */
 	}
 
 	/** Id of the table. */

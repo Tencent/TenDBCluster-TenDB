@@ -667,7 +667,7 @@ SHOW CREATE TABLE t_in_def;
 ALTER TABLE t_in_def ROW_FORMAT=dynamic;
 SHOW CREATE TABLE t_in_def;
 
-ALTER TABLE t_in_def ADD COLUMN (c int);
+ALTER TABLE t_in_def ADD COLUMN (c int default 10);
 SHOW CREATE TABLE t_in_def;
 
 ALTER TABLE t_in_def ADD INDEX c (c);
