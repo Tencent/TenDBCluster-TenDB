@@ -1,0 +1,99 @@
+create database instant_alter;
+use instant_alter;
+create table t1(id int primary key, c2 int) engine = innodb row_format=gcs;
+insert into t1 values(1,1),(2,2),(3,3);
+/* connection con1 */
+use instant_alter;
+start transaction with consistent snapshot;
+/* connection default */
+alter table t1 add column d1 int not null default 10;
+/* connection con1 */
+select * from t1;
+ERROR HY000: Table definition has changed, please retry transaction
+/* connection default */
+create table t2 (c1 int) engine = innodb;
+insert into t2 values(1);
+flush tables t2 for export;
+unlock tables;
+alter table t2 add column d1 int;
+flush tables t2 for export;
+ERROR HY000: Cannot EXPORT tablespace associated with instant table
+create table t3 (c1 int) engine = innodb;
+insert into t3 values(1);
+alter table t3 add column d1 int;
+alter table t3 discard tablespace;
+ERROR HY000: Cannot DISCARD/IMPORT tablespace associated with instant table
+alter table t3 engine = innodb;
+alter table t3 discard tablespace;
+select * from t3;
+ERROR HY000: Tablespace has been discarded for table 't3'
+drop table t3;
+create table big_table (id int primary key auto_increment, c1 blob, c2 blob, c3 blob) engine = innodb row_format=gcs_dynamic;
+set @i:=0;
+insert into big_table(id, c1,c2,c3) values(@i:=@i+1, repeat('a', 1000), repeat('b', 1000), repeat('c', 1000));
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+alter table big_table add column d1 int not null default 10;
+alter table big_table add column d2 int not null default 100;
+/* connection con1 */
+start transaction with consistent snapshot;
+select count(*) from big_table;
+count(*)
+131072
+select max(id) from big_table;
+max(id)
+131072
+/* connection default */
+alter table big_table drop column c3;;
+/* connection con1 */
+select sleep(1);
+sleep(1)
+0
+select State,Info from information_schema.processlist order by 1;
+State	Info
+executing	select State,Info from information_schema.processlist order by 1
+Waiting for table metadata lock	alter table big_table drop column c3
+commit;
+select sleep(1);
+sleep(1)
+0
+select State,Info from information_schema.processlist order by 1;
+State	Info
+altering table	alter table big_table drop column c3
+executing	select State,Info from information_schema.processlist order by 1
+/* row log */
+insert into big_table(id,c1,c2,c3) values(100000000, 'x', 'y', 'z');
+insert into big_table(id,c1,c2,c3) values(100000001, 'x', 'y', 'z');
+delete from big_table where id < 1000;
+update big_table set c1='h', c2 = 'i', c3 = 'j' where id > 1000 and id < 2000;
+/* connection default */
+/* reap */
+select count(*) from big_table;
+count(*)
+130075
+select * from big_table where id >= 100000000;
+id	c1	c2	d1	d2
+100000000	x	y	10	100
+100000001	x	y	10	100
+select c1,count(*) from big_table group by 1;
+c1	count(*)
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	129074
+h	999
+x	2
+/* disconnect con1 */
+drop database instant_alter;

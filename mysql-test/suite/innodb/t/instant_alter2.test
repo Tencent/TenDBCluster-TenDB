@@ -1,0 +1,145 @@
+--source include/have_innodb.inc
+--source include/have_nodebug.inc
+--source include/count_sessions.inc
+
+create database instant_alter;
+
+use instant_alter;
+
+create table t1(id int primary key, c2 int) engine = innodb row_format=gcs;
+
+insert into t1 values(1,1),(2,2),(3,3);
+
+
+--echo /* connection con1 */
+connect (con1,localhost,root,,);
+use instant_alter;
+start transaction with consistent snapshot;
+
+
+--echo /* connection default */
+connection default;
+
+alter table t1 add column d1 int not null default 10;
+
+--echo /* connection con1 */
+connection con1;
+
+--error ER_TABLE_DEF_CHANGED
+select * from t1;
+
+
+--echo /* connection default */
+connection default;
+
+
+####### export instant table
+create table t2 (c1 int) engine = innodb;
+
+insert into t2 values(1);
+
+flush tables t2 for export;
+
+unlock tables;
+
+alter table t2 add column d1 int;
+
+--error ER_CANNOT_EXPORT_INSATNT_TABLE
+flush tables t2 for export;
+
+####### discard instant table
+create table t3 (c1 int) engine = innodb;
+
+insert into t3 values(1);
+
+alter table t3 add column d1 int;
+
+--error ER_CANNOT_DISCARD_INSATNT_TABLE 
+alter table t3 discard tablespace;
+
+alter table t3 engine = innodb;
+
+alter table t3 discard tablespace;
+
+--error ER_TABLESPACE_DISCARDED 
+select * from t3;
+
+drop table t3;
+
+# online ddl on instant table
+create table big_table (id int primary key auto_increment, c1 blob, c2 blob, c3 blob) engine = innodb row_format=gcs_dynamic;
+
+set @i:=0;
+insert into big_table(id, c1,c2,c3) values(@i:=@i+1, repeat('a', 1000), repeat('b', 1000), repeat('c', 1000));
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+insert into big_table(id, c1,c2,c3) select @i:=@i+1, c1,c2,c3 from big_table;
+
+alter table big_table add column d1 int not null default 10;
+alter table big_table add column d2 int not null default 100;
+
+--echo /* connection con1 */
+connection con1;
+
+start transaction with consistent snapshot;
+select count(*) from big_table; 
+select max(id) from big_table; 
+
+--echo /* connection default */
+connection default;
+
+
+--send alter table big_table drop column c3;
+
+--echo /* connection con1 */
+connection con1;
+
+select sleep(1);
+
+select State,Info from information_schema.processlist order by 1;
+
+commit;
+
+select sleep(1);
+
+select State,Info from information_schema.processlist order by 1;
+
+--echo /* row log */
+insert into big_table(id,c1,c2,c3) values(100000000, 'x', 'y', 'z');
+insert into big_table(id,c1,c2,c3) values(100000001, 'x', 'y', 'z');
+delete from big_table where id < 1000;
+update big_table set c1='h', c2 = 'i', c3 = 'j' where id > 1000 and id < 2000; 
+
+--echo /* connection default */
+connection default;
+
+--echo /* reap */
+--reap
+
+select count(*) from big_table;
+
+select * from big_table where id >= 100000000;
+
+select c1,count(*) from big_table group by 1;
+
+--echo /* disconnect con1 */
+disconnect con1;
+
+drop database instant_alter;
+
+# Wait till all disconnects are completed
+--source include/wait_until_count_sessions.inc
