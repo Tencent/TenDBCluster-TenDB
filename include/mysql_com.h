@@ -169,6 +169,8 @@
 #define REFRESH_FLUSH_PAGE_BITMAPS 0x8000000L
 #define REFRESH_RESET_PAGE_BITMAPS 0x10000000L
 
+#define REFRESH_QUERY_RESPONSE_TIME 0x20000000L /* response time distribution */
+
 #define PURGE_BITMAPS_TO_LSN 1
 
 #define CLIENT_LONG_PASSWORD	1	/* new more secure passwords */

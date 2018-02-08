@@ -33,6 +33,8 @@
 #include "log.h"         // query_logger
 #include "des_key_file.h"
 
+extern void query_response_time_flush();  // in plugin/query_response_time/query_response_time.h
+
 /**
   Reload/resets privileges and the different caches.
 
@@ -392,6 +394,11 @@ bool reload_acl_and_cache(THD *thd, unsigned long options,
     {
       my_error(ER_UNKNOWN_ERROR, MYF(0), "RESET CHANGED_PAGE_BITMAPS");
     }
+  }
+  if (options & REFRESH_QUERY_RESPONSE_TIME)
+  {
+    tmp_write_to_binlog = 0;
+    query_response_time_flush();
   }
  if (*write_to_binlog != -1)
    *write_to_binlog= tmp_write_to_binlog;

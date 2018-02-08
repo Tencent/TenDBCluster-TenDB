@@ -90,7 +90,7 @@ public:
   utility() : m_base(0)
   {
     m_max_dec_value= MILLION;
-    for(int i= 0; TIME_STRING_POSITIVE_POWER_LENGTH > i; ++i)
+    for(int i= 0; TIME_STRING_POSITIVE_POWER_LENGTH > i && i < 5; ++i)
       m_max_dec_value *= 10;
     setup(DEFAULT_BASE);
   }
@@ -101,9 +101,11 @@ public:
   uint      bound_count()     const { return m_bound_count; }
   ulonglong max_dec_value()   const { return m_max_dec_value; }
   ulonglong bound(uint index) const { return m_bound[ index ]; }
+  time_t    start_time()      const { return m_start_time; }
 public:
   void setup(uint base)
   {
+    m_start_time = my_time(MY_WME);
     if(base != m_base)
     {
       m_base= base;
@@ -111,7 +113,7 @@ public:
       const ulonglong million= 1000 * 1000;
       ulonglong value= million;
       m_negative_count= 0;
-      while(value > 0)
+      while (value > 10) /* not less than 10^-5 */
       {
 	m_negative_count += 1;
 	value /= m_base;
@@ -148,6 +150,7 @@ private:
   uint      m_bound_count;
   ulonglong m_max_dec_value; /* for TIME_STRING_POSITIVE_POWER_LENGTH=7 is 10000000 */
   ulonglong m_bound[OVERALL_POWER_COUNT];
+  time_t    m_start_time;    /* each time flush */
 };
 
 static
@@ -157,6 +160,16 @@ void print_time(char* buffer, std::size_t buffer_size, const char* format,
   ulonglong second=      (value / MILLION);
   ulonglong microsecond= (value % MILLION);
   my_snprintf(buffer, buffer_size, format, second, microsecond);
+}
+
+static
+void print_timestamp(time_t tm, char* buf, std::size_t buf_size)
+{
+  char    tmp[50];
+
+  my_get_time_str(tm, tmp, sizeof(tmp));
+
+  my_snprintf(buf, buf_size, "Since %s", tmp);
 }
 
 class time_collector
@@ -229,13 +242,13 @@ public:
     for(uint i= 0, count= bound_count() + 1 /* with overflow */; count > i; ++i)
     {
       char time[TIME_STRING_BUFFER_LENGTH];
-      char total[TOTAL_STRING_BUFFER_LENGTH];
+      char total[100];
       if(i == bound_count())
       {        
         assert(sizeof(TIME_OVERFLOW) <= TIME_STRING_BUFFER_LENGTH);
         assert(sizeof(TIME_OVERFLOW) <= TOTAL_STRING_BUFFER_LENGTH);
         memcpy(time,TIME_OVERFLOW,sizeof(TIME_OVERFLOW));
-        memcpy(total,TIME_OVERFLOW,sizeof(TIME_OVERFLOW));
+        print_timestamp(m_utility.start_time(), total, sizeof(total));
       }
       else
       {

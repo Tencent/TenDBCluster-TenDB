@@ -474,6 +474,7 @@ static const SYMBOL symbols[] = {
   { SYM("PURGE",                    PURGE)},
   { SYM("QUARTER",                  QUARTER_SYM)},
   { SYM("QUERY",                    QUERY_SYM)},
+  { SYM("QUERY_RESPONSE_TIME",      QUERY_RESPONSE_TIME_SYM)},
   { SYM("QUICK",                    QUICK)},
   { SYM("RANGE",                    RANGE_SYM)},
   { SYM("READ",                     READ_SYM)},

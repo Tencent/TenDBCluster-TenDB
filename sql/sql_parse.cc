@@ -2130,6 +2130,7 @@ int prepare_schema_table(THD *thd, LEX *lex, Table_ident *table_ident,
   case SCH_COLUMN_PRIVILEGES:
   case SCH_TABLE_CONSTRAINTS:
   case SCH_KEY_COLUMN_USAGE:
+  case SCH_QUERY_RESPONSE_TIME:
   default:
     break;
   }

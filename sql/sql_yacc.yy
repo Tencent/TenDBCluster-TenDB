@@ -910,6 +910,7 @@ bool my_yyoverflow(short **a, YYSTYPE **b, YYLTYPE **c, ulong *yystacksize);
 %token  PURGE
 %token  QUARTER_SYM
 %token  QUERY_SYM
+%token  QUERY_RESPONSE_TIME_SYM
 %token  QUICK
 %token  RANGE_SYM                     /* SQL-2003-R */
 %token  READS_SYM                     /* SQL-2003-R */
@@ -12263,6 +12264,13 @@ show_param:
           {
             Lex->sql_command = SQLCOM_SHOW_SLAVE_STAT;
           }
+        | QUERY_RESPONSE_TIME_SYM opt_wild_or_where
+          {
+            LEX *lex= Lex;
+            lex->sql_command= SQLCOM_SELECT;
+			if (prepare_schema_table(YYTHD, lex, 0, SCH_QUERY_RESPONSE_TIME))
+              MYSQL_YYABORT;
+          }
         | CLIENT_STATS_SYM opt_wild_or_where
           {
            LEX *lex= Lex;
@@ -12667,6 +12675,8 @@ flush_option:
           { Lex->type|= REFRESH_OPTIMIZER_COSTS; }
         | CHANGED_PAGE_BITMAPS_SYM
           { Lex->type|= REFRESH_FLUSH_PAGE_BITMAPS; }
+        | QUERY_RESPONSE_TIME_SYM
+          { Lex->type|= REFRESH_QUERY_RESPONSE_TIME; }
         ;
 
 opt_table_list:
@@ -13796,6 +13806,7 @@ keyword_sp:
         | PROXY_SYM                {}
         | QUARTER_SYM              {}
         | QUERY_SYM                {}
+        | QUERY_RESPONSE_TIME_SYM  {}
         | QUICK                    {}
         | READ_ONLY_SYM            {}
         | REBUILD_SYM              {}

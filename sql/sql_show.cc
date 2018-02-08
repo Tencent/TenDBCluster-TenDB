@@ -75,6 +75,9 @@ using std::min;
 
 #define STR_OR_NIL(S) ((S) ? (S) : "<nil>")
 
+extern ST_FIELD_INFO query_response_time_fields_info[];
+extern int  query_response_time_fill(THD* thd, TABLE_LIST *tables, Item *cond);
+
 enum enum_i_s_events_fields
 {
   ISE_EVENT_CATALOG= 0,
@@ -9860,6 +9863,8 @@ ST_SCHEMA_TABLE schema_tables[]=
   {"PROFILING", query_profile_statistics_info, create_schema_table,
     fill_query_profile_statistics_info, make_profile_table_for_show, 
     NULL, -1, -1, false, 0},
+  {"QUERY_RESPONSE_TIME", query_response_time_fields_info, create_schema_table,
+    query_response_time_fill, make_old_format, 0, -1, -1, 0, 0 },
   {"REFERENTIAL_CONSTRAINTS", referential_constraints_fields_info,
    create_schema_table, get_all_tables, 0, get_referential_constraints_record,
    1, 9, 0, OPTIMIZE_I_S_TABLE|OPEN_TABLE_ONLY},

@@ -185,3 +185,28 @@ void dynstr_free(DYNAMIC_STRING *str)
   my_free(str->str);
   str->str= NULL;
 }
+
+void
+my_get_time_str(
+  time_t  tm,
+  char*   buf,
+  size_t  buf_size
+)
+{
+  struct tm  cal_tm;
+  struct tm* cal_tm_ptr;
+
+#ifdef HAVE_LOCALTIME_R
+  localtime_r(&tm, &cal_tm);
+  cal_tm_ptr = &cal_tm;
+#else
+  cal_tm_ptr = localtime(&tm);
+#endif
+  my_snprintf(buf, buf_size, "%02d%02d%02d %2d:%02d:%02d",
+    cal_tm_ptr->tm_year % 100,
+    cal_tm_ptr->tm_mon + 1,
+    cal_tm_ptr->tm_mday,
+    cal_tm_ptr->tm_hour,
+    cal_tm_ptr->tm_min,
+    cal_tm_ptr->tm_sec);
+}

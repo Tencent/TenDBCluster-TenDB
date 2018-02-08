@@ -55,8 +55,9 @@
   Message if time too big for statistic collecting (very long query)
 */
 #define QRT_TIME_OVERFLOW "TOO LONG"
+#define QRT_TOTAL_OVERFLOW "Since 1970-01-01 00:00:00"
 
-#define QRT_DEFAULT_BASE 10
+#define QRT_DEFAULT_BASE 2
 
 #define QRT_TIME_STRING_LENGTH				\
   MY_MAX( (QRT_TIME_STRING_POSITIVE_POWER_LENGTH + 1 /* '.' */ + 6 /*QRT_TIME_STRING_NEGATIVE_POWER_LENGTH*/), \
@@ -64,7 +65,7 @@
 
 #define QRT_TOTAL_STRING_LENGTH				\
   MY_MAX( (QRT_TOTAL_STRING_POSITIVE_POWER_LENGTH + 1 /* '.' */ + 6 /*QRT_TOTAL_STRING_NEGATIVE_POWER_LENGTH*/), \
-       (sizeof(QRT_TIME_OVERFLOW) - 1) )
+       (sizeof(QRT_TOTAL_OVERFLOW) - 1) )
 
 enum QUERY_TYPE
 {
