@@ -50,7 +50,6 @@ struct mysql_malloc_service_st
 };
 
 extern struct mysql_malloc_service_st *mysql_malloc_service;
-extern void my_get_time_str(time_t  tm, char*   buf, size_t  buf_size);
 
 #ifdef MYSQL_DYNAMIC_PLUGIN
 

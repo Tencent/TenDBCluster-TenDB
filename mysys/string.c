@@ -193,10 +193,10 @@ my_get_time_str(
   size_t  buf_size
 )
 {
-  struct tm  cal_tm;
   struct tm* cal_tm_ptr;
 
 #ifdef HAVE_LOCALTIME_R
+  struct tm  cal_tm;
   localtime_r(&tm, &cal_tm);
   cal_tm_ptr = &cal_tm;
 #else

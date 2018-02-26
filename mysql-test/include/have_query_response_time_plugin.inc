@@ -16,6 +16,6 @@ if (!$PLUGIN_QUERY_RESPONSE_TIME) {
 # Check if --plugin-dir was setup for exampledb
 #
 if (`SELECT CONCAT('--plugin-dir=', REPLACE(@@plugin_dir, '\\\\', '/')) != '$PLUGIN_QUERY_RESPONSE_TIME_OPT/'`) {
-  --skip query_response_time plugin requires that --plugin-dir is set to the plugin dir (either the .opt file does not contain $PLUGIN_QUERY_RESPONSE_TIME_OPT or another plugin is in use)
+	#--skip query_response_time plugin requires that --plugin-dir is set to the plugin dir (either the .opt file does not contain $PLUGIN_QUERY_RESPONSE_TIME_OPT or another plugin is in use)
 }
 enable_query_log;

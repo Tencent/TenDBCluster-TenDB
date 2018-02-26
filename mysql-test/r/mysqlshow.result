@@ -99,6 +99,7 @@ Database: information_schema
 | PLUGINS                               |
 | PROCESSLIST                           |
 | PROFILING                             |
+| QUERY_RESPONSE_TIME                   |
 | REFERENTIAL_CONSTRAINTS               |
 | ROUTINES                              |
 | SCHEMATA                              |
@@ -117,7 +118,7 @@ Database: information_schema
 | USER_PRIVILEGES                       |
 | USER_STATISTICS                       |
 | VIEWS                                 |
-| INNODB_SYS_ADDED_COLS_DEFAULT         |
+| QUERY_RESPONSE_TIME_READ              |
 | INNODB_CMP_RESET                      |
 | INNODB_SYS_DATAFILES                  |
 | XTRADB_READ_VIEW                      |
@@ -141,7 +142,7 @@ Database: information_schema
 | INNODB_BUFFER_PAGE_LRU                |
 | INNODB_SYS_TABLESPACES                |
 | INNODB_CMP_PER_INDEX_RESET            |
-| INNODB_SYS_FOREIGN_COLS               |
+| QUERY_RESPONSE_TIME                   |
 | INNODB_FT_INDEX_CACHE                 |
 | INNODB_BUFFER_POOL_STATS              |
 | INNODB_FT_BEING_DELETED               |
@@ -153,6 +154,9 @@ Database: information_schema
 | INNODB_SYS_COLUMNS                    |
 | XTRADB_ZIP_DICT_COLS                  |
 | INNODB_BUFFER_PAGE                    |
+| QUERY_RESPONSE_TIME_WRITE             |
+| INNODB_SYS_FOREIGN_COLS               |
+| INNODB_SYS_ADDED_COLS_DEFAULT         |
 | INNODB_SYS_VIRTUAL                    |
 +---------------------------------------+
 Database: INFORMATION_SCHEMA
@@ -179,6 +183,7 @@ Database: INFORMATION_SCHEMA
 | PLUGINS                               |
 | PROCESSLIST                           |
 | PROFILING                             |
+| QUERY_RESPONSE_TIME                   |
 | REFERENTIAL_CONSTRAINTS               |
 | ROUTINES                              |
 | SCHEMATA                              |
@@ -197,7 +202,7 @@ Database: INFORMATION_SCHEMA
 | USER_PRIVILEGES                       |
 | USER_STATISTICS                       |
 | VIEWS                                 |
-| INNODB_SYS_ADDED_COLS_DEFAULT         |
+| QUERY_RESPONSE_TIME_READ              |
 | INNODB_CMP_RESET                      |
 | INNODB_SYS_DATAFILES                  |
 | XTRADB_READ_VIEW                      |
@@ -221,7 +226,7 @@ Database: INFORMATION_SCHEMA
 | INNODB_BUFFER_PAGE_LRU                |
 | INNODB_SYS_TABLESPACES                |
 | INNODB_CMP_PER_INDEX_RESET            |
-| INNODB_SYS_FOREIGN_COLS               |
+| QUERY_RESPONSE_TIME                   |
 | INNODB_FT_INDEX_CACHE                 |
 | INNODB_BUFFER_POOL_STATS              |
 | INNODB_FT_BEING_DELETED               |
@@ -233,6 +238,9 @@ Database: INFORMATION_SCHEMA
 | INNODB_SYS_COLUMNS                    |
 | XTRADB_ZIP_DICT_COLS                  |
 | INNODB_BUFFER_PAGE                    |
+| QUERY_RESPONSE_TIME_WRITE             |
+| INNODB_SYS_FOREIGN_COLS               |
+| INNODB_SYS_ADDED_COLS_DEFAULT         |
 | INNODB_SYS_VIRTUAL                    |
 +---------------------------------------+
 Wildcard: inf_rmation_schema

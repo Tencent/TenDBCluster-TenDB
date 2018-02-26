@@ -946,6 +946,28 @@ The following options may be given as the first argument:
  release.
  --query-prealloc-size=# 
  Persistent buffer for query parsing and execution
+ --query-response-time[=name] 
+ Enable or disable QUERY_RESPONSE_TIME plugin. Possible
+ values are ON, OFF, FORCE (don't start if the plugin
+ fails to load).
+ --query-response-time-audit[=name] 
+ Enable or disable QUERY_RESPONSE_TIME_AUDIT plugin.
+ Possible values are ON, OFF, FORCE (don't start if the
+ plugin fails to load).
+ --query-response-time-range-base=# 
+ Select base of log for query_response_time
+ ranges.WARNING: change of this variable take effect only
+ after next FLUSH QUERY_RESPONSE_TIME execution.
+ --query-response-time-read[=name] 
+ Enable or disable QUERY_RESPONSE_TIME_READ plugin.
+ Possible values are ON, OFF, FORCE (don't start if the
+ plugin fails to load).
+ --query-response-time-stats 
+ Enable and disable collection of query times.
+ --query-response-time-write[=name] 
+ Enable or disable QUERY_RESPONSE_TIME_WRITE plugin.
+ Possible values are ON, OFF, FORCE (don't start if the
+ plugin fails to load).
  --range-alloc-block-size=# 
  Allocation block size for storing ranges during
  optimization
@@ -1606,6 +1628,12 @@ query-cache-strip-comments FALSE
 query-cache-type OFF
 query-cache-wlock-invalidate FALSE
 query-prealloc-size 8192
+query-response-time ON
+query-response-time-audit ON
+query-response-time-range-base 2
+query-response-time-read ON
+query-response-time-stats FALSE
+query-response-time-write ON
 range-alloc-block-size 4096
 range-optimizer-max-mem-size 8388608
 read-buffer-size 131072
