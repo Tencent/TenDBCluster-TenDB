@@ -1,3 +1,5 @@
 --source include/have_query_response_time_plugin.inc
 
-SELECT * FROM INFORMATION_SCHEMA.QUERY_RESPONSE_TIME;
+SELECT * FROM INFORMATION_SCHEMA.QUERY_RESPONSE_TIME where time <> 'TOO LONG';
+
+show query_response_time where time <> 'TOO LONG';
