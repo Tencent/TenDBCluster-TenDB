@@ -11,6 +11,8 @@ gccdir=/usr/local/gcc-4.7.3/
 suffix="-$1"
 debug_flag=" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_CONFIG=mysql_release "
 bld_dir="bld"
+static_flag=" -DCMAKE_CXX_FLAGS=-static-libstdc++ -DCMAKE_C_FLAGS=-static-libgcc " 
+#static_flag=" -DCMAKE_CXX_FLAGS=\"-static-libgcc -static-libstdc++\" -DCMAKE_C_FLAGS=\"-static-libgcc\" " 
 
 debug_arg=`echo $2 | tr 'a-z' 'A-Z'`
 
@@ -19,20 +21,23 @@ then
 	suffix="$suffix-debug"
 	debug_flag=" -DCMAKE_BUILD_TYPE=Debug -DWITH_DEBUG=ON "
 	bld_dir="bld_debug"	
+    static_flag=""
+    export LD_LIBRARY_PATH=$gccdir/lib64/:$LD_LIBRARY_PATH
 fi
 
-echo "$suffix $debug_flag $bld_dir"
+echo "$suffix $debug_flag $bld_dir $static_flag"
 
 mkdir -p $bld_dir
 cd $bld_dir
 
 rm -f CMakeCache.txt
-#export LD_LIBRARY_PATH=$gccdir/lib64/:$LD_LIBRARY_PATH
 
-cmake .. -DDOWNLOAD_BOOST=1 -DWITH_BOOST=/home/mysql/boost/ -DWITHOUT_TOKUDB_STORAGE_ENGINE=1 -DMYSQL_SERVER_SUFFIX=$suffix $debug_flag -DFEATURE_SET=community  -DWITH_EMBEDDED_SERVER=OFF -DCMAKE_C_COMPILER=$gccdir/bin/gcc -DCMAKE_CXX_COMPILER=$gccdir/bin/g++ -DCMAKE_INSTALL_PREFIX=/usr/local/mysql -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" -DCMAKE_C_FLAGS="-static-libgcc" -DWITH_QUERY_RESPONSE_TIME=on
+cmake .. -DDOWNLOAD_BOOST=1 -DWITH_BOOST=/home/mysql/boost/ -DWITH_ZLIB=bundled -DWITHOUT_TOKUDB_STORAGE_ENGINE=1 -DMYSQL_SERVER_SUFFIX=$suffix $debug_flag -DFEATURE_SET=community  -DWITH_EMBEDDED_SERVER=OFF -DCMAKE_C_COMPILER=$gccdir/bin/gcc -DCMAKE_CXX_COMPILER=$gccdir/bin/g++ -DCMAKE_INSTALL_PREFIX=/usr/local/mysql -DWITH_QUERY_RESPONSE_TIME=on $static_flag 
+
 #cmake .. -DDOWNLOAD_BOOST=1 -DWITH_BOOST=/home/mysql/boost/ -DWITHOUT_TOKUDB_STORAGE_ENGINE=1 -DMYSQL_SERVER_SUFFIX=$suffix $debug_flag -DFEATURE_SET=community  -DWITH_EMBEDDED_SERVER=OFF -DCMAKE_INSTALL_PREFIX=/usr/local/mysql -DWITH_QUERY_RESPONSE_TIME=on
 
-make -j
+make VERBOSE=1 -j
 #make package 
 
 cd ..
+
