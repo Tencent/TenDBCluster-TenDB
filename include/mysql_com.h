@@ -127,6 +127,7 @@
                                            NULL by the user */
 #define CLUSTERING_FLAG (1 << 28)       /* Field has a secondary clustering
                                         key */
+#define COMPRESSED_BLOB_FLAG (1 << 31)    /** field is blob and set compressed, bit 31**/
 
 #define REFRESH_GRANT		1	/* Refresh grant tables */
 #define REFRESH_LOG		2	/* Start on new log file */

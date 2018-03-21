@@ -125,9 +125,123 @@ bool mysql_create_frm(THD *thd, const char *file_name,
   const uint format_section_header_size= 8;
   uint format_section_length;
   size_t tablespace_length= 0;
+	my_bool is_support_blob_compressed =  FALSE;
+	is_support_blob_compressed = db_file->ha_table_flags() & HA_BLOB_COMPRESSED ? TRUE : FALSE;
   DBUG_ENTER("mysql_create_frm");
 
   DBUG_ASSERT(*fn_rext((char*)file_name)); // Check .frm extension
+
+	/* 系统变量指定所有的blob默认加上compressed， 仅针对innodb存储引擎 */
+	/* 系统变量blob_compressed，仅影响建表语句 */
+	if(thd->variables.blob_compressed && is_support_blob_compressed)
+	{
+		List_iterator<Create_field> it(create_fields);
+		Create_field *create_field;
+		Create_field *tmp_create_field;
+		uint		idx = 0;
+		my_bool is_create_table = TRUE;
+
+		while(!!(tmp_create_field = it++))
+		{
+			/* 当所有的field都为NULL时,表明是建表操作 */
+			if(tmp_create_field->field)
+			{
+				is_create_table = FALSE;
+				break;
+			}
+		}
+		it.rewind();
+		while ((create_field = it++))
+		{
+			if(create_field->unireg_check == Field::BLOB_FIELD  && is_create_table)
+			{
+				/* create_field->field为null,表示为建表语句 */
+				/* 满足打开系统变量blob_compressed，innodb存储引擎，且是blob */
+				/* 但是，若该blob字段是索引，也不应该默认加上compressed特性 */
+				my_bool is_index = FALSE;
+
+				for (uint key_i = 0; key_i < keys; key_i++)
+				{
+					uint key_parts_i = 0;
+					uint key_parts = key_info[key_i].user_defined_key_parts;
+					uint16 field_num;
+					for(key_parts_i = 0; key_parts_i < key_parts; key_parts_i++)
+					{
+						field_num = key_info[key_i].key_part[key_parts_i].fieldnr;
+						if(field_num == idx)
+						{
+							/* 当前字段，是blob类型，且还是index */
+							is_index = TRUE;
+							break;
+						}
+						if(is_index)
+							break;
+					}
+				}
+				if(!is_index)
+				{
+					create_field->unireg_check = Field::COMPRESSED_BLOB_FIELD;
+					create_field->flags |= COMPRESSED_BLOB_FLAG;
+					if (create_field->field)
+					{
+						create_field->field->unireg_check = Field::COMPRESSED_BLOB_FIELD;
+						create_field->field->flags |= COMPRESSED_BLOB_FLAG;
+					}
+				}
+			}
+			idx++;
+		}
+	}
+
+	/* 不支持blob compressed的存储引擎误使用该功能，则报错 */
+	if (!is_support_blob_compressed)
+	{
+		List_iterator<Create_field> it_field(create_fields);
+		my_bool is_compressed;
+		Create_field *cur_field = NULL;
+		while(!!(cur_field = it_field++))
+		{
+			// cur_field->field->is_compressed();
+			is_compressed = (cur_field->unireg_check == Field::COMPRESSED_BLOB_FIELD);
+			if(is_compressed)
+			{
+				/* 如果表中有blob compressed属性，若存储引擎不支持，则报错 */
+				my_error(ER_FIELD_CAN_NOT_COMPRESSED_IN_CURRENT_ENGINESS, MYF(0), cur_field->field_name);
+				DBUG_RETURN(1);
+			}
+		}
+	}
+
+	/* 限制在blob compressed字段上不能加索引 */
+	for (uint key_i = 0; key_i < keys; key_i++)
+	{
+		uint key_parts_i = 0;
+		uint key_parts = key_info[key_i].user_defined_key_parts;
+
+		for(key_parts_i = 0; key_parts_i < key_parts; key_parts_i++)
+		{
+			uint16 field_i = 0;
+			my_bool is_compressed = FALSE;
+			uint16 field_num = key_info[key_i].key_part[key_parts_i].fieldnr;
+			List_iterator<Create_field> it_field(create_fields);
+			Create_field *cur_field = NULL;
+
+			while(!!(cur_field = it_field++))
+			{
+				if(field_i == field_num)
+				{
+					is_compressed = (cur_field->unireg_check == Field::COMPRESSED_BLOB_FIELD);
+
+					if(is_compressed)
+					{// 是索引键，同时还是blob compressed字段，报错
+						my_error(ER_FIELD_CAN_NOT_COMPRESSED_AND_INDEX, MYF(0), cur_field->field_name);
+						DBUG_RETURN(1);
+					}
+				}
+				field_i++;
+			}
+		}
+	}
 
   if (!(screen_buff=pack_screens(create_fields,&info_length,&screens,0)))
     DBUG_RETURN(1);

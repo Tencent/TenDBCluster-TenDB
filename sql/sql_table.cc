@@ -3181,6 +3181,10 @@ int prepare_create_field(Create_field *sql_field,
       sql_field->pack_flag|=FIELDFLAG_BINARY;
     sql_field->length=8;			// Unireg field length
     sql_field->unireg_check=Field::BLOB_FIELD;
+		if(sql_field->flags & COMPRESSED_BLOB_FLAG)
+		{
+			sql_field->unireg_check=Field::COMPRESSED_BLOB_FIELD;
+		}
     (*blob_columns)++;
     break;
   case MYSQL_TYPE_GEOMETRY:

@@ -201,6 +201,7 @@ be less than 256 */
 				COMPRESSED attribute*/
 /*-------------------------------------------*/
 
+
 /* This many bytes we need to store the type information affecting the
 alphabetical order for a single field and decide the storage size of an
 SQL null*/
@@ -258,10 +259,14 @@ the underling datatype of GEOMETRY(not DATA_POINT) data. */
 #define DATA_LARGE_BINARY(mtype,prtype) ((mtype) == DATA_GEOMETRY || \
 	((mtype) == DATA_BLOB && !((prtype) & DATA_BINARY_TYPE)))
 
-/* We now support 15 bits (up to 32767) collation number */
-#define MAX_CHAR_COLL_NUM	32767
+// use 30th bit
+#define DATA_IS_BLOB_COMPRESSED  (1 << 29)
+//16+13
+#define DATA_MYSQL_PRTYPE_MASK 0x1FFFFFFF
+/* We now support 13 bits (up to 8191) collation number */
+#define MAX_CHAR_COLL_NUM	8191
 
-/* Mask to get the Charset Collation number (0x7fff) */
+/* Mask to get the Charset Collation number (0x1fff) */
 #define CHAR_COLL_MASK		MAX_CHAR_COLL_NUM
 
 #ifndef UNIV_HOTBACKUP
@@ -384,7 +389,8 @@ dtype_form_prtype(
 /*==============*/
 	ulint	old_prtype,	/*!< in: the MySQL type code and the flags
 				DATA_BINARY_TYPE etc. */
-	ulint	charset_coll);	/*!< in: MySQL charset-collation code */
+	ulint	charset_coll,/*!< in: MySQL charset-collation code */
+	ibool   is_blob_compressed);
 /*********************************************************************//**
 Determines if a MySQL string type is a subset of UTF-8.  This function
 may return false negatives, in case further character-set collation

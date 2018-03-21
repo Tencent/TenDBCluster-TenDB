@@ -321,7 +321,7 @@ dtype_read_for_order_and_null_size(
 	type->len = mach_read_from_2(buf + 2);
 
 	type->prtype = dtype_form_prtype(type->prtype,
-					 data_mysql_default_charset_coll);
+					 data_mysql_default_charset_coll, FALSE);
 	dtype_set_mblen(type);
 }
 
@@ -370,7 +370,7 @@ dtype_new_read_for_order_and_null_size(
 			charset_coll = data_mysql_default_charset_coll;
 		}
 
-		type->prtype = dtype_form_prtype(type->prtype, charset_coll);
+		type->prtype = dtype_form_prtype(type->prtype, charset_coll, FALSE);
 	}
 	dtype_set_mblen(type);
 }

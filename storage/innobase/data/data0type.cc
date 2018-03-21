@@ -150,12 +150,13 @@ dtype_form_prtype(
 /*==============*/
 	ulint	old_prtype,	/*!< in: the MySQL type code and the flags
 				DATA_BINARY_TYPE etc. */
-	ulint	charset_coll)	/*!< in: MySQL charset-collation code */
+	ulint	charset_coll,/*!< in: MySQL charset-collation code */
+	ibool   is_blob_compressed)
 {
 	ut_a(old_prtype < 256 * 256);
 	ut_a(charset_coll <= MAX_CHAR_COLL_NUM);
 
-	return(old_prtype + (charset_coll << 16));
+	return(old_prtype + (charset_coll << 16) + (is_blob_compressed ? DATA_IS_BLOB_COMPRESSED : 0));
 }
 
 /*********************************************************************//**

@@ -1683,6 +1683,11 @@ int store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
         !(thd->variables.sql_mode & MODE_NO_FIELD_OPTIONS))
       packet->append(STRING_WITH_LEN(" AUTO_INCREMENT"));
 
+		if ((field->column_format() != COLUMN_FORMAT_TYPE_COMPRESSED) && field->is_compressed() )
+		{
+			packet->append(STRING_WITH_LEN(" /*!99104 COMPRESSED */"));
+		}
+
     if (field->comment.length)
     {
       packet->append(STRING_WITH_LEN(" COMMENT "));

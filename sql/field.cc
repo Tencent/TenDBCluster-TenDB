@@ -2239,7 +2239,7 @@ Field *Field::new_field(MEM_ROOT *root, TABLE *new_table,
   bool has_compressed_flag =
     (tmp->column_format() == COLUMN_FORMAT_TYPE_COMPRESSED);
   tmp->flags&= (NOT_NULL_FLAG | BLOB_FLAG | UNSIGNED_FLAG |
-                ZEROFILL_FLAG | BINARY_FLAG | ENUM_FLAG | SET_FLAG);
+                ZEROFILL_FLAG | BINARY_FLAG | ENUM_FLAG | SET_FLAG | COMPRESSED_BLOB_FLAG);
   if (has_compressed_flag)
     tmp->set_column_format(COLUMN_FORMAT_TYPE_COMPRESSED);
   tmp->reset_fields();
@@ -8072,6 +8072,8 @@ Field_blob::Field_blob(uchar *ptr_arg, uchar *null_ptr_arg, uchar null_bit_arg,
 {
   DBUG_ASSERT(blob_pack_length <= 4); // Only pack lengths 1-4 supported currently
   flags|= BLOB_FLAG;
+  if (unireg_check_arg == COMPRESSED_BLOB_FIELD)
+	  flags |= COMPRESSED_BLOB_FLAG;
   share->blob_fields++;
   /* TODO: why do not fill table->s->blob_field array here? */
 }
@@ -8238,7 +8240,7 @@ Field_blob::store_internal(const char *from, size_t length,
       If content of the 'from'-address is cached in the 'value'-object
       it is possible that the content needs a character conversion.
     */
-    if (!String::needs_conversion_on_storage(length, cs, field_charset))
+    if (!String::needs_conversion_on_storage(length, cs, field_charset) && is_compressed())
     {
       store_ptr_and_length(from, length);
       return TYPE_OK;
@@ -8683,6 +8685,10 @@ uint Field_blob::max_packed_col_length()
 
 uint Field_blob::is_equal(Create_field *new_field)
 {
+  /* 压缩标记需一样 */
+  if (is_compressed() != new_field->is_compressed())
+		return 0;
+
   /*
     changing column format to/from compressed or changing associated
     compression dictionary must result in table rebuild

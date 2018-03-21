@@ -1809,6 +1809,7 @@ err_len:
 	if (dtype_get_charset_coll(prtype) == 0
 	    && dtype_is_string_type(mtype)) {
 		/* The table was created with < 4.1.2. */
+		ut_a(!(prtype & DATA_IS_BLOB_COMPRESSED));
 
 		if (dtype_is_binary_string_type(mtype, prtype)) {
 			/* Use the binary collation for
@@ -1816,14 +1817,14 @@ err_len:
 
 			prtype = dtype_form_prtype(
 				prtype,
-				DATA_MYSQL_BINARY_CHARSET_COLL);
+				DATA_MYSQL_BINARY_CHARSET_COLL, FALSE);
 		} else {
 			/* Use the default charset for
 			other than binary columns. */
 
 			prtype = dtype_form_prtype(
 				prtype,
-				data_mysql_default_charset_coll);
+				data_mysql_default_charset_coll, FALSE);
 		}
 	}
 

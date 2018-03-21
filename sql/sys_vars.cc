@@ -4697,6 +4697,10 @@ static Sys_var_bit Sys_big_selects(
        SESSION_VAR(option_bits), NO_CMD_LINE, OPTION_BIG_SELECTS,
        DEFAULT(FALSE));
 
+static Sys_var_mybool Sys_blob_compressed(
+	   "blob_compressed", "Set all blob/text field can be compressed when create table. ",
+	   READ_ONLY SESSION_VAR(blob_compressed), CMD_LINE(OPT_ARG), DEFAULT(FALSE));
+
 static Sys_var_bit Sys_log_off(
        "sql_log_off", "sql_log_off",
        SESSION_VAR(option_bits), NO_CMD_LINE, OPTION_LOG_OFF,

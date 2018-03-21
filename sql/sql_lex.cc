@@ -1915,7 +1915,7 @@ static int lex_one_token(YYSTYPE *yylval, THD *thd)
           ulong version;
           version=strtol(version_str, NULL, 10);
 
-          if (version <= MYSQL_VERSION_ID)
+          if (version != TMYSQL_IGNORE_ID && (version <= MYSQL_VERSION_ID || ( version >= TMYSQL_VERSION_START_ID && version <= TMYSQL_VERSION_ID)))
           {
             /* Accept 'M' 'm' 'm' 'd' 'd' */
             lip->yySkipn(5);
