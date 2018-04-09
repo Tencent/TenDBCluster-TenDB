@@ -2011,9 +2011,6 @@ ulint*			def_val_len_out)
   }
 
   table_id = mach_read_from_8(field);
-  if (table && table->id != mach_read_from_8(field)) {
-    return("SYS_ADDED_COLS_DEFAULT.TABLE_ID mismatch");
-  }
 
   field = rec_get_nth_field_old(
     rec, DICT_FLD__SYS_ADDED_COLS_DEFAULT__POS, &len);

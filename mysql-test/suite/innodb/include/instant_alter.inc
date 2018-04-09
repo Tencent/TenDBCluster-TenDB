@@ -180,6 +180,18 @@ alter table geom add column d2 int;
 
 SELECT ST_AsText(g), d1, g2 FROM geom;
 
+# bug for dict_load_added_cols_default_low 
+# because the table_id of bug2 is <table_id of bug1 + 1>
+eval CREATE TABLE bug1 (c1 int) engine = innodb row_format=$row_format;
+eval CREATE TABLE bug2 (c1 int) engine = innodb row_format=$row_format;
+
+alter table bug1 add column d1 int not null default 10;
+alter table bug2 add column d1 int not null default 10;
+alter table bug1 add column d2 int;
+alter table bug2 add column d2 int;
+
+select name, n_cols, n_core_cols from information_schema.innodb_sys_tables  where name like '%instant_alter%bug1%';
+select name, n_cols, n_core_cols from information_schema.innodb_sys_tables  where name like '%instant_alter%bug2%';
 
 # big table
 eval create table big_table (id int primary key, c1 varchar(4000), c2 varchar(4000), c3 varchar(1000)) ENGINE=InnoDB ROW_FORMAT=$row_format;
