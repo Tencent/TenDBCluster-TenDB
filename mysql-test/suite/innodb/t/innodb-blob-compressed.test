@@ -56,10 +56,10 @@ DROP TABLE t1,t3;
 CREATE TABLE t1 (a INT PRIMARY KEY, b TEXT compressed, c blob compressed) ENGINE=InnoDB;
 CREATE TABLE t2 like t1;
 
--- error ER_FIELD_CAN_NOT_COMPRESSED_IN_CURRENT_ENGINESS,1729
+-- error ER_FIELD_CAN_NOT_COMPRESSED_IN_CURRENT_ENGINESS
 create table t3 (a int primary key, b text compressed) engine=MyIsam;
 
--- error ER_FIELD_CAN_NOT_COMPRESSED_AND_INDEX,1728
+-- error ER_FIELD_CAN_NOT_COMPRESSED_AND_INDEX
 create index index_t1_b on t1(b(10));
 begin;
 insert into t1 values(1,repeat('b',10),repeat('c',3000));
@@ -77,7 +77,7 @@ insert into t3 values(repeat('a',3000));
 insert into t3 values('');
 select length(a) from t3;
 
--- error ER_BLOB_FIELD_IN_PART_FUNC_ERROR,1502
+-- error ER_BLOB_FIELD_IN_PART_FUNC_ERROR
 CREATE TABLE employees (
     id INT NOT NULL,
     name blob compressed

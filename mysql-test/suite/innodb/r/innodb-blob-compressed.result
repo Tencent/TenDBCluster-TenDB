@@ -58,9 +58,9 @@ DROP TABLE t1,t3;
 CREATE TABLE t1 (a INT PRIMARY KEY, b TEXT compressed, c blob compressed) ENGINE=InnoDB;
 CREATE TABLE t2 like t1;
 create table t3 (a int primary key, b text compressed) engine=MyIsam;
-Got one of the listed errors
+ERROR HY000: Field 'b' can not have compressed property in this enginess
 create index index_t1_b on t1(b(10));
-Got one of the listed errors
+ERROR HY000: Field 'b' can not have compressed property and to be index at the sametime
 begin;
 insert into t1 values(1,repeat('b',10),repeat('c',3000));
 select a,length(b),length(c) from t1;
@@ -103,7 +103,7 @@ PARTITION BY RANGE (name) (
 PARTITION p0 VALUES LESS THAN (6),
 PARTITION p1 VALUES LESS THAN (11)
 );
-Got one of the listed errors
+ERROR HY000: A BLOB field is not allowed in partition function
 DROP TABLE t1,t2,t3;
 create table t1(c1 blob, c2 text)ENGINE=InnoDB;
 insert into t1 values('a', repeat('a',1000));
