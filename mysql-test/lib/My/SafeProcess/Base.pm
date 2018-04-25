@@ -214,6 +214,7 @@ sub create_process {
     }
   }
 
+	print "test_cmd:".__FILE__.":".__LINE__." ".((caller(0))[3]).":$path @$args"."\n";
   if ( !exec($path, @$args) ){
     croak("Failed to exec '$path': $!");
   }

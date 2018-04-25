@@ -4697,6 +4697,10 @@ static Sys_var_bit Sys_big_selects(
        SESSION_VAR(option_bits), NO_CMD_LINE, OPTION_BIG_SELECTS,
        DEFAULT(FALSE));
 
+static Sys_var_mybool Sys_blob_compressed(
+	   "blob_compressed", "Set all blob/text field can be compressed when create table. ",
+	   READ_ONLY SESSION_VAR(blob_compressed), CMD_LINE(OPT_ARG), DEFAULT(FALSE));
+
 static Sys_var_bit Sys_log_off(
        "sql_log_off", "sql_log_off",
        SESSION_VAR(option_bits), NO_CMD_LINE, OPTION_LOG_OFF,
@@ -5660,6 +5664,12 @@ static Sys_var_charptr Sys_slave_skip_errors(
        "provided list",
        READ_ONLY GLOBAL_VAR(opt_slave_skip_errors), CMD_LINE(REQUIRED_ARG),
        IN_SYSTEM_CHARSET, DEFAULT(0));
+
+static Sys_var_ulonglong Sys_read_binlog_speed_limit(
+       "read_binlog_speed_limit", "Maximum speed(KB/s) to read binlog from"
+       " master (0 = no limit)",
+       GLOBAL_VAR(opt_read_binlog_speed_limit), CMD_LINE(REQUIRED_ARG),
+       VALID_RANGE(0, ULONG_MAX), DEFAULT(0), BLOCK_SIZE(1));
 
 static Sys_var_ulonglong Sys_relay_log_space_limit(
        "relay_log_space_limit", "Maximum space to use for all relay logs",

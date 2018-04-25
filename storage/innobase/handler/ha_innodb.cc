@@ -3118,6 +3118,7 @@ ha_innobase::ha_innobase(
 			  | HA_ATTACHABLE_TRX_COMPATIBLE
 			  | HA_CAN_INDEX_VIRTUAL_GENERATED_COLUMN
 			  | HA_ONLINE_ANALYZE
+				| HA_BLOB_COMPRESSED
 		  ),
 	m_start_of_scan(),
 	m_num_write_row(),
@@ -8468,6 +8469,7 @@ innodb_fill_old_vcol_val(
 			false,
 			0,
 			0,
+			0,
 			0);
 	} else {
 		dfield_set_null(vfield);
@@ -8525,6 +8527,12 @@ calc_row_difference(
 
 	/* We use upd_buff to convert changed fields */
 	buf = (byte*) upd_buff;
+
+	if (prebuilt->blob_heap_for_compress)
+	{
+		mem_heap_free(prebuilt->blob_heap_for_compress);
+		prebuilt->blob_heap_for_compress = NULL;
+	}
 
 	for (i = 0; i < n_fields; i++) {
 		field = table->field[i];
@@ -8708,7 +8716,9 @@ calc_row_difference(
 					reinterpret_cast<const byte*>(
 						field->zip_dict_data.str),
 					field->zip_dict_data.length,
-					prebuilt);
+					prebuilt,
+					i
+				);
 				dfield_copy(&ufield->new_val, &dfield);
 			} else {
 				dict_col_copy_type(
@@ -8750,7 +8760,9 @@ calc_row_difference(
 						reinterpret_cast<const byte*>(
 							field->zip_dict_data.str),
 						field->zip_dict_data.length,
-						prebuilt);
+						prebuilt,
+						i
+					);
 					dfield_copy(ufield->old_v_val,
 						    &dfield);
 					dfield_copy(vfield, &dfield);
@@ -10919,7 +10931,7 @@ err_col:
 					| nulls_allowed | unsigned_type
 					| binary_type | long_true_varchar
 					| compressed,
-					charset_no),
+					charset_no, field->is_compressed()),
 				col_len);
 		} else {
 			dict_mem_table_add_v_col(table, heap,
@@ -10929,7 +10941,7 @@ err_col:
 					| nulls_allowed | unsigned_type
 					| binary_type | long_true_varchar
 					| is_virtual | compressed,
-					charset_no),
+					charset_no, field->is_compressed()),
 				col_len, i,
 				field->gcol_info->non_virtual_base_columns());
 		}
@@ -16267,6 +16279,10 @@ ha_innobase::extra(
 		if (m_prebuilt->compress_heap) {
 			row_mysql_prebuilt_free_compress_heap(m_prebuilt);
 		}
+		if (m_prebuilt->blob_heap_for_compress){
+			mem_heap_free(m_prebuilt->blob_heap_for_compress);
+			m_prebuilt->blob_heap_for_compress = NULL;
+		}
 
 		break;
 	case HA_EXTRA_RESET_STATE:
@@ -16322,6 +16338,11 @@ ha_innobase::end_stmt()
 
 	if (m_prebuilt->compress_heap) {
 		row_mysql_prebuilt_free_compress_heap(m_prebuilt);
+	}
+
+	if (m_prebuilt->blob_heap_for_compress){
+		mem_heap_free(m_prebuilt->blob_heap_for_compress);
+		m_prebuilt->blob_heap_for_compress = NULL;
 	}
 
 
@@ -21533,6 +21554,11 @@ static MYSQL_SYSVAR_ULONG(api_bk_commit_interval, ib_bk_commit_interval,
   1,		/* Minimum value */
   1024 * 1024 * 1024, 0);	/* Maximum value */
 
+static MYSQL_SYSVAR_ULONG(min_blob_compress_length, blob_compress_length,
+		PLUGIN_VAR_RQCMDARG,
+		"Minimum length to enable blob/text field compress",
+		NULL, NULL, 256, 0, UINT_MAX32, 0);
+
 static MYSQL_SYSVAR_STR(change_buffering, innobase_change_buffering,
   PLUGIN_VAR_RQCMDARG,
   "Buffer changes to reduce random access:"
@@ -22000,6 +22026,7 @@ static struct st_mysql_sys_var* innobase_system_variables[]= {
   MYSQL_SYSVAR(compressed_columns_zip_level),
   MYSQL_SYSVAR(compressed_columns_threshold),
   MYSQL_SYSVAR(ft_ignore_stopwords),
+  MYSQL_SYSVAR(min_blob_compress_length),
   NULL
 };
 
@@ -22519,7 +22546,7 @@ innobase_get_computed_value(
 		field, buf,
 		TRUE, mysql_rec + vctempl->mysql_col_offset,
 		vctempl->mysql_col_len, dict_table_is_comp(index->table),
-		false, 0, 0, 0);
+		false, 0, 0, 0, 0);
 	field->type.prtype |= DATA_VIRTUAL;
 
 	ulint	max_prefix = col->m_col.max_prefix;

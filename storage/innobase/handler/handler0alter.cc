@@ -2862,7 +2862,7 @@ innobase_build_col_map_add(
 		dfield, buf, true, mysql_data, size, comp,
 		field->column_format() == COLUMN_FORMAT_TYPE_COMPRESSED,
 		reinterpret_cast<const byte*>(field->zip_dict_data.str),
-		field->zip_dict_data.length, prebuilt);
+		field->zip_dict_data.length, prebuilt,0);
 }
 
 /** Construct the translation table for reordering, dropping or
@@ -3549,7 +3549,7 @@ prepare_inplace_add_virtual(
 
 
 		ctx->add_vcol[j].m_col.prtype = dtype_form_prtype(
-						field_type, charset_no);
+						field_type, charset_no, field->is_compressed());
 
 		ctx->add_vcol[j].m_col.prtype |= DATA_VIRTUAL;
 
@@ -3691,7 +3691,7 @@ prepare_inplace_drop_virtual(
 
 
 		ctx->drop_vcol[j].m_col.prtype = dtype_form_prtype(
-						field_type, charset_no);
+						field_type, charset_no, field->is_compressed());
 
 		ctx->drop_vcol[j].m_col.prtype |= DATA_VIRTUAL;
 
@@ -3937,7 +3937,7 @@ ulint*              def_length
 		ut_a(dfield.type.mtype != DATA_INT || len <= DATA_INT_MAX_LEN);
 
 		row_mysql_store_col_in_innobase_format(&dfield, (unsigned char *)&int_buff[0], TRUE,
-			ptr, len, comp, false, 0, 0, 0);
+			ptr, len, comp, false, 0, 0, 0,0);
 
 		// maybe default value is ''
 		ut_ad(dfield.len <= field->pack_length());
@@ -4036,7 +4036,7 @@ trx_t*				trx)
 	}
 
 
-	prtype = dtype_form_prtype(field_type, charset_no);
+	prtype = dtype_form_prtype(field_type, charset_no, field->is_compressed());
 
 	info = pars_info_create();
 
@@ -4912,7 +4912,7 @@ prepare_inplace_alter_table_dict(
 					field->field_name,
 					col_type,
 					dtype_form_prtype(
-						field_type, charset_no)
+						field_type, charset_no, field->is_compressed())
 					| DATA_VIRTUAL,
 					col_len, i,
 					field->gcol_info->non_virtual_base_columns());
@@ -4922,7 +4922,7 @@ prepare_inplace_alter_table_dict(
 					field->field_name,
 					col_type,
 					dtype_form_prtype(
-						field_type, charset_no),
+						field_type, charset_no, field->is_compressed()),
 					col_len);
 			}
 		}

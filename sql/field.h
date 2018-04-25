@@ -665,7 +665,7 @@ public:
 		CHECK,EMPTY,UNKNOWN_FIELD,CASEDN,NEXT_NUMBER,INTERVAL_FIELD,
                 BIT_FIELD, TIMESTAMP_OLD_FIELD, CAPITALIZE, BLOB_FIELD,
                 TIMESTAMP_DN_FIELD, TIMESTAMP_UN_FIELD, TIMESTAMP_DNUN_FIELD,
-                GENERATED_FIELD= 128 };
+                COMPRESSED_BLOB_FIELD=60,GENERATED_FIELD= 128 };
   enum geometry_type
   {
     GEOM_GEOMETRY = 0, GEOM_POINT = 1, GEOM_LINESTRING = 2, GEOM_POLYGON = 3,
@@ -1087,6 +1087,7 @@ public:
     in str and restore it with set() if needed
   */
   virtual void sql_type(String &str) const =0;
+  virtual bool is_compressed() const { return false;}
 
   bool is_temporal() const
   { return is_temporal_type(type()); }
@@ -3817,6 +3818,7 @@ public:
   void make_sort_key(uchar *buff, size_t length);
   uint32 pack_length() const
   { return (uint32) (packlength + portable_sizeof_char_ptr); }
+  virtual bool is_compressed() const { return unireg_check == COMPRESSED_BLOB_FIELD; }
 
   /**
      Return the packed length without the pointer size added. 
@@ -4528,6 +4530,8 @@ public:
     return (ha_storage_media)
       ((flags >> FIELD_FLAGS_STORAGE_MEDIA) & 3);
   }
+
+  bool is_compressed() { return unireg_check == Field::COMPRESSED_BLOB_FIELD; }
 
   column_format_type column_format() const
   {

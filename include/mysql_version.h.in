@@ -19,6 +19,12 @@
 #define MYSQL_UNIX_ADDR            "@MYSQL_UNIX_ADDR@"
 #define MYSQL_CONFIG_NAME          "my"
 #define MYSQL_COMPILATION_COMMENT  "@COMPILATION_COMMENT@"
+/* TMySQL start version,Should never change it! */
+#define TMYSQL_VERSION_START_ID	99000
+/* current TMySQL version, may change with TMySQL version: 5 numbers start from 99000 */
+#define TMYSQL_VERSION_ID  99301
+#define TMYSQL_IGNORE_ID  12345
+
 #define LIBMYSQL_VERSION           "@VERSION@"
 #define LIBMYSQL_VERSION_ID         @MYSQL_VERSION_ID@
 #define SYS_SCHEMA_VERSION         "@SYS_SCHEMA_VERSION@"

@@ -83,6 +83,19 @@ UPDATE 2byte_collation set b = "aaa" where c = 20001;
 
 DROP TABLE 2byte_collation;
 
+CREATE TABLE 2byte_collation_blob(
+       a INT AUTO_INCREMENT PRIMARY KEY,
+       b text character set utf8 collate utf8_maxuserid_ci compressed,
+       c INT,
+       z INT)
+ENGINE=InnoDB STATS_PERSISTENT=0;
+
+INSERT INTO 2byte_collation_blob VALUES(0,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',1, 1);
+
+SELECT b FROM 2byte_collation_blob;
+
+DROP TABLE 2byte_collation_blob;
+
 -- error 0, ER_UNKNOWN_SYSTEM_VARIABLE
 SET GLOBAL innodb_change_buffering_debug = 0;
 

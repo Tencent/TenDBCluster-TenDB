@@ -85,7 +85,7 @@ dict_col_copy_type(
 	ut_ad(type != NULL);
 
 	type->mtype = col->mtype;
-	type->prtype = col->prtype;
+	type->prtype = col->prtype & DATA_MYSQL_PRTYPE_MASK;
 	type->len = col->len;
 	type->mbminmaxlen = col->mbminmaxlen;
 }
@@ -117,7 +117,7 @@ dict_col_type_assert_equal(
 	ut_ad(type);
 
 	ut_ad(col->mtype == type->mtype);
-	ut_ad(col->prtype == type->prtype);
+	ut_ad((col->prtype & DATA_MYSQL_PRTYPE_MASK) == type->prtype); /* 只比较前29bit [0,28]，忽略压缩属性 */
 	//ut_ad(col->len == type->len);
 # ifndef UNIV_HOTBACKUP
 	ut_ad(col->mbminmaxlen == type->mbminmaxlen);
@@ -177,6 +177,27 @@ dict_col_get_sql_null_size(
 	ulint			comp)	/*!< in: nonzero=ROW_FORMAT=COMPACT  */
 {
 	return(dict_col_get_fixed_size(col, comp));
+}
+
+UNIV_INLINE
+ibool
+dict_col_is_compressed(
+/*============*/
+	const dict_col_t*	col)	/*!< in: column */
+{
+    return (col->prtype & DATA_IS_BLOB_COMPRESSED) ? TRUE : FALSE;
+}
+
+UNIV_INLINE
+ibool
+dict_col_is_binary_blob(
+	const dict_col_t* col)
+{
+	if(col->mtype == DATA_BLOB && (col->prtype & DATA_BINARY_TYPE))
+	{
+		return TRUE;
+	}
+	return FALSE;
 }
 
 /*********************************************************************//**

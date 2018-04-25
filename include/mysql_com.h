@@ -127,6 +127,7 @@
                                            NULL by the user */
 #define CLUSTERING_FLAG (1 << 28)       /* Field has a secondary clustering
                                         key */
+#define COMPRESSED_BLOB_FLAG (1 << 31)    /** field is blob and set compressed, bit 31**/
 
 #define REFRESH_GRANT		1	/* Refresh grant tables */
 #define REFRESH_LOG		2	/* Start on new log file */
@@ -520,6 +521,7 @@ my_bool	net_write_command(NET *net,unsigned char command,
 			  const unsigned char *packet, size_t len);
 my_bool net_write_packet(NET *net, const unsigned char *packet, size_t length);
 unsigned long my_net_read(NET *net);
+ulong my_net_read_packet_reallen(NET *net, ulong* reallen);
 
 #ifdef MY_GLOBAL_INCLUDED
 void my_net_set_write_timeout(NET *net, uint timeout);

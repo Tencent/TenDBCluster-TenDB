@@ -43,6 +43,7 @@ struct SysIndexCallback;
 
 extern ibool row_rollback_on_timeout;
 
+extern ulint blob_compress_length;
 extern uint	srv_compressed_columns_zip_level;
 extern ulong	srv_compressed_columns_threshold;
 
@@ -197,6 +198,22 @@ row_mysql_read_geometry(
 	MY_ATTRIBUTE((warn_unused_result));
 /**************************************************************//**
 Pad a column with spaces. */
+
+/*******************************************************************//**
+Reads a reference to a BLOB in the MySQL format and compress the blob field
+@return	pointer to BLOB data after compress*/
+const byte*
+row_mysql_read_blob_ref_and_compress(
+/*====================*/
+	ulint*		len,		/*!< out: BLOB length */
+	const byte*	ref,		/*!< in: BLOB reference in the
+					MySQL format */
+	ulint		col_len,	/*!< in: BLOB reference length
+					(not BLOB length) */
+	row_prebuilt_t*	prebuilt); /*存储所有的信息*/
+/**************************************************************//**
+Pad a column with spaces. */
+
 void
 row_mysql_pad_col(
 /*==============*/
@@ -248,8 +265,10 @@ row_mysql_store_col_in_innobase_format(
 					dictionary data */
 	ulint		dict_data_len,	/*!< in: optional compression
 					dictionary data length */
-	row_prebuilt_t*	prebuilt);	/*!< in: use prebuilt->compress_heap
+	row_prebuilt_t*	prebuilt,	/*!< in: use prebuilt->compress_heap
 					only here */
+	int         i             /*第i个处理的col*/
+	);
 /****************************************************************//**
 Handles user errors and lock waits detected by the database engine.
 @return true if it was a lock wait and we should continue running the
@@ -669,6 +688,43 @@ row_mysql_table_id_reassign(
 	table_id_t*	new_id) /*!< out: new table id */
         MY_ATTRIBUTE((warn_unused_result));
 
+ibool
+row_blob_compress_is_valid(
+	const byte	*ptr,
+	ulint	    col_len
+);
+
+int
+row_blob_compress_head_read(
+			const byte  *data,
+			ulint		data_len,
+			my_bool		*isCompress,
+			ulint		*len,
+			int			*algo_type);
+
+
+void
+row_blob_compress_head_write(
+			byte		*head,		/* 一个字节，存储头 */
+			my_bool 	isCompress, /* 表示是否压缩 */
+			ulint		len,		/* 后续用几个字节存储长度 */
+			int			algo_type);	/* 算法类型 */
+
+byte*
+row_blob_compress_alloc(/* 函数返回压缩后的结果 */
+			const byte			*packet,     /* 待压缩内容 */
+			ulint				len,         /* 待压缩的长度 */
+			ulint				*complen,	 /* 压缩后的长度 */
+			row_prebuilt_t		*prebuilt);	 /* heap相关 */
+
+
+const byte*
+row_blob_uncompress(/* 函数返回解压后原数据的地址 */
+			const byte			*packet,     /* 待解压内容 */
+			ulint				len,         /* 待解压的内容及head信息的总长度 */
+			ulint				*complen,	 /* 解缩后的长度 */
+			row_prebuilt_t		*prebuilt);	 /* heap相关 */
+
 /* A struct describing a place for an individual column in the MySQL
 row format which is presented to the table handler in ha_innobase.
 This template struct is used to speed up row transformations between
@@ -929,6 +985,8 @@ struct row_prebuilt_t {
 					fetched row in fetch_cache */
 	ulint		n_fetch_cached;	/*!< number of not yet fetched rows
 					in fetch_cache */
+	mem_heap_t* blob_heap_for_compress;/*used to malloc memory for blob
+				    field compressed.*/
 	mem_heap_t*	blob_heap;	/*!< in SELECTS BLOB fields are copied
 					to this heap */
 	mem_heap_t*	compress_heap;  /*!< memory heap used to compress
@@ -1075,6 +1133,8 @@ innobase_rename_vc_templ(
 #define ROW_READ_WITH_LOCKS		0
 #define ROW_READ_TRY_SEMI_CONSISTENT	1
 #define ROW_READ_DID_SEMI_CONSISTENT	2
+
+#define MIN_BLOB_COMPRESS_LENGTH 4
 
 #ifndef UNIV_NONINL
 #include "row0mysql.ic"

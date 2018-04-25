@@ -2762,7 +2762,7 @@ row_sel_convert_mysql_key_to_innobase(
 					FALSE,
 					key_ptr + data_offset, data_len,
 					dict_table_is_comp(index->table),
-					false, 0, 0 ,0);
+					false, 0, 0 ,0, 0);
 			ut_a(buf <= original_buf + buf_len);
 		}
 
@@ -3115,6 +3115,8 @@ row_sel_store_mysql_field_func(
 	DBUG_ENTER("row_sel_store_mysql_field_func");
 
 	const byte*	data;
+	mem_heap_t*	heap = NULL; /* Copy an externally stored field to a temporary heap */
+	uint		pos_in_mysql = templ->col_no;
 	ulint		len;
 	ulint		clust_field_no;
 	bool		clust_templ_for_sec = (sec_field_no != ULINT_UNDEFINED);
@@ -3138,9 +3140,6 @@ row_sel_store_mysql_field_func(
 	}
 
 	if (UNIV_UNLIKELY(rec_offs_nth_extern(offsets, field_no))) {
-
-		mem_heap_t*	heap;
-		/* Copy an externally stored field to a temporary heap */
 
 		ut_a(!prebuilt->trx->has_search_latch);
 		ut_ad(field_no == templ->clust_rec_field_no);
@@ -3183,14 +3182,46 @@ row_sel_store_mysql_field_func(
 
 		ut_a(len_is_stored(len));
 
+		if(dict_col_is_compressed(&prebuilt->table->cols[pos_in_mysql]))
+		{
+			if (UNIV_UNLIKELY(templ->type == DATA_BLOB)) {
+				if (prebuilt->blob_heap == NULL) {
+					prebuilt->blob_heap = mem_heap_create(
+							UNIV_PAGE_SIZE);
+				}
+				//解压的话，在这里面改变data所指的值
+				if (dict_col_is_compressed(&prebuilt->table->cols[pos_in_mysql]))
+				{
+					//blob字段有压缩属性，处理压缩数据
+					byte* org_data = (byte*)data;
+					ulint org_len = len;
+
+					data = row_blob_uncompress(data, len, &len, prebuilt);
+					if (!data){
+						/* 如果解压失败，一般会由韭正常使用sql_compressed的操作导致
+							 data则直接读取原数据
+						 */
+						data = static_cast<byte*>(memcpy(mem_heap_alloc(
+										prebuilt->blob_heap, org_len),
+									org_data, org_len));
+						len = org_len;
+
+						ut_print_timestamp(stderr);
+						fprintf(stderr, " [InnoDB compress ERROR] BLOB UNCOMPRESS FAILED, table_name : %s\n",
+								(prebuilt->table->name).m_name);
+					}
+				}
+				else{//blob字段没压缩发生，即普通blob字段，按原方式处理
+					data = static_cast<byte*>(
+							mem_heap_dup(prebuilt->blob_heap, data, len));
+				}
+			}
+		}
 		row_sel_field_store_in_mysql_format(
 			mysql_rec + templ->mysql_col_offset,
 			templ, index, field_no, data, len, prebuilt,
 			ULINT_UNDEFINED);
 
-		if (heap != prebuilt->blob_heap) {
-			mem_heap_free(heap);
-		}
 	} else {
 		/* Field is stored in the row. */
 
@@ -3224,8 +3255,38 @@ row_sel_store_mysql_field_func(
 			       templ->mysql_col_len);
 			DBUG_RETURN(TRUE);
 		}
+		if (UNIV_UNLIKELY(templ->type == DATA_BLOB)) {
+			if (prebuilt->blob_heap == NULL) {
+				prebuilt->blob_heap = mem_heap_create(
+						UNIV_PAGE_SIZE);
+			}
+			//解压的话，在这里面改变data所指的值
+			if (dict_col_is_compressed(&prebuilt->table->cols[pos_in_mysql]))
+			{
+				//blob字段有压缩属性，处理压缩数据
+				byte* org_data = (byte*)data;
+				ulint org_len = len;
 
-		if (DATA_LARGE_MTYPE(templ->type)
+				data = row_blob_uncompress(data, len, &len, prebuilt);
+				if (!data){
+					/* 如果解压失败，一般会由韭正常使用sql_compressed的操作导致
+						 data则直接读取原数据
+					 */
+					data = static_cast<byte*>(memcpy(mem_heap_alloc(
+									prebuilt->blob_heap, org_len),
+								org_data, org_len));
+					len = org_len;
+
+					ut_print_timestamp(stderr);
+					fprintf(stderr, " [InnoDB compress ERROR] BLOB UNCOMPRESS FAILED, table_name : %s\n",
+							(prebuilt->table->name).m_name);
+				}
+			}
+			else{//blob字段没压缩发生，即普通blob字段，按原方式处理
+				data = static_cast<byte*>(
+						mem_heap_dup(prebuilt->blob_heap, data, len));
+			}
+		}else if (DATA_LARGE_MTYPE(templ->type)
 		    || DATA_GEOMETRY_MTYPE(templ->type)) {
 
 			/* It is a BLOB field locally stored in the
@@ -3262,7 +3323,9 @@ row_sel_store_mysql_field_func(
 			templ, index, field_no, data, len, prebuilt,
 			sec_field_no);
 	}
-
+	if (heap!=NULL && heap != prebuilt->blob_heap) {
+		mem_heap_free(heap);
+	}
 	ut_ad(len_is_stored(len));
 
 	if (templ->mysql_null_bit_mask) {
@@ -3295,9 +3358,7 @@ be needed in the query.
 					clustered index format and it
 					is used only for end range comparison
 @return TRUE on success, FALSE if not all columns could be retrieved */
-static MY_ATTRIBUTE((warn_unused_result))
-ibool
-row_sel_store_mysql_rec(
+static ibool row_sel_store_mysql_rec(
 	byte*		mysql_rec,
 	row_prebuilt_t*	prebuilt,
 	const rec_t*	rec,

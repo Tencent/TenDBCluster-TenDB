@@ -141,6 +141,8 @@ The following options may be given as the first argument:
  non-transactional engines for the binary log. If you
  often use statements updating a great number of rows, you
  can increase this to get more performance
+ --blob-compressed   Set all blob/text field can be compressed when create
+ table. 
  --block-encryption-mode=name 
  mode for AES_ENCRYPT/AES_DECRYPT
  --bootstrap         Used by mysql installation scripts.
@@ -979,6 +981,9 @@ The following options may be given as the first argument:
  optimization of a query, index range scan will not be
  considered for this query. A value of 0 means range
  optimizer does not have any cap on memory. 
+ --read-binlog-speed-limit=# 
+ Maximum speed(KB/s) to read binlog from master (0 = no
+ limit)
  --read-buffer-size=# 
  Each thread that does a sequential scan allocates a
  buffer of this size for each table it scans. If you do
@@ -1381,6 +1386,7 @@ binlog-row-event-max-size 8192
 binlog-row-image FULL
 binlog-rows-query-log-events FALSE
 binlog-stmt-cache-size 32768
+blob-compressed FALSE
 block-encryption-mode aes-128-ecb
 bulk-insert-buffer-size 8388608
 character-set-client-handshake TRUE
@@ -1636,6 +1642,7 @@ query-response-time-stats FALSE
 query-response-time-write ON
 range-alloc-block-size 4096
 range-optimizer-max-mem-size 8388608
+read-binlog-speed-limit 0
 read-buffer-size 131072
 read-only FALSE
 read-rnd-buffer-size 262144

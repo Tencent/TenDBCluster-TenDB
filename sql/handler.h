@@ -300,6 +300,11 @@ enum enum_alter_inplace_result {
  */
 #define HA_ONLINE_ANALYZE             (1LL << 48)
 
+/*Engine supports BLOB file can be compressed.
+Only innobase supports this function.
+*/
+#define HA_BLOB_COMPRESSED				 (1LL << 50)
+
 /* bits in index_flags(index_number) for what you can do with index */
 #define HA_READ_NEXT            1       /* TODO really use this flag */
 #define HA_READ_PREV            2       /* supports ::index_prev */

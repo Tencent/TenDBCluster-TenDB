@@ -7724,6 +7724,24 @@ ER_CANNOT_DISCARD_INSATNT_TABLE
 ER_CANNOT_EXPORT_INSATNT_TABLE
   eng "Cannot EXPORT tablespace associated with instant table"
 
+ER_FIELD_TYPE_NOT_ALLOWED_AS_COMPRESSED_FIELD
+  eng "Field '%-.192s' is of a not allowed type to use compressed property"
+
+ER_FIELD_CAN_NOT_COMPRESSED_AND_INDEX
+  eng "Field '%-.192s' can not have compressed property and to be index at the sametime"
+
+ER_FIELD_CAN_NOT_COMPRESSED_IN_CURRENT_ENGINESS
+  eng "Field '%-.192s' can not have compressed property in this enginess"
+
+ER_FIELD_CAN_NOT_COMPRESSED_IN_CURRENT_FORMAT
+  eng "Field '%-.192s' can not have compressed property in this row format"
+
+ER_COLUMN_CAN_NOT_CHARSET_IN_CURRENT_STORAGE
+  eng "Field '%-.192s' can not charset for column in this storage"
+
+ER_COLUMN_CAN_NOT_AUTOINCREMENT_IN_CURRENT_STORAGE
+  eng "Field '%-.192s' can not set auto_increment for column in this storage"
+
 #
 #  End of TenDB specific messages
 #

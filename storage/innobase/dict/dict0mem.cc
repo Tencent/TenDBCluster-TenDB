@@ -330,7 +330,7 @@ dict_mem_table_add_col(
 	mem_heap_t*	heap,	/*!< in: temporary memory heap, or NULL */
 	const char*	name,	/*!< in: column name, or NULL */
 	ulint		mtype,	/*!< in: main datatype */
-	ulint		prtype,	/*!< in: precise type */
+	ulint		prtype,	/*!< in: precise type, maybe 29 bit blob compress */
 	ulint		len)	/*!< in: precision */
 {
 	dict_col_t*	col;
@@ -679,6 +679,9 @@ dict_mem_fill_column_struct(
 	ulint	mbminlen;
 	ulint	mbmaxlen;
 #endif /* !UNIV_HOTBACKUP */
+
+	/* only blob field have compressed  */
+	ut_ad(mtype == DATA_BLOB || !(prtype & DATA_IS_BLOB_COMPRESSED));
 
 	column->ind = (unsigned int) col_pos;
 	column->ord_part = 0;

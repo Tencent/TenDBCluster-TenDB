@@ -5869,7 +5869,7 @@ fts_add_doc_id_column(
 		DATA_INT,
 		dtype_form_prtype(
 			DATA_NOT_NULL | DATA_UNSIGNED
-			| DATA_BINARY_TYPE | DATA_FTS_DOC_ID, 0),
+			| DATA_BINARY_TYPE | DATA_FTS_DOC_ID, 0, FALSE),
 		sizeof(doc_id_t));
 	DICT_TF2_FLAG_SET(table, DICT_TF2_FTS_HAS_DOC_ID);
 }

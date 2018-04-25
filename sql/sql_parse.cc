@@ -6082,6 +6082,22 @@ bool add_field_to_list(THD *thd, LEX_STRING *field_name, enum_field_types type,
     my_error(ER_TOO_LONG_IDENT, MYF(0), field_name->str); /* purecov: inspected */
     DBUG_RETURN(1);				/* purecov: inspected */
   }
+
+  switch(type)
+  {
+	case MYSQL_TYPE_TINY_BLOB:
+	case MYSQL_TYPE_MEDIUM_BLOB:
+	case MYSQL_TYPE_LONG_BLOB:
+	case MYSQL_TYPE_BLOB:
+		break;
+	default:
+		if(type_modifier & COMPRESSED_BLOB_FLAG)
+		{/*only BOLB type can have compressed property*/
+			my_error(ER_FIELD_TYPE_NOT_ALLOWED_AS_COMPRESSED_FIELD, MYF(0), field_name->str);
+			DBUG_RETURN(1);
+		}
+  }
+
   if (type_modifier & PRI_KEY_FLAG)
   {
     Key *key;
