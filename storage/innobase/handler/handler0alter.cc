@@ -674,7 +674,6 @@ ha_innobase::check_if_supported_inplace_alter(
 			   | Alter_inplace_info::DROP_INDEX);
 
 		if (flags != 0
-		    || altered_table->is_partition()   /* Not Support Partition table */
 		    || (!check_v_col_in_order(
 			this->table, altered_table, ha_alter_info))) {
 			ha_alter_info->unsupported_reason =
@@ -9092,53 +9091,61 @@ foreign_fail:
 		DBUG_RETURN(true);
 	}
 
-	if (ctx0->num_to_drop_vcol || ctx0->num_to_add_vcol 
+
+	if (ctx0->num_to_drop_vcol || ctx0->num_to_add_vcol
 		|| ctx0->num_to_add_instant_col) {
 
 		if (ctx0->old_table->get_ref_count() > 1) {
-
 			row_mysql_unlock_data_dictionary(trx);
 			trx_free_for_mysql(trx);
-			my_error(ER_TABLE_REFERENCED,MYF(0));
+			my_error(ER_TABLE_REFERENCED, MYF(0));
 			DBUG_RETURN(true);
 		}
 
-		// save the trx id before commit
-		trx_id_t trx_id = m_prebuilt->trx->id;
-		trx_commit_for_mysql(m_prebuilt->trx);
+		for (inplace_alter_handler_ctx** pctx = ctx_array; *pctx; pctx++) {
+			ha_innobase_inplace_ctx*	ctx
+				= static_cast<ha_innobase_inplace_ctx*>(*pctx);
 
-		if (btr_search_enabled) {
-			btr_search_disable(false);
-			btr_search_enable();
+			m_prebuilt = ctx->prebuilt;
+
+			// save the trx id before commit
+			trx_id_t trx_id = m_prebuilt->trx->id;
+			trx_commit_for_mysql(m_prebuilt->trx);
+
+			if (btr_search_enabled) {
+				btr_search_disable(false);
+				btr_search_enable();
+			}
+
+			char	tb_name[FN_REFLEN];
+			ut_strcpy(tb_name, ctx->prebuilt->table->name.m_name);
+
+			tb_name[strlen(m_prebuilt->table->name.m_name)] = 0;
+
+			dict_table_close(m_prebuilt->table, true, false);
+			dict_table_remove_from_cache(m_prebuilt->table);
+			m_prebuilt->table = dict_table_open_on_name(
+				tb_name, TRUE, TRUE, DICT_ERR_IGNORE_NONE);
+			dict_table_set_trx_id(m_prebuilt->table, trx_id);
+
+			/* Drop outdated table stats. */
+			char	errstr[1024];
+			if (dict_stats_drop_table(
+				m_prebuilt->table->name.m_name,
+				errstr, sizeof(errstr))
+				!= DB_SUCCESS) {
+				push_warning_printf(
+					m_user_thd,
+					Sql_condition::SL_WARNING,
+					ER_ALTER_INFO,
+					"Deleting persistent statistics"
+					" for table '%s' in"
+					" InnoDB failed: %s",
+					table->s->table_name.str,
+					errstr);
+			}
 		}
-
-		char	tb_name[FN_REFLEN];
-		ut_strcpy(tb_name, m_prebuilt->table->name.m_name);
-
-		tb_name[strlen(m_prebuilt->table->name.m_name)] = 0;
-
-		dict_table_close(m_prebuilt->table, true, false);
-		dict_table_remove_from_cache(m_prebuilt->table);
-		m_prebuilt->table = dict_table_open_on_name(
-			tb_name, TRUE, TRUE, DICT_ERR_IGNORE_NONE);
-		dict_table_set_trx_id(m_prebuilt->table, trx_id);
-
-		/* Drop outdated table stats. */
-		char	errstr[1024];
-		if (dict_stats_drop_table(
-			    m_prebuilt->table->name.m_name,
-			    errstr, sizeof(errstr))
-		    != DB_SUCCESS) {
-			push_warning_printf(
-				m_user_thd,
-				Sql_condition::SL_WARNING,
-				ER_ALTER_INFO,
-				"Deleting persistent statistics"
-				" for table '%s' in"
-				" InnoDB failed: %s",
-				table->s->table_name.str,
-				errstr);
-		}
+		m_prebuilt = ctx0->prebuilt;
 
 		row_mysql_unlock_data_dictionary(trx);
 		trx_free_for_mysql(trx);
