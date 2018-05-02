@@ -149,3 +149,92 @@ Variable_name	Value
 innodb_min_blob_compress_length	256
 insert into t1 values(2, 'ghijklmn');
 drop table t1;
+create table t1(a blob compressed)engine=innodb;
+insert into t1 values(repeat('a',10000));
+select right(a,10) from t1;
+right(a,10)
+aaaaaaaaaa
+select length(a) from t1;
+length(a)
+10000
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` blob /*!99104 COMPRESSED */
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
+alter table t1 change a a blob column_format compressed;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` blob /*!50633 COLUMN_FORMAT COMPRESSED */
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
+select length(a) from t1;
+length(a)
+10000
+select right(a,10) from t1;
+right(a,10)
+aaaaaaaaaa
+insert into t1 values(repeat('b',10000));
+select right(a,10) from t1;
+right(a,10)
+aaaaaaaaaa
+bbbbbbbbbb
+drop table t1;
+create table t1(a blob column_format compressed)engine=innodb;
+insert into t1 values(repeat('a',10000));
+select right(a,10) from t1;
+right(a,10)
+aaaaaaaaaa
+select length(a) from t1;
+length(a)
+10000
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` blob /*!50633 COLUMN_FORMAT COMPRESSED */
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
+alter table t1 change a a blob compressed;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` blob /*!99104 COMPRESSED */
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
+select length(a) from t1;
+length(a)
+10000
+select right(a,10) from t1;
+right(a,10)
+aaaaaaaaaa
+insert into t1 values(repeat('b',10000));
+select right(a,10) from t1;
+right(a,10)
+aaaaaaaaaa
+bbbbbbbbbb
+drop table t1;
+create table t1(a blob, b blob compressed,c blob column_format compressed)engine=innodb;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` blob,
+  `b` blob /*!99104 COMPRESSED */,
+  `c` blob /*!50633 COLUMN_FORMAT COMPRESSED */
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
+insert into t1 values(repeat('a',10000),repeat('a',10000),repeat('a',10000));
+insert into t1 values('a','a','a');
+select left(a,10),left(b,10),left(c,10) from t1;
+left(a,10)	left(b,10)	left(c,10)
+aaaaaaaaaa	aaaaaaaaaa	aaaaaaaaaa
+a	a	a
+drop table t1;
+create table t1(a blob(3072) compressed,index i (a(3072)))engine=innodb;
+ERROR HY000: Field 'a' can not have compressed property and to be index at the sametime
+create table t1(a blob(3072) compressed)engine=innodb;
+alter table t1 add index i (a(3072));
+ERROR HY000: Field 'a' can not have compressed property and to be index at the sametime
+drop table t1;
+create table t1(a blob compressed column_format compressed)engine=innodb;
+ERROR HY000: Field 'a' can not have 'compressed' property and 'column_format compressed' property at the same time
+create table t1(a blob column_format compressed compressed)engine=innodb;
+ERROR HY000: Field 'a' can not have 'compressed' property and 'column_format compressed' property at the same time
+create table t1(a varchar(30) compressed)engine=innodb;
+ERROR HY000: Field 'a' is of a not allowed type to use compressed property
