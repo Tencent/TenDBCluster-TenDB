@@ -7736,6 +7736,9 @@ ER_FIELD_CAN_NOT_COMPRESSED_IN_CURRENT_ENGINESS
 ER_FIELD_CAN_NOT_COMPRESSED_IN_CURRENT_FORMAT
   eng "Field '%-.192s' can not have compressed property in this row format"
 
+ER_FIELD_CAN_NOT_COMPRESSED_AND_COLUMN_FORMAT_COMPRESSED
+  eng "Field '%-.192s' can not have 'compressed' property and 'column_format compressed' property at the same time"
+
 ER_COLUMN_CAN_NOT_CHARSET_IN_CURRENT_STORAGE
   eng "Field '%-.192s' can not charset for column in this storage"
 
