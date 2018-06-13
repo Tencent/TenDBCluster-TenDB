@@ -9758,11 +9758,11 @@ int MYSQL_BIN_LOG::recover(IO_CACHE *log, Format_description_log_event *fdle,
   while ((ev= Log_event::read_log_event(log, 0, fdle, TRUE))
          && ev->is_valid())
   {
-    if (ev->get_type_code() == binary_log::QUERY_EVENT &&
+    if ((ev->get_type_code() == binary_log::QUERY_EVENT || ev->get_type_code() == binary_log::QUERY_COMPRESSED_EVENT) &&
         !strcmp(((Query_log_event*)ev)->query, "BEGIN"))
       in_transaction= TRUE;
 
-    if (ev->get_type_code() == binary_log::QUERY_EVENT &&
+    if ((ev->get_type_code() == binary_log::QUERY_EVENT || ev->get_type_code() == binary_log::QUERY_COMPRESSED_EVENT) &&
         !strcmp(((Query_log_event*)ev)->query, "COMMIT"))
     {
       DBUG_ASSERT(in_transaction == TRUE);
@@ -11573,8 +11573,13 @@ int THD::binlog_write_row(TABLE* table, bool is_trans,
 
   size_t const len= pack_row(table, table->write_set, row_data, record);
 
-  Rows_log_event* const ev=
-    binlog_prepare_pending_rows_event(table, server_id, len, is_trans,
+  Rows_log_event* ev;
+  if (binlog_should_compress(len))
+    ev = binlog_prepare_pending_rows_event(table, server_id, len, is_trans,
+                                      static_cast<Write_rows_compressed_log_event*>(0),
+                                      extra_row_info);
+  else
+    ev = binlog_prepare_pending_rows_event(table, server_id, len, is_trans,
                                       static_cast<Write_rows_log_event*>(0),
                                       extra_row_info);
 
@@ -11626,8 +11631,14 @@ int THD::binlog_update_row(TABLE* table, bool is_trans,
   DBUG_DUMP("before_row",    before_row, before_size);
   DBUG_DUMP("after_row",     after_row, after_size);
 
-  Rows_log_event* const ev=
-    binlog_prepare_pending_rows_event(table, server_id,
+  Rows_log_event* ev;
+  if (binlog_should_compress(before_size + after_size))
+    ev = binlog_prepare_pending_rows_event(table, server_id,
+				      before_size + after_size, is_trans,
+				      static_cast<Update_rows_compressed_log_event*>(0),
+                                      extra_row_info);
+  else
+    ev = binlog_prepare_pending_rows_event(table, server_id,
 				      before_size + after_size, is_trans,
 				      static_cast<Update_rows_log_event*>(0),
                                       extra_row_info);
@@ -11681,8 +11692,13 @@ int THD::binlog_delete_row(TABLE* table, bool is_trans,
   DBUG_DUMP("table->read_set", (uchar*) table->read_set->bitmap, (table->s->fields + 7) / 8);
   size_t const len= pack_row(table, table->read_set, row_data, record);
 
-  Rows_log_event* const ev=
-    binlog_prepare_pending_rows_event(table, server_id, len, is_trans,
+  Rows_log_event* ev;
+  if (binlog_should_compress(len))
+    ev = binlog_prepare_pending_rows_event(table, server_id, len, is_trans,
+				      static_cast<Delete_rows_compressed_log_event*>(0),
+                                      extra_row_info);
+  else
+    ev = binlog_prepare_pending_rows_event(table, server_id, len, is_trans,
 				      static_cast<Delete_rows_log_event*>(0),
                                       extra_row_info);
 
@@ -12227,15 +12243,25 @@ int THD::binlog_query(THD::enum_binlog_query_type qtype, const char *query_arg,
       flush the pending rows event if necessary.
     */
     {
-      Query_log_event qinfo(this, query_arg, query_len, is_trans, direct,
-                            suppress_use, errcode);
+	  int error = 0;
+	  if (binlog_should_compress(query_len))
+	  {
+		  Query_compressed_log_event qinfo(this, query_arg, query_len, is_trans, direct,
+			  suppress_use, errcode);
+		  error = mysql_bin_log.write_event(&qinfo);
+	  }
+	  else
+	  {
+		  Query_log_event qinfo(this, query_arg, query_len, is_trans, direct,
+			  suppress_use, errcode);
+		  error = mysql_bin_log.write_event(&qinfo);
+	  }
       /*
         Binlog table maps will be irrelevant after a Query_log_event
         (they are just removed on the slave side) so after the query
         log event is written to the binary log, we pretend that no
         table maps were written.
        */
-      int error= mysql_bin_log.write_event(&qinfo);
       binlog_table_maps= 0;
       DBUG_RETURN(error);
     }

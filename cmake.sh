@@ -35,7 +35,7 @@ boost_dir=/home/mysql/boost/
 install_dir=/usr/local/mysql
 export LD_LIBRARY_PATH=$gccdir/lib64/:$LD_LIBRARY_PATH
 
-TEMP=`getopt -o b:d:hitv: --long debug,test,help,install,tar,directory:,boost-dir:,verion: \
+TEMP=`getopt -o b:d:hitv: --long debug,test,help,install,tar,version:,directory:,boost-dir:,verion: \
 	-n "Try $0 --help for more information" -- "$@"`
 
 if [ $? != 0 ]

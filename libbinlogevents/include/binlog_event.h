@@ -326,6 +326,14 @@ enum Log_event_type
 
   /* Prepared XA transaction terminal event similar to Xid */
   XA_PREPARE_LOG_EVENT= 38,
+
+  QUERY_COMPRESSED_EVENT = 50,
+  WRITE_ROWS_COMPRESSED_EVENT_V1 = 51,
+  UPDATE_ROWS_COMPRESSED_EVENT_V1 = 52,
+  DELETE_ROWS_COMPRESSED_EVENT_V1 = 53,
+  WRITE_ROWS_COMPRESSED_EVENT = 54,
+  UPDATE_ROWS_COMPRESSED_EVENT = 55,
+  DELETE_ROWS_COMPRESSED_EVENT = 56,
   /**
     Add new events here - right above this comment!
     Existing events (except ENUM_END_EVENT) should never change their numbers
@@ -355,6 +363,15 @@ enum Log_event_type
 #define EVENT_LEN_OFFSET     9
 #define LOG_POS_OFFSET       13
 #define FLAGS_OFFSET         17
+
+/** query event post-header */
+#define	Q_THREAD_ID_OFFSET          0
+#define	Q_EXEC_TIME_OFFSET          4
+#define	Q_DB_LEN_OFFSET             8
+#define	Q_ERR_CODE_OFFSET           9
+#define	Q_STATUS_VARS_LEN_OFFSET    11
+/* Q_DATA_OFFSET = QUERY_HEADER_LEN */
+#define	Q_DATA_OFFSET               13
 
 /** start event post-header (for v3 and v4) */
 #define ST_BINLOG_VER_OFFSET  0
@@ -786,7 +803,7 @@ public:
     ROWS_HEADER_LEN_V2= 10,
     TRANSACTION_CONTEXT_HEADER_LEN= 18,
     VIEW_CHANGE_HEADER_LEN= 52,
-    XA_PREPARE_HEADER_LEN= 0
+    XA_PREPARE_HEADER_LEN= 0,
   }; // end enum_post_header_length
 protected:
   /**
