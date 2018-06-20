@@ -1085,6 +1085,15 @@ static Sys_var_mybool Sys_explicit_defaults_for_timestamp(
        CMD_LINE(OPT_ARG), DEFAULT(FALSE), NO_MUTEX_GUARD, NOT_IN_BINLOG,
        ON_CHECK(check_explicit_defaults_for_timestamp));
 
+static Sys_var_mybool Sys_datetime_precision_use_v1(
+       "datetime_precision_use_v1",
+       "This option causes CREATE TABLE to create all DATETIME/TIMESTAMP/TIME columns "
+       "as old type, Without this option, "
+       "DATETIME2/TIMESTAMP2/TIME2 type default to be used when CREATE TABLE, "
+       "which not support for MySQL5.5 or earlier",
+       GLOBAL_VAR(datetime_precision_use_v1),
+       CMD_LINE(OPT_ARG), DEFAULT(FALSE));
+
 static bool repository_check(sys_var *self, THD *thd, set_var *var, SLAVE_THD_TYPE thread_mask)
 {
   bool ret= FALSE;
