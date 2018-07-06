@@ -1917,6 +1917,11 @@ static Sys_var_uint Sys_log_bin_compress_min_len(
 	GLOBAL_VAR(opt_bin_log_compress_min_len),
 	CMD_LINE(OPT_ARG), VALID_RANGE(10, 1024), DEFAULT(256), BLOCK_SIZE(1));
 
+static Sys_var_mybool Sys_relay_log_uncompress(
+	"relay_log_uncompress",
+	"Whether IO_Thread need to uncompress the relay log",
+	GLOBAL_VAR(opt_relay_log_uncompress), CMD_LINE(OPT_ARG), DEFAULT(TRUE));
+
 static bool transaction_write_set_check(sys_var *self, THD *thd, set_var *var)
 {
 #ifdef HAVE_REPLICATION

@@ -3,7 +3,7 @@ RESET MASTER;
 CREATE TABLE t1 (a INT, b VARCHAR(100), PRIMARY KEY (a,b)) ENGINE=innodb;
 SHOW MASTER STATUS;
 File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
-master-bin.000001	383
+master-bin.000001	383			
 SHOW STATUS LIKE 'binlog_snapshot_%';
 Variable_name	Value
 Binlog_snapshot_file	master-bin.000001
@@ -41,7 +41,7 @@ Binlog_snapshot_file	master-bin.000001
 Binlog_snapshot_position	1172
 SHOW MASTER STATUS;
 File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
-master-bin.000001	1773
+master-bin.000001	1773			
 SELECT * FROM t2 ORDER BY a;
 a
 2
@@ -63,7 +63,7 @@ Binlog_snapshot_file	master-bin.000001
 Binlog_snapshot_position	1172
 SHOW MASTER STATUS;
 File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
-master-bin.000002	172
+master-bin.000002	172			
 COMMIT;
 SHOW STATUS LIKE 'binlog_snapshot_%';
 Variable_name	Value
@@ -71,7 +71,7 @@ Binlog_snapshot_file	master-bin.000002
 Binlog_snapshot_position	172
 SHOW MASTER STATUS;
 File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
-master-bin.000002	172
+master-bin.000002	172			
 # Test START TRANSACTION WITH CONSISTENT SNAPSHOT FROM SESSION
 DELETE FROM t1;
 START TRANSACTION WITH CONSISTENT SNAPSHOT;
@@ -81,7 +81,7 @@ Binlog_snapshot_file	master-bin.000002
 Binlog_snapshot_position	435
 SHOW MASTER STATUS;
 File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
-master-bin.000002	435
+master-bin.000002	435			
 INSERT INTO t1 VALUES (1, "first");
 SELECT * FROM t1;
 a	b
@@ -97,7 +97,7 @@ Binlog_snapshot_file	master-bin.000002
 Binlog_snapshot_position	718
 SHOW MASTER STATUS;
 File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
-master-bin.000002	718
+master-bin.000002	718			
 # Connection con2
 SELECT * FROM t1;
 a	b
@@ -108,7 +108,7 @@ Binlog_snapshot_file	master-bin.000002
 Binlog_snapshot_position	718
 SHOW MASTER STATUS;
 File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
-master-bin.000002	718
+master-bin.000002	718			
 START TRANSACTION WITH CONSISTENT SNAPSHOT FROM SESSION $donor_id;
 SELECT * FROM t1;
 a	b
@@ -119,7 +119,7 @@ Binlog_snapshot_file	master-bin.000002
 Binlog_snapshot_position	435
 SHOW MASTER STATUS;
 File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
-master-bin.000002	718
+master-bin.000002	718			
 # Connection con3
 FLUSH LOGS;
 SHOW STATUS LIKE 'binlog_snapshot_%';
@@ -128,7 +128,7 @@ Binlog_snapshot_file	master-bin.000003
 Binlog_snapshot_position	172
 SHOW MASTER STATUS;
 File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
-master-bin.000003	172
+master-bin.000003	172			
 # Connection con2
 SHOW STATUS LIKE 'binlog_snapshot_%';
 Variable_name	Value
@@ -136,7 +136,7 @@ Binlog_snapshot_file	master-bin.000002
 Binlog_snapshot_position	435
 SHOW MASTER STATUS;
 File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
-master-bin.000003	172
+master-bin.000003	172			
 COMMIT;
 # Connection default
 SHOW STATUS LIKE 'binlog_snapshot_%';
@@ -145,12 +145,12 @@ Binlog_snapshot_file	master-bin.000002
 Binlog_snapshot_position	435
 SHOW MASTER STATUS;
 File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
-master-bin.000003	172
+master-bin.000003	172			
 COMMIT;
 SHOW BINLOG EVENTS;
 Log_name	Pos	Event_type	Server_id	End_log_pos	Info
 master-bin.000001	4	Format_desc	1	141	Server ver: #, Binlog ver: #
-master-bin.000001	141	Previous_gtids	1	172
+master-bin.000001	141	Previous_gtids	1	172	
 master-bin.000001	172	Anonymous_Gtid	1	237	SET @@SESSION.GTID_NEXT= 'ANONYMOUS'
 master-bin.000001	237	Query	1	383	use `test`; CREATE TABLE t1 (a INT, b VARCHAR(100), PRIMARY KEY (a,b)) ENGINE=innodb
 master-bin.000001	383	Anonymous_Gtid	1	448	SET @@SESSION.GTID_NEXT= 'ANONYMOUS'

@@ -8608,38 +8608,38 @@ bool queue_event(Master_info* mi,const char* buf, ulong event_len)
   break;
 
   case binary_log::QUERY_COMPRESSED_EVENT:
-	  inc_pos = event_len;
-	  if (query_event_uncompress(mi->get_mi_description_event(), checksum_alg, buf, (char **)&buf, &event_len))
-	  {
-		  char errbuf[1024];
-		  char llbuf[22];
-		  sprintf(errbuf, "master log_pos: %s", llstr(mi->get_master_log_pos(), llbuf));
-		  mi->report(ERROR_LEVEL, ER_BINLOG_UNCOMPRESS_ERROR,
-			  ER(ER_BINLOG_UNCOMPRESS_ERROR), errbuf);
-		  goto err;
-	  }
-	  compressed_event = true;
-	  break;
+    inc_pos = event_len;
+    if (!opt_relay_log_uncompress) break;
+    if (query_event_uncompress(mi->get_mi_description_event(), checksum_alg, buf, (char **)&buf, &event_len))
+    {
+      char errbuf[1024];
+      char llbuf[22];
+      sprintf(errbuf, "master log_pos: %s", llstr(mi->get_master_log_pos(), llbuf));
+      mi->report(ERROR_LEVEL, ER_BINLOG_UNCOMPRESS_ERROR,
+            ER(ER_BINLOG_UNCOMPRESS_ERROR), errbuf);
+      goto err;
+    }
+    compressed_event = true;
+    break;
   case binary_log::WRITE_ROWS_COMPRESSED_EVENT_V1:
   case binary_log::UPDATE_ROWS_COMPRESSED_EVENT_V1:
   case binary_log::DELETE_ROWS_COMPRESSED_EVENT_V1:
   case binary_log::WRITE_ROWS_COMPRESSED_EVENT:
   case binary_log::UPDATE_ROWS_COMPRESSED_EVENT:
   case binary_log::DELETE_ROWS_COMPRESSED_EVENT:
-	  inc_pos = event_len;
-	  {
-		  if (Row_log_event_uncompress(mi->get_mi_description_event(), checksum_alg, buf, (char **)&buf, &event_len))
-		  {
-			  char errbuf[1024];
-			  char llbuf[22];
-			  sprintf(errbuf, "master log_pos: %s", llstr(mi->get_master_log_pos(), llbuf));
-			  mi->report(ERROR_LEVEL, ER_BINLOG_UNCOMPRESS_ERROR,
-				  ER(ER_BINLOG_UNCOMPRESS_ERROR), errbuf);
-			  goto err;
-		  }
-	  }
-	  compressed_event = true;
-	  break;
+    inc_pos = event_len;
+    if (!opt_relay_log_uncompress) break;
+    if (Row_log_event_uncompress(mi->get_mi_description_event(), checksum_alg, buf, (char **)&buf, &event_len))
+    {
+      char errbuf[1024];
+      char llbuf[22];
+      sprintf(errbuf, "master log_pos: %s", llstr(mi->get_master_log_pos(), llbuf));
+      mi->report(ERROR_LEVEL, ER_BINLOG_UNCOMPRESS_ERROR,
+            ER(ER_BINLOG_UNCOMPRESS_ERROR), errbuf);
+      goto err;
+    }
+    compressed_event = true;
+    break;
   case binary_log::ANONYMOUS_GTID_LOG_EVENT:
     /*
       This cannot normally happen, because the master has a check that

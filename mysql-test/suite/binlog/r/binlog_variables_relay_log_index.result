@@ -15,3 +15,5 @@ Variable_name	relay_log_recovery
 Value	OFF
 Variable_name	relay_log_space_limit
 Value	0
+Variable_name	relay_log_uncompress
+Value	ON

@@ -121,7 +121,7 @@ extern CHARSET_INFO *character_set_filesystem;
 extern MY_BITMAP temp_pool;
 extern bool opt_large_files, server_id_supplied;
 extern bool opt_update_log, opt_bin_log;
-extern my_bool opt_bin_log_compress;
+extern my_bool opt_bin_log_compress, opt_relay_log_uncompress;
 extern uint opt_bin_log_compress_min_len;
 extern my_bool opt_log_slave_updates;
 extern my_bool opt_log_unsafe_statements;

@@ -19,6 +19,7 @@ relay_log_info_repository	FILE
 relay_log_purge	ON
 relay_log_recovery	OFF
 relay_log_space_limit	0
+relay_log_uncompress	ON
 flush logs;
 show variables like 'log_bin%';
 Variable_name	Value
@@ -39,4 +40,5 @@ relay_log_info_repository	FILE
 relay_log_purge	ON
 relay_log_recovery	OFF
 relay_log_space_limit	0
+relay_log_uncompress	ON
 set global expire_logs_days = 0;
