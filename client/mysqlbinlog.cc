@@ -973,6 +973,7 @@ static bool shall_skip_gtids(Log_event* ev)
       filter_based_on_gtids= false;
     break;
     case binary_log::QUERY_EVENT:
+    case binary_log::QUERY_COMPRESSED_EVENT:
       filtered= filter_based_on_gtids;
       if (((Query_log_event *)ev)->ends_group())
         filter_based_on_gtids= false;
@@ -1248,6 +1249,7 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
 
     switch (ev_type) {
     case binary_log::QUERY_EVENT:
+    case binary_log::QUERY_COMPRESSED_EVENT:
     {
       Query_log_event *qle= (Query_log_event*) ev;
       bool parent_query_skips=
@@ -1547,9 +1549,15 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
     case binary_log::WRITE_ROWS_EVENT:
     case binary_log::DELETE_ROWS_EVENT:
     case binary_log::UPDATE_ROWS_EVENT:
+    case binary_log::WRITE_ROWS_COMPRESSED_EVENT:
+    case binary_log::DELETE_ROWS_COMPRESSED_EVENT:
+    case binary_log::UPDATE_ROWS_COMPRESSED_EVENT:
     case binary_log::WRITE_ROWS_EVENT_V1:
     case binary_log::UPDATE_ROWS_EVENT_V1:
     case binary_log::DELETE_ROWS_EVENT_V1:
+	case binary_log::WRITE_ROWS_COMPRESSED_EVENT_V1:
+	case binary_log::DELETE_ROWS_COMPRESSED_EVENT_V1:
+	case binary_log::UPDATE_ROWS_COMPRESSED_EVENT_V1:
     case binary_log::PRE_GA_WRITE_ROWS_EVENT:
     case binary_log::PRE_GA_DELETE_ROWS_EVENT:
     case binary_log::PRE_GA_UPDATE_ROWS_EVENT:
@@ -1559,9 +1567,15 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
       if (ev_type == binary_log::WRITE_ROWS_EVENT ||
           ev_type == binary_log::DELETE_ROWS_EVENT ||
           ev_type == binary_log::UPDATE_ROWS_EVENT ||
+          ev_type == binary_log::WRITE_ROWS_COMPRESSED_EVENT ||
+          ev_type == binary_log::DELETE_ROWS_COMPRESSED_EVENT ||
+          ev_type == binary_log::UPDATE_ROWS_COMPRESSED_EVENT ||
           ev_type == binary_log::WRITE_ROWS_EVENT_V1 ||
           ev_type == binary_log::DELETE_ROWS_EVENT_V1 ||
-          ev_type == binary_log::UPDATE_ROWS_EVENT_V1)
+          ev_type == binary_log::UPDATE_ROWS_EVENT_V1 ||
+		  ev_type == binary_log::WRITE_ROWS_COMPRESSED_EVENT_V1 ||
+		  ev_type == binary_log::DELETE_ROWS_COMPRESSED_EVENT_V1 ||
+		  ev_type == binary_log::UPDATE_ROWS_COMPRESSED_EVENT_V1)
       {
         Rows_log_event *new_ev= (Rows_log_event*) ev;
         if (new_ev->get_flags(Rows_log_event::STMT_END_F))

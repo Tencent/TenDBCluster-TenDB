@@ -307,6 +307,8 @@ LEX_STRING opt_init_connect, opt_init_slave;
 /* Global variables */
 
 bool opt_bin_log, opt_ignore_builtin_innodb= 0;
+my_bool opt_bin_log_compress, opt_relay_log_uncompress;
+uint opt_bin_log_compress_min_len;
 bool opt_general_log, opt_slow_log, opt_general_log_raw;
 ulonglong slow_query_log_always_write_time= 10000000;
 ulonglong log_output_options;
@@ -528,6 +530,9 @@ ulong stored_program_cache_size= 0;
   during certain ALTER TABLE operations.
 */
 my_bool avoid_temporal_upgrade;
+
+/* if ON, use DATETIME/TIME/TIMESTAMP type when create table */
+my_bool datetime_precision_use_v1;
 
 const double log_10[] = {
   1e000, 1e001, 1e002, 1e003, 1e004, 1e005, 1e006, 1e007, 1e008, 1e009,
@@ -6280,6 +6285,10 @@ struct my_option my_long_options[]=
    "user has access to in a comma delimited list.",
    &utility_user_schema_access, 0, 0, GET_STR, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
+  {"relay_log_uncompress", 0,
+   "Whether IO_Thread need to uncompress the relay log",
+   &opt_relay_log_uncompress, &opt_relay_log_uncompress, 0, GET_BOOL,
+   OPT_ARG, 0, 0, 0, 0, 0, 0},
   {0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}
 };
 
@@ -7337,6 +7346,7 @@ static int mysql_init_variables(void)
   myisam_test_invalid_symlink= test_if_data_home_dir;
   opt_general_log= opt_slow_log= false;
   opt_bin_log= 0;
+  opt_relay_log_uncompress= 1;
   opt_disable_networking= opt_skip_show_db=0;
   opt_skip_name_resolve= 0;
   opt_ignore_builtin_innodb= 0;

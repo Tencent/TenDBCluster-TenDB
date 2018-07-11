@@ -186,6 +186,12 @@ The following options may be given as the first argument:
  --date-format=name  The DATE format (ignored)
  --datetime-format=name 
  The DATETIME format (ignored)
+ --datetime-precision-use-v1 
+ This option causes CREATE TABLE to create all
+ DATETIME/TIMESTAMP/TIME columns as old type, Without this
+ option, DATETIME2/TIMESTAMP2/TIME2 type default to be
+ used when CREATE TABLE, which not support for MySQL5.5 or
+ earlier
  --default-authentication-plugin=name 
  The default authentication plugin used by the server to
  hash the password.
@@ -396,6 +402,10 @@ The following options may be given as the first argument:
  strongly recommended to avoid replication problems if
  server's hostname changes) argument should be the chosen
  location for the binary log files.
+ --log-bin-compress  Whether the binary log can be compressed
+ --log-bin-compress-min-len[=#] 
+ Minimum length of sql statement(in statement mode) or
+ record(in row mode)that can be compressed.
  --log-bin-index=name 
  File that holds the names for binary log files.
  --log-bin-trust-function-creators 
@@ -1014,6 +1024,11 @@ The following options may be given as the first argument:
  transaction processed
  --relay-log-space-limit=# 
  Maximum space to use for all relay logs
+ --relay-log-uncompress 
+ Whether IO_Thread need to uncompress the relay log
+ --relay-log-uncompress 
+ Whether IO_Thread need to uncompress the relay log
+ (Defaults to on; use --skip-relay-log-uncompress to disable.)
  --replicate-do-db=name 
  Tells the slave thread to restrict replication to the
  specified database. To specify more than one database,
@@ -1404,6 +1419,7 @@ csv-mode
 daemonize FALSE
 date-format %Y-%m-%d
 datetime-format %Y-%m-%d %H:%i:%s
+datetime-precision-use-v1 FALSE
 default-authentication-plugin mysql_native_password
 default-password-lifetime 0
 default-storage-engine InnoDB
@@ -1467,6 +1483,8 @@ lc-time-names en_US
 local-infile TRUE
 lock-wait-timeout 31536000
 log-bin (No default value)
+log-bin-compress FALSE
+log-bin-compress-min-len 256
 log-bin-index (No default value)
 log-bin-trust-function-creators FALSE
 log-bin-use-v1-row-events FALSE
@@ -1653,6 +1671,8 @@ relay-log-info-repository FILE
 relay-log-purge TRUE
 relay-log-recovery FALSE
 relay-log-space-limit 0
+relay-log-uncompress TRUE
+relay-log-uncompress TRUE
 replicate-same-server-id FALSE
 report-host (No default value)
 report-password (No default value)

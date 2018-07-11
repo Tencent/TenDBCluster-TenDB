@@ -1085,6 +1085,15 @@ static Sys_var_mybool Sys_explicit_defaults_for_timestamp(
        CMD_LINE(OPT_ARG), DEFAULT(FALSE), NO_MUTEX_GUARD, NOT_IN_BINLOG,
        ON_CHECK(check_explicit_defaults_for_timestamp));
 
+static Sys_var_mybool Sys_datetime_precision_use_v1(
+       "datetime_precision_use_v1",
+       "This option causes CREATE TABLE to create all DATETIME/TIMESTAMP/TIME columns "
+       "as old type, Without this option, "
+       "DATETIME2/TIMESTAMP2/TIME2 type default to be used when CREATE TABLE, "
+       "which not support for MySQL5.5 or earlier",
+       GLOBAL_VAR(datetime_precision_use_v1),
+       CMD_LINE(OPT_ARG), DEFAULT(FALSE));
+
 static bool repository_check(sys_var *self, THD *thd, set_var *var, SLAVE_THD_TYPE thread_mask)
 {
   bool ret= FALSE;
@@ -1896,6 +1905,22 @@ static Sys_var_mybool Sys_locked_in_memory(
 static Sys_var_mybool Sys_log_bin(
        "log_bin", "Whether the binary log is enabled",
        READ_ONLY GLOBAL_VAR(opt_bin_log), NO_CMD_LINE, DEFAULT(FALSE));
+
+static Sys_var_mybool Sys_log_bin_compress(
+	"log_bin_compress", "Whether the binary log can be compressed",
+	GLOBAL_VAR(opt_bin_log_compress), CMD_LINE(OPT_ARG), DEFAULT(FALSE));
+
+static Sys_var_uint Sys_log_bin_compress_min_len(
+	"log_bin_compress_min_len",
+	"Minimum length of sql statement(in statement mode) or record(in row mode)"
+	"that can be compressed.",
+	GLOBAL_VAR(opt_bin_log_compress_min_len),
+	CMD_LINE(OPT_ARG), VALID_RANGE(10, 1024), DEFAULT(256), BLOCK_SIZE(1));
+
+static Sys_var_mybool Sys_relay_log_uncompress(
+	"relay_log_uncompress",
+	"Whether IO_Thread need to uncompress the relay log",
+	GLOBAL_VAR(opt_relay_log_uncompress), CMD_LINE(OPT_ARG), DEFAULT(TRUE));
 
 static bool transaction_write_set_check(sys_var *self, THD *thd, set_var *var)
 {

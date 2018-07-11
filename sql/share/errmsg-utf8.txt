@@ -7815,6 +7815,8 @@ ER_RDB_TTL_DURATION_FORMAT
 ER_PER_INDEX_CF_DEPRECATED
   eng "The per-index column family option has been deprecated."
 
+ER_BINLOG_UNCOMPRESS_ERROR
+  eng "Uncompress the compressed binlog failed"
 #
 # End of MyRocks specific messages
 #

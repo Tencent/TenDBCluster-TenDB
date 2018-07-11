@@ -421,16 +421,6 @@ namespace binary_log
 class Query_event: public Binary_log_event
 {
 public:
-  /** query event post-header */
-  enum Query_event_post_header_offset{
-    Q_THREAD_ID_OFFSET= 0,
-    Q_EXEC_TIME_OFFSET= 4,
-    Q_DB_LEN_OFFSET= 8,
-    Q_ERR_CODE_OFFSET= 9,
-    Q_STATUS_VARS_LEN_OFFSET= 11,
-    Q_DATA_OFFSET= QUERY_HEADER_LEN
-  };
-
   /* these are codes, not offsets; not more than 256 values (1 byte). */
   enum Query_event_status_vars
   {

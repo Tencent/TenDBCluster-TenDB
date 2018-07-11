@@ -6677,13 +6677,19 @@ type:
         | TIME_SYM type_datetime_precision
           {
             Lex->dec= const_cast<char *>($2);
-            $$= MYSQL_TYPE_TIME2;
+            if (datetime_precision_use_v1)
+              $$= MYSQL_TYPE_TIME;
+            else
+              $$= MYSQL_TYPE_TIME2;
           }
         | TIMESTAMP type_datetime_precision
           {
             Lex->dec= const_cast<char *>($2);
             if (YYTHD->variables.sql_mode & MODE_MAXDB)
-              $$=MYSQL_TYPE_DATETIME2;
+              if (datetime_precision_use_v1)
+                $$=MYSQL_TYPE_DATETIME;
+              else
+                $$=MYSQL_TYPE_DATETIME2;
             else
             {
               /*
@@ -6700,13 +6706,19 @@ type:
               Lex->binlog_need_explicit_defaults_ts=
                 YYTHD->binlog_need_explicit_defaults_ts= true;
 
-              $$=MYSQL_TYPE_TIMESTAMP2;
+              if (datetime_precision_use_v1)
+                $$=MYSQL_TYPE_TIMESTAMP;
+              else
+                $$=MYSQL_TYPE_TIMESTAMP2;
             }
           }
         | DATETIME type_datetime_precision
           {
             Lex->dec= const_cast<char *>($2);
-            $$= MYSQL_TYPE_DATETIME2;
+            if (datetime_precision_use_v1)
+              $$= MYSQL_TYPE_DATETIME;
+            else
+              $$= MYSQL_TYPE_DATETIME2;
           }
         | TINYBLOB
           {
