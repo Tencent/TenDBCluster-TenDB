@@ -63,6 +63,8 @@ static void warning(const char *format, ...)
 #include <algorithm>
 #include <utility>
 #include <map>
+#include <set>
+#include <string>
 
 using std::min;
 using std::max;
@@ -311,7 +313,7 @@ static const char* default_dbug_option = "d:t:o,/tmp/mysqlbinlog.trace";
 #endif
 static const char *load_default_groups[]= { "mysqlbinlog","client",0 };
 
-static my_bool one_database=0, disable_log_bin= 0;
+static my_bool one_database=0, multi_databases=0, disable_log_bin= 0;
 static my_bool opt_hexdump= 0;
 const char *base64_output_mode_names[]=
 {"NEVER", "AUTO", "UNSPEC", "DECODE-ROWS", NullS};
@@ -333,6 +335,8 @@ static enum enum_remote_proto {
 } opt_remote_proto= BINLOG_LOCAL;
 static char *opt_remote_proto_str= 0;
 static char *database= 0;
+static char *databases= 0;
+static std::set<std::string> filter_databases;
 static char *output_file= 0;
 static char *rewrite= 0;
 static my_bool force_opt= 0, short_form= 0, idempotent_mode= 0;
@@ -897,7 +901,7 @@ static void convert_path_to_forward_slashes(char *fname)
 
 /**
   Indicates whether the given database should be filtered out,
-  according to the --database=X option.
+  according to the --database=X or --databases=X,X,X option.
 
   @param log_dbname Name of database.
 
@@ -906,9 +910,17 @@ static void convert_path_to_forward_slashes(char *fname)
 */
 static bool shall_skip_database(const char *log_dbname)
 {
-  return one_database &&
-         (log_dbname != NULL) &&
-         strcmp(log_dbname, database);
+  if (log_dbname == NULL){
+    return false;
+  }
+
+  if (one_database)
+    return strcmp(log_dbname, database);
+  else if (multi_databases){
+    return filter_databases.count(log_dbname) == 0;
+  }
+  else
+    return false;
 }
 
 
@@ -1775,6 +1787,10 @@ static struct my_option my_long_options[] =
   {"database", 'd', "List entries for just this database (local log only).",
    &database, &database, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
+  {"databases", 'L', "List entries for these databases (local log only)."
+   "Give the database names in a comma separated list.",
+   &databases, &databases, 0, GET_STR_ALLOC, REQUIRED_ARG,
+   0, 0, 0, 0, 0, 0},
   {"rewrite-db", OPT_REWRITE_DB, "Rewrite the row event to point so that "
    "it can be applied to a new database", &rewrite, &rewrite, 0,
    GET_STR_ALLOC, REQUIRED_ARG, 0, 0, 0, 0, 0, 0},
@@ -2058,6 +2074,7 @@ static void cleanup()
 {
   my_free(pass);
   my_free(database);
+  my_free(databases);
   my_free(rewrite);
   my_free(host);
   my_free(user);
@@ -2145,6 +2162,15 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
 #include <sslopt-case.h>
   case 'd':
     one_database = 1;
+    break;
+  case 'L':
+    for (char *p=databases;; p = NULL) {
+      char *q = strtok(p, ",");
+      if (q == NULL)
+        break;
+      filter_databases.insert(q);
+    }
+    multi_databases = 1;
     break;
   case OPT_REWRITE_DB:
   {
@@ -2240,6 +2266,13 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
     break;
 
   }
+
+  if (one_database && multi_databases)
+  {
+    error("options -d/--database and -L/--databases cannot be used together");
+    exit(1);
+  }
+
   if (tty_password)
     pass= get_tty_password(NullS);
 
