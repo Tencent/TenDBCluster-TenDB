@@ -1172,7 +1172,7 @@ void end_binlog(PRINT_EVENT_INFO *print_event_info)
   }
 
   if (!opt_skip_gtids)
-    fprintf(result_file, "%sAUTOMATIC' /* added by mysqlbinlog */ %s\n",
+    fprintf(result_file, "/*!50607 %sAUTOMATIC'*/ /* added by mysqlbinlog */ %s\n",
             Gtid_log_event::SET_STRING_PREFIX, print_event_info->delimiter);
 
   seen_gtid= false;
