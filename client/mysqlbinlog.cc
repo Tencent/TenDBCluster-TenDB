@@ -63,6 +63,8 @@ static void warning(const char *format, ...)
 #include <algorithm>
 #include <utility>
 #include <map>
+#include <set>
+#include <string>
 
 using std::min;
 using std::max;
@@ -311,7 +313,7 @@ static const char* default_dbug_option = "d:t:o,/tmp/mysqlbinlog.trace";
 #endif
 static const char *load_default_groups[]= { "mysqlbinlog","client",0 };
 
-static my_bool one_database=0, disable_log_bin= 0;
+static my_bool one_database=0, multi_databases=0, disable_log_bin= 0;
 static my_bool opt_hexdump= 0;
 const char *base64_output_mode_names[]=
 {"NEVER", "AUTO", "UNSPEC", "DECODE-ROWS", NullS};
@@ -333,6 +335,8 @@ static enum enum_remote_proto {
 } opt_remote_proto= BINLOG_LOCAL;
 static char *opt_remote_proto_str= 0;
 static char *database= 0;
+static char *databases= 0;
+static std::set<std::string> filter_databases;
 static char *output_file= 0;
 static char *rewrite= 0;
 static my_bool force_opt= 0, short_form= 0, idempotent_mode= 0;
@@ -897,7 +901,7 @@ static void convert_path_to_forward_slashes(char *fname)
 
 /**
   Indicates whether the given database should be filtered out,
-  according to the --database=X option.
+  according to the --database=X or --databases=X,X,X option.
 
   @param log_dbname Name of database.
 
@@ -906,9 +910,17 @@ static void convert_path_to_forward_slashes(char *fname)
 */
 static bool shall_skip_database(const char *log_dbname)
 {
-  return one_database &&
-         (log_dbname != NULL) &&
-         strcmp(log_dbname, database);
+  if (log_dbname == NULL){
+    return false;
+  }
+
+  if (one_database)
+    return strcmp(log_dbname, database);
+  else if (multi_databases){
+    return filter_databases.count(log_dbname) == 0;
+  }
+  else
+    return false;
 }
 
 
@@ -1160,7 +1172,7 @@ void end_binlog(PRINT_EVENT_INFO *print_event_info)
   }
 
   if (!opt_skip_gtids)
-    fprintf(result_file, "%sAUTOMATIC' /* added by mysqlbinlog */ %s\n",
+    fprintf(result_file, "/*!50607 %sAUTOMATIC'*/ /* added by mysqlbinlog */ %s\n",
             Gtid_log_event::SET_STRING_PREFIX, print_event_info->delimiter);
 
   seen_gtid= false;
@@ -1468,17 +1480,7 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
 
       if (head->error == -1)
         goto err;
-      if (opt_remote_proto == BINLOG_LOCAL)
-      {
-        ev->free_temp_buf(); // free memory allocated in dump_local_log_entries
-      }
-      else
-      {
-        /*
-          disassociate but not free dump_remote_log_entries time memory
-        */
-        ev->temp_buf= 0;
-      }
+      ev->free_temp_buf(); // free memory allocated in dump_local_log_entries
       /*
         We don't want this event to be deleted now, so let's hide it (I
         (Guilhem) should later see if this triggers a non-serious Valgrind
@@ -1741,11 +1743,10 @@ end:
   /*
     Destroy the log_event object. If reading from a remote host,
     set the temp_buf to NULL so that memory isn't freed twice.
+    (I dup the memory, so free it at any time  ---- migrate from tmysql2.x)
   */
   if (ev)
   {
-    if (opt_remote_proto != BINLOG_LOCAL)
-      ev->temp_buf= 0;
     if (destroy_evt) /* destroy it later if not set (ignored table map) */
       delete ev;
   }
@@ -1785,6 +1786,10 @@ static struct my_option my_long_options[] =
    0, 0, 0},
   {"database", 'd', "List entries for just this database (local log only).",
    &database, &database, 0, GET_STR_ALLOC, REQUIRED_ARG,
+   0, 0, 0, 0, 0, 0},
+  {"databases", 'L', "List entries for these databases (local log only)."
+   "Give the database names in a comma separated list.",
+   &databases, &databases, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
   {"rewrite-db", OPT_REWRITE_DB, "Rewrite the row event to point so that "
    "it can be applied to a new database", &rewrite, &rewrite, 0,
@@ -2069,6 +2074,7 @@ static void cleanup()
 {
   my_free(pass);
   my_free(database);
+  my_free(databases);
   my_free(rewrite);
   my_free(host);
   my_free(user);
@@ -2156,6 +2162,15 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
 #include <sslopt-case.h>
   case 'd':
     one_database = 1;
+    break;
+  case 'L':
+    for (char *p=databases;; p = NULL) {
+      char *q = strtok(p, ",");
+      if (q == NULL)
+        break;
+      filter_databases.insert(q);
+    }
+    multi_databases = 1;
     break;
   case OPT_REWRITE_DB:
   {
@@ -2251,6 +2266,13 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
     break;
 
   }
+
+  if (one_database && multi_databases)
+  {
+    error("options -d/--database and -L/--databases cannot be used together");
+    exit(1);
+  }
+
   if (tty_password)
     pass= get_tty_password(NullS);
 
@@ -2741,7 +2763,13 @@ static Exit_status dump_remote_log_entries(PRINT_EVENT_INFO *print_event_info,
         If reading from a remote host, ensure the temp_buf for the
         Log_event class is pointing to the incoming stream.
       */
-      ev->register_temp_buf((char *) net->read_pos + 1);
+      char * temp_buf = (char *)my_memdup(PSI_NOT_INSTRUMENTED, (char *)net->read_pos + 1, len - 1, MYF(MY_WME));
+      if(temp_buf == NULL)
+      {
+        error("Got fatal error allocating memory.");
+        DBUG_RETURN(ERROR_STOP);
+      }
+      ev->register_temp_buf(temp_buf);
     }
     if (raw_mode || (type != binary_log::LOAD_EVENT))
     {
@@ -2843,7 +2871,6 @@ static Exit_status dump_remote_log_entries(PRINT_EVENT_INFO *print_event_info,
           delete glob_description_event;
           glob_description_event= (Format_description_log_event*) ev;
           print_event_info->common_header_len= glob_description_event->common_header_len;
-          ev->temp_buf= 0;
           ev= 0;
         }
       }
@@ -2866,7 +2893,7 @@ static Exit_status dump_remote_log_entries(PRINT_EVENT_INFO *print_event_info,
           retval= ERROR_STOP;
         }
         if (ev)
-          reset_temp_buf_and_delete(ev);
+          delete ev;
 
         /* Flush result_file after every event */
         fflush(result_file);

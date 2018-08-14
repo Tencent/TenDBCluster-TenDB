@@ -661,6 +661,7 @@ int query_event_uncompress(const Format_description_log_event *description_event
 int Row_log_event_uncompress(const Format_description_log_event *description_event, bool contain_checksum,
 	const char *src, char **dst, ulong *newlen)
 {
+	DBUG_ASSERT((buf[0] & 0xe0) == 0x80);
 	Log_event_type type = (Log_event_type)src[EVENT_TYPE_OFFSET];
 	ulong len = uint4korr(src + EVENT_LEN_OFFSET);
 	const char *tmp = src;
@@ -3266,6 +3267,7 @@ Slave_worker *Log_event::get_slave_worker(Relay_log_info *rli)
     Mts_db_names mts_dbs;
 
     get_mts_dbs(&mts_dbs);
+    DBUG_ASSERT(mts_dbs.num);
     /*
       Bug 12982188 - MTS: SBR ABORTS WITH ERROR 1742 ON LOAD DATA
       Logging on master can create a group with no events holding
@@ -3304,6 +3306,8 @@ Slave_worker *Log_event::get_slave_worker(Relay_log_info *rli)
     // partioning info is found which drops the flag
     rli->mts_end_group_sets_max_dbs= false;
     ret_worker= rli->last_assigned_worker;
+    if (thd->is_error())
+      return NULL;
     if (mts_dbs.num == OVER_MAX_DBS_IN_EVENT_MTS)
     {
       // Worker with id 0 to handle serial execution
@@ -13133,6 +13137,9 @@ void Write_rows_compressed_log_event::print(FILE *file, PRINT_EVENT_INFO* print_
 {
   char *new_buf;
   ulong len;
+#ifdef MYSQL_CLIENT
+  DBUG_ASSERT(print_event_info->description_event == glob_description_event);
+#endif
   if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg, temp_buf, &new_buf, &len))
   {
 	my_free(temp_buf);
@@ -13280,6 +13287,9 @@ void Delete_rows_compressed_log_event::print(FILE *file,
 {
   char *new_buf;
   ulong len;
+#ifdef MYSQL_CLIENT
+  DBUG_ASSERT(print_event_info->description_event == glob_description_event);
+#endif
   if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg, temp_buf, &new_buf, &len))
   {
 	my_free(temp_buf);
@@ -13489,6 +13499,9 @@ void Update_rows_compressed_log_event::print(FILE *file, PRINT_EVENT_INFO *print
 {
   char *new_buf;
   ulong len;
+#ifdef MYSQL_CLIENT
+  DBUG_ASSERT(print_event_info->description_event == glob_description_event);
+#endif
   if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg, temp_buf, &new_buf, &len))
   {
 	my_free(temp_buf);
