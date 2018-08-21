@@ -661,7 +661,6 @@ int query_event_uncompress(const Format_description_log_event *description_event
 int Row_log_event_uncompress(const Format_description_log_event *description_event, bool contain_checksum,
 	const char *src, char **dst, ulong *newlen)
 {
-	DBUG_ASSERT((buf[0] & 0xe0) == 0x80);
 	Log_event_type type = (Log_event_type)src[EVENT_TYPE_OFFSET];
 	ulong len = uint4korr(src + EVENT_LEN_OFFSET);
 	const char *tmp = src;
@@ -13137,9 +13136,6 @@ void Write_rows_compressed_log_event::print(FILE *file, PRINT_EVENT_INFO* print_
 {
   char *new_buf;
   ulong len;
-#ifdef MYSQL_CLIENT
-  DBUG_ASSERT(print_event_info->description_event == glob_description_event);
-#endif
   if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg, temp_buf, &new_buf, &len))
   {
 	my_free(temp_buf);
@@ -13287,9 +13283,6 @@ void Delete_rows_compressed_log_event::print(FILE *file,
 {
   char *new_buf;
   ulong len;
-#ifdef MYSQL_CLIENT
-  DBUG_ASSERT(print_event_info->description_event == glob_description_event);
-#endif
   if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg, temp_buf, &new_buf, &len))
   {
 	my_free(temp_buf);
@@ -13499,9 +13492,6 @@ void Update_rows_compressed_log_event::print(FILE *file, PRINT_EVENT_INFO *print
 {
   char *new_buf;
   ulong len;
-#ifdef MYSQL_CLIENT
-  DBUG_ASSERT(print_event_info->description_event == glob_description_event);
-#endif
   if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg, temp_buf, &new_buf, &len))
   {
 	my_free(temp_buf);

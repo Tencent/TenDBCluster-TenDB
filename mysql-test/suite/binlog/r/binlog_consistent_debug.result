@@ -19,7 +19,7 @@ SET DEBUG_SYNC="now WAIT_FOR commit_ready";
 SHOW STATUS LIKE 'binlog_snapshot_%';
 Variable_name	Value
 Binlog_snapshot_file	master-bin.000001
-Binlog_snapshot_position	608
+Binlog_snapshot_position	587
 SET DEBUG_SYNC="now SIGNAL finish_commit";
 # connection con1
 # connection default

@@ -196,7 +196,7 @@ SET TIMESTAMP=1000000000/*!*/;
 LOAD DATA LOCAL INFILE '<name>' INTO TABLE `db1``; select 'oops!'`.`t``1` FIELDS TERMINATED BY ',' ENCLOSED BY '\'' ESCAPED BY '\\' LINES TERMINATED BY '\n' (`a``1`, `b``2`) SET `c``3`= concat('|', "b""a'z", "!")
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= 'AUTOMATIC' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= 'AUTOMATIC'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -290,7 +290,7 @@ SET TIMESTAMP=1000000000/*!*/;
 INSERT INTO t1 VALUES (@`a``1`+1, @`a``2`*100, @`a``3`-1, @`a``4`-1, @`b```/2, @```c`, substr(@```d```, 2, 98))
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= 'AUTOMATIC' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= 'AUTOMATIC'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;

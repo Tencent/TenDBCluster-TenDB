@@ -55,7 +55,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -100,7 +100,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -137,7 +137,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -175,7 +175,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(2)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -204,7 +204,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(2)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -249,7 +249,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -279,7 +279,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(1)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -308,7 +308,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(1)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -356,7 +356,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -374,7 +374,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(5)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -419,7 +419,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -437,7 +437,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(5)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -474,7 +474,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -492,7 +492,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(5)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -538,7 +538,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -548,7 +548,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(4)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -585,7 +585,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -595,7 +595,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(4)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -640,7 +640,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -658,7 +658,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(5)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -704,7 +704,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -714,7 +714,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(4)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -759,7 +759,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -769,7 +769,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(4)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -817,7 +817,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -862,7 +862,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -898,7 +898,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -936,7 +936,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(2)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -964,7 +964,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(2)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1009,7 +1009,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1039,7 +1039,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(1)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1068,7 +1068,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(1)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1116,7 +1116,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -1134,7 +1134,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(5)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1179,7 +1179,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -1197,7 +1197,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(5)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1233,7 +1233,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -1251,7 +1251,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(5)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1297,7 +1297,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -1307,7 +1307,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(4)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1343,7 +1343,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -1353,7 +1353,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(4)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1398,7 +1398,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -1416,7 +1416,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(5)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1462,7 +1462,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -1472,7 +1472,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(4)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1517,7 +1517,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -1527,7 +1527,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(4)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -1573,7 +1573,7 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(3)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
 SET @@SESSION.GTID_NEXT= '#'/*!*/;
 SET TIMESTAMP=#/*!*/;
@@ -1591,9 +1591,9 @@ SET TIMESTAMP=#/*!*/;
 INSERT INTO t1 VALUES(5)
 /*!*/;
 COMMIT/*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 # [empty]
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;

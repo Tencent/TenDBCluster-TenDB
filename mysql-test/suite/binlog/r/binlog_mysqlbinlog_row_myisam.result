@@ -3854,7 +3854,7 @@ COMMIT
 /*!*/;
 # at #
 # # server id #  end_log_pos # CRC32 # 	Rotate to master-bin.000002  pos: 4
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -4171,7 +4171,7 @@ COMMIT
 /*!*/;
 # at #
 # # server id #  end_log_pos # CRC32 # 	Rotate to master-bin.000002  pos: 4
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -4920,7 +4920,7 @@ COMMIT
 /*!*/;
 # at #
 # # server id #  end_log_pos # CRC32 # 	Rotate to master-bin.000002  pos: 4
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -5041,7 +5041,7 @@ COMMIT
 /*!*/;
 # at #
 # # server id #  end_log_pos # CRC32 # 	Rotate to master-bin.000002  pos: 4
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;

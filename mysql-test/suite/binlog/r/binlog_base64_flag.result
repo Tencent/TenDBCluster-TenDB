@@ -52,7 +52,7 @@ BEGIN
 /*!*/;
 # at 305
 <#>ROLLBACK /* added by mysqlbinlog */ /*!*/;
-SET @@SESSION.GTID_NEXT= 'AUTOMATIC' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= 'AUTOMATIC'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;

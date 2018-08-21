@@ -6285,10 +6285,6 @@ struct my_option my_long_options[]=
    "user has access to in a comma delimited list.",
    &utility_user_schema_access, 0, 0, GET_STR, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
-  {"relay_log_uncompress", 0,
-   "Whether IO_Thread need to uncompress the relay log",
-   &opt_relay_log_uncompress, &opt_relay_log_uncompress, 0, GET_BOOL,
-   OPT_ARG, 0, 0, 0, 0, 0, 0},
   {0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}
 };
 
@@ -7346,7 +7342,6 @@ static int mysql_init_variables(void)
   myisam_test_invalid_symlink= test_if_data_home_dir;
   opt_general_log= opt_slow_log= false;
   opt_bin_log= 0;
-  opt_relay_log_uncompress= 1;
   opt_disable_networking= opt_skip_show_db=0;
   opt_skip_name_resolve= 0;
   opt_ignore_builtin_innodb= 0;
