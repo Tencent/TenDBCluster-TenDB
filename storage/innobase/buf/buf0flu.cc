@@ -3394,6 +3394,7 @@ DECLARE_THREAD(buf_flush_page_cleaner_coordinator)(
 
 		} else {
 			/* no activity, but woken up by event */
+			n_flushed = 0;
 		}
 
 		ut_d(buf_flush_page_cleaner_disabled_loop());
