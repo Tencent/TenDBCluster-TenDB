@@ -102,7 +102,7 @@ fi
 if [ $do_test == 1 ]
 then
     cd mysql-test
-    perl mysql-test-run.pl --max-test-fail=0 --force --parallel=8 &>test.log
+    perl mysql-test-run.pl --max-test-fail=0 --force --parallel=24 &>test.log
     cd ..
 fi
 
