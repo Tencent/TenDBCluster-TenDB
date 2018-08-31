@@ -392,19 +392,6 @@ mysqld_ld_preload_text() {
   echo "$text"
 }
 
-mysql_config=
-get_mysql_config() {
-  if [ -z "$mysql_config" ]; then
-    mysql_config=`echo "$0" | sed 's,/[^/][^/]*$,/mysql_config,'`
-    if [ ! -x "$mysql_config" ]; then
-      log_error "Can not run mysql_config $@ from '$mysql_config'"
-      exit 1
-    fi
-  fi
-
-  "$mysql_config" "$@"
-}
-
 # set_malloc_lib LIB
 # - If LIB is empty, do nothing and return
 # - If LIB is 'tcmalloc', look for tcmalloc shared library in $malloc_dirs.
@@ -585,12 +572,7 @@ parse_arguments PICK-ARGS-FROM-ARGV "$@"
 #
 if test $load_jemalloc -eq 1
 then
-  pkglibdir=`get_mysql_config --variable=pkglibdir`
-  pkgbasedir=`basename $pkglibdir`
-  if [ $pkgbasedir == "mysql" ]; then
-    pkglibdir=`dirname $pkglibdir`
-  fi
-  for libjemall in "${MY_BASEDIR_VERSION}/lib/mysql" "/usr/lib64" "/usr/lib/x86_64-linux-gnu" "/usr/lib" $pkglibdir; do
+  for libjemall in "${MY_BASEDIR_VERSION}/lib/mysql" "${MY_BASEDIR_VERSION}/lib/" "/usr/lib64" "/usr/lib/x86_64-linux-gnu" "/usr/lib"; do
     if [ -r "$libjemall/libjemalloc.so" ]; then
       log_notice "Found jemalloc $libjemall/libjemalloc.so"
       add_mysqld_ld_preload "$libjemall/libjemalloc.so"

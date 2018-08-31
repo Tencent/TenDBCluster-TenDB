@@ -19,7 +19,7 @@ SET DEBUG_SYNC="now WAIT_FOR commit_ready";
 SHOW STATUS LIKE 'binlog_snapshot_%';
 Variable_name	Value
 Binlog_snapshot_file	master-bin.000001
-Binlog_snapshot_position	608
+Binlog_snapshot_position	POSITION
 SET DEBUG_SYNC="now SIGNAL finish_commit";
 # connection con1
 # connection default
@@ -52,6 +52,6 @@ Warning	1868	file ./master-bin.000002 was not purged because it is the active lo
 # connection con2
 VARIABLE_NAME	VARIABLE_VALUE
 Binlog_snapshot_file	master-bin.000002
-Binlog_snapshot_position	172
+Binlog_snapshot_position	POSITION
 # connection con3
 # connection default
