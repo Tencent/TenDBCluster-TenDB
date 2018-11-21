@@ -1914,7 +1914,7 @@ int store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
     if (create_info.row_type != ROW_TYPE_DEFAULT)
     {
       packet->append(STRING_WITH_LEN(" ROW_FORMAT="));
-      packet->append(ha_row_type[(uint) create_info.row_type]);
+      packet->append(ha_get_row_type(create_info.row_type, file->is_gcs_table()));
     }
     if (table->s->key_block_size)
     {
@@ -5592,8 +5592,8 @@ static int get_schema_tables_record(THD *thd, TABLE_LIST *tables,
 
     if (share->row_type != ROW_TYPE_DEFAULT)
       ptr=strxmov(ptr, " row_format=", 
-                  ha_row_type[(uint) share->row_type],
-                  NullS);
+				  ha_get_row_type(share->row_type, file ? file->is_gcs_table() : 0),
+          NullS);
 
     if (share->key_block_size)
     {

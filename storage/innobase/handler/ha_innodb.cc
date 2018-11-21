@@ -5458,6 +5458,16 @@ ha_innobase::get_row_type() const
 	return(ROW_TYPE_NOT_USED);
 }
 
+bool
+ha_innobase::is_gcs_table() const
+{
+	if (m_prebuilt && m_prebuilt->table
+			&& dict_table_is_gcs(m_prebuilt->table))
+		return 1;
+
+	return 0;
+}
+
 /****************************************************************//**
 Get the table flags to use for the statement.
 @return table flags */

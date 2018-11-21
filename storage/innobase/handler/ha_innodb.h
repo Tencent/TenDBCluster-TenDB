@@ -78,6 +78,8 @@ public:
 	ROW_TYPE_NOT_USED, the information in HA_CREATE_INFO should be used. */
 	row_type get_row_type() const;
 
+	bool is_gcs_table() const;
+
 	const char* table_type() const;
 
 	const char* index_type(uint key_number);
