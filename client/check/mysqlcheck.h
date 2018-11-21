@@ -35,7 +35,7 @@ extern void mysql_check(MYSQL* connection, int what_to_do, my_bool opt_alldbs,
                 my_bool opt_auto_repair, my_bool ignore_errors,
                 my_bool opt_frm, my_bool opt_fix_table_names,
                 my_bool opt_fix_db_names, my_bool opt_upgrade,
-                my_bool opt_write_binlog, uint verbose,
+                my_bool opt_write_binlog, my_bool opt_grace_print, uint verbose,
                 std::string opt_skip_database,
                 std::vector<std::string> arguments,
                 void (*dberror)(MYSQL *mysql, std::string when));
@@ -87,6 +87,11 @@ public:
    */
   Program* enable_writing_binlog(bool enable);
   /**
+    Enables print mysqlcheck result in one line.
+   */
+
+  Program* enable_grace_print(bool enable);
+  /**
     Enables table name fixing for all encountered tables.
    */
   Program* enable_fixing_table_names(bool enable);
@@ -124,6 +129,7 @@ private:
   bool m_verbose;
   bool m_ignore_errors;
   bool m_write_binlog;
+  bool m_grace_print;
   bool m_process_all_dbs;
   bool m_fix_table_names;
   bool m_fix_db_names;

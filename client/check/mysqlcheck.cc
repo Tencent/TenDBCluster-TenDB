@@ -42,7 +42,7 @@ static my_bool opt_alldbs = 0, opt_check_only_changed = 0, opt_extended = 0,
                opt_silent = 0, opt_auto_repair = 0, ignore_errors = 0,
                tty_password= 0, opt_frm= 0, debug_info_flag= 0, debug_check_flag= 0,
                opt_fix_table_names= 0, opt_fix_db_names= 0, opt_upgrade= 0,
-               opt_write_binlog= 1, opt_secure_auth=TRUE;
+               opt_write_binlog= 1, opt_grace_print= 0, opt_secure_auth=TRUE;
 static uint verbose = 0, opt_mysql_port=0;
 static uint opt_enable_cleartext_plugin= 0;
 static my_bool using_opt_enable_cleartext_plugin= 0;
@@ -140,6 +140,10 @@ static struct my_option my_long_options[] =
    "If you are using this option with CHECK TABLE, it will ensure that the table is 100 percent consistent, but will take a long time. If you are using this option with REPAIR TABLE, it will force using old slow repair with keycache method, instead of much faster repair by sorting.",
    &opt_extended, &opt_extended, 0, GET_BOOL, NO_ARG, 0, 0, 0,
    0, 0, 0},
+  { "grace-print", 'G',
+   "Print simply mysqlcheck result in only one line.",
+   &opt_grace_print, &opt_grace_print, 0, GET_BOOL, NO_ARG, 0, 0, 0,
+   0, 0, 0 },
   {"help", '?', "Display this help message and exit.", 0, 0, 0, GET_NO_ARG,
    NO_ARG, 0, 0, 0, 0, 0, 0},
   {"host",'h', "Connect to host.", &current_host,
@@ -557,7 +561,7 @@ int main(int argc, char **argv)
                 opt_auto_repair, ignore_errors,
                 opt_frm, opt_fix_table_names,
                 opt_fix_db_names, opt_upgrade,
-                opt_write_binlog, verbose,
+                opt_write_binlog, opt_grace_print, verbose,
                 opt_skip_database, conv,
                 DBerror);
 
