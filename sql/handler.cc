@@ -234,6 +234,29 @@ const char *tx_isolation_names[] =
 TYPELIB tx_isolation_typelib= {array_elements(tx_isolation_names)-1,"",
 			       tx_isolation_names, NULL};
 
+/*
+get row_format_name by handler directly
+For mysql is upgraded from tmysql2.x to tmysql3.x, if table in
+tmysql2.x had created by row_format=gcs or row_format=gcs_dynamic,
+then we execute show create table or show table status command,
+the row_format may be display by row_format=? or row_format=TOKUDB_UNCOMPRESSED.
+In old version(tmysql2.x), we had modified ha_row_type[] to support GCS/GCS_DYNAMIC,
+and store the row_format with corresponding flag, but in tmysql3.x we no
+need to support GCS expicity, and not longer modified ha_row_type.
+The is_gcs flag only be set in old tmysql2.x/tmysql1.x, in tmysql3.x or newer
+version, it always be 0, so we can use it to judge whether the table is upgrade
+from tmysql2.x or not
+*/
+const char *ha_get_row_type(enum row_type row_type, bool is_gcs)
+{
+	if (is_gcs && row_type == ROW_TYPE_PAGE)
+		return "GCS";
+	if (is_gcs && row_type == ROW_TYPE_TOKU_UNCOMPRESSED)
+		return "GCS_DYNAMIC";
+
+	return ha_row_type[(uint)row_type];
+}
+
 #ifndef DBUG_OFF
 
 const char *ha_legacy_type_name(legacy_db_type legacy_type)

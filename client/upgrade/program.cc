@@ -601,6 +601,11 @@ public:
       "Write all executed SQL statements to binary log. Disabled by default; "
       "use when statements should be sent to replication slaves.");
 
+    this->create_new_option(&this->m_grace_print, "grace-print",
+      "Print simply mysqlcheck result in only one line.")
+      ->set_short_character('G')
+      ->set_value(false);
+
     this->create_new_option(&this->m_ignore_errors, "force",
         "Force execution of SQL statements even if mysql_upgrade has already "
         "been executed for the current version of MySQL.")
@@ -970,6 +975,7 @@ private:
     return (&mysql_check)
       ->set_ignore_errors(this->m_ignore_errors)
       ->enable_writing_binlog(this->m_write_binlog)
+      ->enable_grace_print(this->m_grace_print)
       ->enable_verbosity(this->m_verbose)
       ->set_error_callback(::mysql_check_error_callback);
   }
@@ -1048,6 +1054,7 @@ private:
   Mysql_query_runner* m_query_runner;
   string m_datadir;
   bool m_write_binlog;
+  bool m_grace_print;
   bool m_upgrade_systables_only;
   bool m_skip_sys_schema;
   bool m_check_version;

@@ -314,6 +314,23 @@ dict_table_get_next_index(
 #endif /* !UNIV_HOTBACKUP */
 
 /********************************************************************//**
+@return	TRUE if table is gcs table,upgrade from tmysql-2.x gcs table*/
+UNIV_INLINE
+ibool
+dict_table_is_gcs(
+/*===============*/
+	const dict_table_t*	table)	/*!< in: table */
+{
+	ut_ad(table);
+
+#if DICT_TF_COMPACT != TRUE
+#error
+#endif
+
+	return table->is_gcs;
+}
+
+/********************************************************************//**
 Check whether the index is the clustered index.
 @return nonzero for clustered index, zero for other indexes */
 UNIV_INLINE

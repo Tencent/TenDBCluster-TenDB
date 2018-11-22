@@ -2230,6 +2230,12 @@ dict_index_get_nth_field_def(
 	ulint		pos,	/*!< in: position of the field */
 	ulint*		len );  /*!< out: length of default value */
 
+UNIV_INLINE
+ibool
+dict_table_is_gcs(
+	/*===============*/
+	const dict_table_t*	table);	/*!< in: table */
+
 /*********************************************************************//**
 Gets the column is nullable.
 @return	TRUE if nullable */

@@ -2877,6 +2877,12 @@ public:
   */
   virtual enum row_type get_row_type() const { return ROW_TYPE_NOT_USED; }
 
+  /**
+    Whether the table is create with row_format=gcs or row_format=gcs_dynamic.
+    Only be true for InnoDB table and upgraded from tmysql2.x version
+  */
+  virtual bool is_gcs_table() const { return 0; }
+
   virtual const char *index_type(uint key_number) { DBUG_ASSERT(0); return "";}
 
 
@@ -4407,6 +4413,7 @@ void ha_binlog_wait(THD *thd);
 /* It is required by basic binlog features on both MySQL server and libmysqld */
 int ha_binlog_end(THD *thd);
 
+const char *ha_get_row_type(enum row_type row_type, bool is_gcs);
 const char *ha_legacy_type_name(legacy_db_type legacy_type);
 const char *get_canonical_filename(handler *file, const char *path,
                                    char *tmp_path);

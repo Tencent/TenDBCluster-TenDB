@@ -41,7 +41,7 @@ static my_bool opt_alldbs= 0, opt_check_only_changed= 0, opt_extended= 0,
                opt_medium_check = 0, opt_quick= 0, opt_all_in_1= 0,
                opt_silent= 0, opt_auto_repair= 0, ignore_errors= 0,
                opt_frm= 0, opt_fix_table_names= 0, opt_fix_db_names= 0, opt_upgrade= 0,
-               opt_write_binlog= 1;
+               opt_write_binlog= 1, opt_grace_print= 0;
 static uint verbose = 0;
 static string opt_skip_database;
 int what_to_do = 0;
@@ -379,7 +379,10 @@ static void print_result()
       printf("%-50s %s", row[0], row[3]);
     else if (!status && changed)
     {
-      printf("%s\n%-9s: %s", row[0], row[2], row[3]);
+	  if (opt_grace_print)
+        printf("%-50s %s: %s", row[0], row[2], row[3]);
+	  else
+        printf("%s\n%-9s: %s", row[0], row[2], row[3]);
       if (opt_auto_repair && strcmp(row[2],"note"))
       {
         const char *alter_txt= strstr(row[3], "ALTER TABLE");
@@ -419,7 +422,10 @@ static void print_result()
       }
     }
     else
-      printf("%-9s: %s", row[2], row[3]);
+	  if (opt_grace_print)
+        printf("%-50s %s: %s", row[0], row[2], row[3]);
+	  else
+        printf("%-9s: %s", row[2], row[3]);
     my_stpcpy(prev, row[0]);
     putchar('\n');
   }
@@ -450,7 +456,7 @@ void Mysql::Tools::Check::mysql_check(MYSQL* connection, int what_to_do,
                 my_bool opt_auto_repair, my_bool ignore_errors,
                 my_bool opt_frm, my_bool opt_fix_table_names,
                 my_bool opt_fix_db_names, my_bool opt_upgrade,
-                my_bool opt_write_binlog, uint verbose,
+                my_bool opt_write_binlog, my_bool opt_grace_print, uint verbose,
                 string opt_skip_database, vector<string> arguments,
                 void (*dberror)(MYSQL *mysql, string when))
 {
@@ -472,6 +478,7 @@ void Mysql::Tools::Check::mysql_check(MYSQL* connection, int what_to_do,
   ::opt_fix_db_names= opt_fix_db_names;
   ::opt_upgrade= opt_upgrade;
   ::opt_write_binlog= opt_write_binlog;
+  ::opt_grace_print = opt_grace_print;
   ::verbose= verbose;
   ::opt_skip_database= opt_skip_database;
   ::DBError= dberror;
@@ -548,6 +555,7 @@ Program::Program()
   m_verbose(false),
   m_ignore_errors(false),
   m_write_binlog(false),
+  m_grace_print(false),
   m_process_all_dbs(false),
   m_fix_table_names(false),
   m_fix_db_names(false),
@@ -612,6 +620,12 @@ Program* Program::enable_writing_binlog(bool enable)
   return this;
 }
 
+Program* Program::enable_grace_print(bool enable)
+{
+  this->m_grace_print= enable;
+  return this;
+}
+
 Program* Program::enable_fixing_table_names(bool enable)
 {
   this->m_fix_table_names= enable;
@@ -670,6 +684,7 @@ int Program::execute(vector<string> positional_options)
     this->m_fix_db_names, // opt_fix_db_names
     this->m_upgrade, // opt_upgrade
     this->m_write_binlog, // opt_write_binlog
+	this->m_grace_print,
     this->m_verbose, // verbose
     this->m_database_to_skip,
     positional_options,
