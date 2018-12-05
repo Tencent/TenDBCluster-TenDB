@@ -249,10 +249,12 @@ from tmysql2.x or not
 */
 const char *ha_get_row_type(enum row_type row_type, bool is_gcs)
 {
-	if (is_gcs && row_type == ROW_TYPE_PAGE)
-		return "GCS";
-	if (is_gcs && row_type == ROW_TYPE_TOKU_UNCOMPRESSED)
-		return "GCS_DYNAMIC";
+  if (is_gcs){
+	  if (row_type == ROW_TYPE_PAGE)
+		  return "GCS";
+	  if (row_type == ROW_TYPE_TOKU_UNCOMPRESSED)
+		  return "GCS_DYNAMIC";
+  }
 
 	return ha_row_type[(uint)row_type];
 }
