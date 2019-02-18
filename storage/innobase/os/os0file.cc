@@ -3376,6 +3376,7 @@ os_file_create_simple_func(
 	*success = false;
 
 	int		create_flag;
+  const char* mode_str = NULL;
 
 	ut_a(!(create_mode & OS_FILE_ON_ERROR_SILENT));
 	ut_a(!(create_mode & OS_FILE_ON_ERROR_NO_EXIT));
@@ -3402,14 +3403,17 @@ os_file_create_simple_func(
 		} else {
 			create_flag = O_RDWR;
 		}
+    mode_str = "OPEN";
 
 	} else if (read_only) {
 
 		create_flag = O_RDONLY;
+    mode_str = "OPEN";
 
 	} else if (create_mode == OS_FILE_CREATE) {
 
 		create_flag = O_RDWR | O_CREAT | O_EXCL;
+    mode_str = "CREATE";
 
 	} else if (create_mode == OS_FILE_CREATE_PATH) {
 
@@ -3429,6 +3433,7 @@ os_file_create_simple_func(
 
 		create_flag = O_RDWR | O_CREAT | O_EXCL;
 		create_mode = OS_FILE_CREATE;
+    mode_str = "CREATE";
 	} else {
 
 		ib::error()
@@ -3445,6 +3450,13 @@ os_file_create_simple_func(
 	do {
 		file.m_file = ::open(name, create_flag | create_o_sync,
 			      os_innodb_umask);
+
+    /* We disable OS caching (O_DIRECT) only on data files */
+    if (file.m_file != -1 &&
+      srv_unix_file_flush_method == SRV_UNIX_O_DIRECT) {
+
+      os_file_set_nocache(file.m_file, name, mode_str);
+    }
 
 		if (file.m_file == -1) {
 			*success = false;
