@@ -11111,6 +11111,7 @@ bool mysql_checksum_table(THD *thd, TABLE_LIST *tables,
                 case MYSQL_TYPE_VARCHAR:
                 case MYSQL_TYPE_GEOMETRY:
                 case MYSQL_TYPE_BIT:
+                case MYSQL_TYPE_JSON:
                 {
                   String tmp;
                   f->val_str(&tmp);
