@@ -376,19 +376,44 @@ public:
     return my_b_tell(&cache_log);
   }
 
+  int cache_state_binary_search_find(my_off_t pos) {
+    int ret = -1;      
+
+    int end = cache_state_vec.size() - 1;
+    int start = 0;
+    while (start <= end) 
+    {
+      int mid = start + (end - start) / 2;
+      if (cache_state_vec[mid].pos < pos)
+        start = mid + 1;
+      else if (cache_state_vec[mid].pos > pos) 
+      {
+        end = mid - 1;
+        ret = mid;  // it maybe also match
+      }
+      else 
+      {           
+        ret = mid;
+        break;
+      }
+    }
+
+    return ret;   
+  }
+
   void cache_state_rollback(my_off_t pos_to_rollback)
   {
     if (pos_to_rollback)
     {
-      std::map<my_off_t,cache_state>::iterator it;
-      it = cache_state_map.find(pos_to_rollback);
-      if (it != cache_state_map.end())
+      int pos = cache_state_binary_search_find(pos_to_rollback);
+      if (pos != -1)
       {
-        flags.with_rbr= it->second.with_rbr;
-        flags.with_sbr= it->second.with_sbr;
+        flags.with_rbr = cache_state_vec.at(pos).with_rbr;
+        flags.with_sbr = cache_state_vec.at(pos).with_sbr;
+
+        cache_state_vec.at(pos).pos = pos_to_rollback;
+        cache_state_vec.resize(pos+1);
       }
-      else
-        DBUG_ASSERT(it == cache_state_map.end());
     }
     // Rolling back to pos == 0 means cleaning up the cache.
     else
@@ -401,12 +426,41 @@ public:
   void cache_state_checkpoint(my_off_t pos_to_checkpoint)
   {
     // We only need to store the cache state for pos > 0
-    if (pos_to_checkpoint)
+    if (pos_to_checkpoint && pos_to_checkpoint != MY_OFF_T_UNDEF)
     {
-      cache_state state;
-      state.with_rbr= flags.with_rbr;
-      state.with_sbr= flags.with_sbr;
-      cache_state_map[pos_to_checkpoint]= state;
+      // Get the last element
+      std::vector<cache_state>::reverse_iterator it = cache_state_vec.rbegin();
+      if (it == cache_state_vec.rend()) 
+      {
+        // first element
+        cache_state state;
+        state.with_rbr = flags.with_rbr;
+        state.with_sbr = flags.with_sbr;
+        state.pos = pos_to_checkpoint;
+
+        cache_state_vec.push_back(state);
+      } 
+      else 
+      {
+        DBUG_ASSERT(it->pos <= pos_to_checkpoint);
+        if (it->with_rbr != flags.with_rbr ||
+            it->with_sbr != flags.with_sbr)
+        {
+          // if diff with the last element, create a new bigger one.
+          cache_state state;
+          state.with_rbr = flags.with_rbr;
+          state.with_sbr = flags.with_sbr;
+          state.pos = pos_to_checkpoint;
+
+          cache_state_vec.push_back(state);
+        }
+        else
+        {
+          // update the pos directly
+          it->pos = pos_to_checkpoint;
+        }
+
+      }
     }
   }
 
@@ -449,7 +503,7 @@ public:
       variable after truncating the cache.
     */
     cache_log.disk_writes= 0;
-    cache_state_map.clear();
+    cache_state_vec.clear();
     DBUG_ASSERT(is_binlog_empty());
   }
 
@@ -521,6 +575,7 @@ protected:
   */
   struct cache_state
   {
+    my_off_t pos;
     bool with_sbr;
     bool with_rbr;
   };
@@ -528,8 +583,13 @@ protected:
     For every SAVEPOINT used, we will store a cache_state for the current
     binlog cache position. So, if a ROLLBACK TO SAVEPOINT is used, we can
     restore the cache_state values after truncating the binlog cache.
+
+    In fact, there are no more than two elements in cache_state_vec; There
+    are only two possibilities: 
+    1. {{pos0, with_sbr=true; with_rbr=false},{pos1, with_sbr=true; with_rbr=true}}
+    2. {{pos0, with_sbr=false; with_rbr=true},{pos1, with_sbr=true; with_rbr=true}}
   */
-  std::map<my_off_t, cache_state> cache_state_map;
+  std::vector<cache_state> cache_state_vec;
 
   /*
     It truncates the cache to a certain position. This includes deleting the
