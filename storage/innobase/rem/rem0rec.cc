@@ -1418,7 +1418,6 @@ rec_convert_dtuple_to_rec_comp(
 	end = rec;
 
 	if (n_fields != 0) {
-		n_null = index->n_nullable;
 		lens = nulls - UT_BITS_IN_BYTES(n_null);
 		/* clear the SQL-null flags */
 		memset(lens + 1, 0, nulls - lens);
