@@ -144,6 +144,7 @@ bool mysql_create_frm(THD *thd, const char *file_name,
 		while(!!(tmp_create_field = it++))
 		{
 			/* 当所有的field都为NULL时,表明是建表操作 */
+      /* TODO: This needs furthur improvements */
 			if(tmp_create_field->field)
 			{
 				is_create_table = FALSE;
@@ -172,12 +173,11 @@ bool mysql_create_frm(THD *thd, const char *file_name,
 						{
 							/* 当前字段，是blob类型，且还是index */
 							is_index = TRUE;
-							break;
+							goto field_add_blob_compressed;
 						}
-						if(is_index)
-							break;
 					}
 				}
+field_add_blob_compressed:
 				if(!is_index)
 				{
 					create_field->unireg_check = Field::COMPRESSED_BLOB_FIELD;
@@ -190,56 +190,6 @@ bool mysql_create_frm(THD *thd, const char *file_name,
 				}
 			}
 			idx++;
-		}
-	}
-
-	/* 不支持blob compressed的存储引擎误使用该功能，则报错 */
-	if (!is_support_blob_compressed)
-	{
-		List_iterator<Create_field> it_field(create_fields);
-		my_bool is_compressed;
-		Create_field *cur_field = NULL;
-		while(!!(cur_field = it_field++))
-		{
-			// cur_field->field->is_compressed();
-			is_compressed = (cur_field->unireg_check == Field::COMPRESSED_BLOB_FIELD);
-			if(is_compressed)
-			{
-				/* 如果表中有blob compressed属性，若存储引擎不支持，则报错 */
-				my_error(ER_FIELD_CAN_NOT_COMPRESSED_IN_CURRENT_ENGINESS, MYF(0), cur_field->field_name);
-				DBUG_RETURN(1);
-			}
-		}
-	}
-
-	/* 限制在blob compressed字段上不能加索引 */
-	for (uint key_i = 0; key_i < keys; key_i++)
-	{
-		uint key_parts_i = 0;
-		uint key_parts = key_info[key_i].user_defined_key_parts;
-
-		for(key_parts_i = 0; key_parts_i < key_parts; key_parts_i++)
-		{
-			uint16 field_i = 0;
-			my_bool is_compressed = FALSE;
-			uint16 field_num = key_info[key_i].key_part[key_parts_i].fieldnr;
-			List_iterator<Create_field> it_field(create_fields);
-			Create_field *cur_field = NULL;
-
-			while(!!(cur_field = it_field++))
-			{
-				if(field_i == field_num)
-				{
-					is_compressed = (cur_field->unireg_check == Field::COMPRESSED_BLOB_FIELD);
-
-					if(is_compressed)
-					{// 是索引键，同时还是blob compressed字段，报错
-						my_error(ER_FIELD_CAN_NOT_COMPRESSED_AND_INDEX, MYF(0), cur_field->field_name);
-						DBUG_RETURN(1);
-					}
-				}
-				field_i++;
-			}
 		}
 	}
 
