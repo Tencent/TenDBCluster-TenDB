@@ -131,38 +131,25 @@ bool mysql_create_frm(THD *thd, const char *file_name,
 
   DBUG_ASSERT(*fn_rext((char*)file_name)); // Check .frm extension
 
-	/* 系统变量指定所有的blob默认加上compressed， 仅针对innodb存储引擎 */
-	/* 系统变量blob_compressed，仅影响建表语句 */
-	if(thd->variables.blob_compressed && is_support_blob_compressed)
+		/* If system variable blob_compressed is TRUE,
+	   Tendb will by default convert a blob field to a blob compressed one.
+	   Note that this requires InnoDB as the storage engine and will only 
+	   happen under a CREATE TABLE command rather than an ALTER TABLE.
+	*/
+	if(thd->variables.blob_compressed && thd->lex->sql_command == SQLCOM_CREATE_TABLE 
+		&& is_support_blob_compressed)
 	{
 		List_iterator<Create_field> it(create_fields);
 		Create_field *create_field;
-		Create_field *tmp_create_field;
-		uint		idx = 0;
-		my_bool is_create_table = TRUE;
-
-		while(!!(tmp_create_field = it++))
+		for (uint idx = 0; (create_field = it++); idx++)
 		{
-			/* 当所有的field都为NULL时,表明是建表操作 */
-      /* TODO: This needs furthur improvements */
-			if(tmp_create_field->field)
+			if(create_field->unireg_check == Field::BLOB_FIELD)
 			{
-				is_create_table = FALSE;
-				break;
-			}
-		}
-		it.rewind();
-		while ((create_field = it++))
-		{
-			if(create_field->unireg_check == Field::BLOB_FIELD  && is_create_table)
-			{
-				/* create_field->field为null,表示为建表语句 */
-				/* 满足打开系统变量blob_compressed，innodb存储引擎，且是blob */
-				/* 但是，若该blob字段是索引，也不应该默认加上compressed特性 */
 				my_bool is_index = FALSE;
 
 				for (uint key_i = 0; key_i < keys; key_i++)
 				{
+					/* first, check if the blob field has been indexed */
 					uint key_parts_i = 0;
 					uint key_parts = key_info[key_i].user_defined_key_parts;
 					uint16 field_num;
@@ -171,7 +158,7 @@ bool mysql_create_frm(THD *thd, const char *file_name,
 						field_num = key_info[key_i].key_part[key_parts_i].fieldnr;
 						if(field_num == idx)
 						{
-							/* 当前字段，是blob类型，且还是index */
+							/* the field cannot be indexed and a blob-compressed at the same time*/
 							is_index = TRUE;
 							goto field_add_blob_compressed;
 						}
@@ -180,6 +167,7 @@ bool mysql_create_frm(THD *thd, const char *file_name,
 field_add_blob_compressed:
 				if(!is_index)
 				{
+					/* second, if the blob field is not indexed, it can be safely converted to blob-compressed*/
 					create_field->unireg_check = Field::COMPRESSED_BLOB_FIELD;
 					create_field->flags |= COMPRESSED_BLOB_FLAG;
 					if (create_field->field)
@@ -189,9 +177,8 @@ field_add_blob_compressed:
 					}
 				}
 			}
-			idx++;
 		}
-	}
+	}	
 
   if (!(screen_buff=pack_screens(create_fields,&info_length,&screens,0)))
     DBUG_RETURN(1);
