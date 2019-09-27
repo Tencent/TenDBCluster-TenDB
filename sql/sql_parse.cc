@@ -6089,19 +6089,21 @@ bool add_field_to_list(THD *thd, LEX_STRING *field_name, enum_field_types type,
 	case MYSQL_TYPE_MEDIUM_BLOB:
 	case MYSQL_TYPE_LONG_BLOB:
 	case MYSQL_TYPE_BLOB:
+	case MYSQL_TYPE_JSON:
 		break;
 	default:
 		if(type_modifier & COMPRESSED_BLOB_FLAG)
-		{/*only BOLB type can have compressed property*/
+		{
+			/* only BOLB (including JSON) type can have compressed property */
 			my_error(ER_FIELD_TYPE_NOT_ALLOWED_AS_COMPRESSED_FIELD, MYF(0), field_name->str);
 			DBUG_RETURN(1);
 		}
   }
 	if((type_modifier & COMPRESSED_BLOB_FLAG)
 		&& (type_modifier & (COLUMN_FORMAT_TYPE_COMPRESSED << FIELD_FLAGS_COLUMN_FORMAT))
-	){//don't support syntax like:a blob compressed column_format compressed
-			my_error(ER_FIELD_CAN_NOT_COMPRESSED_AND_COLUMN_FORMAT_COMPRESSED, MYF(0), field_name->str);
-			DBUG_RETURN(1);
+	){	/* don't support syntax like:a blob compressed column_format compressed */
+		my_error(ER_FIELD_CAN_NOT_COMPRESSED_AND_COLUMN_FORMAT_COMPRESSED, MYF(0), field_name->str);
+		DBUG_RETURN(1);
 	}
 
   if (type_modifier & PRI_KEY_FLAG)

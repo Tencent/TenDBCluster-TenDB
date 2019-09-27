@@ -131,7 +131,7 @@ bool mysql_create_frm(THD *thd, const char *file_name,
 
   DBUG_ASSERT(*fn_rext((char*)file_name)); // Check .frm extension
 
-		/* If system variable blob_compressed is TRUE,
+	/* If system variable blob_compressed is TRUE,
 	   Tendb will by default convert a blob field to a blob compressed one.
 	   Note that this requires InnoDB as the storage engine and will only 
 	   happen under a CREATE TABLE command rather than an ALTER TABLE.
@@ -143,6 +143,7 @@ bool mysql_create_frm(THD *thd, const char *file_name,
 		Create_field *create_field;
 		for (uint idx = 0; (create_field = it++); idx++)
 		{
+			/* Note that this worked for both JSON compressed and BLOB compressed */
 			if(create_field->unireg_check == Field::BLOB_FIELD)
 			{
 				my_bool is_index = FALSE;

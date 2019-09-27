@@ -4722,6 +4722,7 @@ static Sys_var_bit Sys_big_selects(
        SESSION_VAR(option_bits), NO_CMD_LINE, OPTION_BIG_SELECTS,
        DEFAULT(FALSE));
 
+/* Note that Sys_blob_compressed is also used for both BLOB COMPRESSED and JSON COMPRESSED fields */
 static Sys_var_mybool Sys_blob_compressed(
 	   "blob_compressed", "Set all blob/text field can be compressed when create table. ",
 	   READ_ONLY SESSION_VAR(blob_compressed), CMD_LINE(OPT_ARG), DEFAULT(FALSE));
