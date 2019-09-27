@@ -3189,18 +3189,18 @@ row_sel_store_mysql_field_func(
 					prebuilt->blob_heap = mem_heap_create(
 							UNIV_PAGE_SIZE);
 				}
-				//解压的话，在这里面改变data所指的值
+				/* check if data needs uncompression */
 				if (dict_col_is_compressed(&prebuilt->table->cols[pos_in_mysql]))
 				{
-					//blob字段有压缩属性，处理压缩数据
+					/* do uncompression */
 					byte* org_data = (byte*)data;
 					ulint org_len = len;
 
 					data = row_blob_uncompress(data, len, &len, prebuilt);
 					if (!data){
-						/* 如果解压失败，一般会由韭正常使用sql_compressed的操作导致
-							 data则直接读取原数据
-						 */
+						/* Uncompression failed, this is probably due to invalid use of sql_compressed.
+						   We need to restore original data here.
+						*/
 						data = static_cast<byte*>(memcpy(mem_heap_alloc(
 										prebuilt->blob_heap, org_len),
 									org_data, org_len));
@@ -3211,7 +3211,8 @@ row_sel_store_mysql_field_func(
 								(prebuilt->table->name).m_name);
 					}
 				}
-				else{//blob字段没压缩发生，即普通blob字段，按原方式处理
+				else{
+					/* data uncompression is not needed */
 					data = static_cast<byte*>(
 							mem_heap_dup(prebuilt->blob_heap, data, len));
 				}
@@ -3260,18 +3261,18 @@ row_sel_store_mysql_field_func(
 				prebuilt->blob_heap = mem_heap_create(
 						UNIV_PAGE_SIZE);
 			}
-			//解压的话，在这里面改变data所指的值
+			/* check if data needs uncompression */
 			if (dict_col_is_compressed(&prebuilt->table->cols[pos_in_mysql]))
 			{
-				//blob字段有压缩属性，处理压缩数据
+				/* do uncompression */
 				byte* org_data = (byte*)data;
 				ulint org_len = len;
 
 				data = row_blob_uncompress(data, len, &len, prebuilt);
 				if (!data){
-					/* 如果解压失败，一般会由韭正常使用sql_compressed的操作导致
-						 data则直接读取原数据
-					 */
+					/* Uncompression failed, this is probably due to invalid use of sql_compressed.
+					   We need to restore original data here.
+					*/
 					data = static_cast<byte*>(memcpy(mem_heap_alloc(
 									prebuilt->blob_heap, org_len),
 								org_data, org_len));
@@ -3282,7 +3283,8 @@ row_sel_store_mysql_field_func(
 							(prebuilt->table->name).m_name);
 				}
 			}
-			else{//blob字段没压缩发生，即普通blob字段，按原方式处理
+			else{
+				/* data uncompression is not needed */
 				data = static_cast<byte*>(
 						mem_heap_dup(prebuilt->blob_heap, data, len));
 			}
