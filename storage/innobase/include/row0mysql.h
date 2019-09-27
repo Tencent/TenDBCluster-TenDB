@@ -705,25 +705,25 @@ row_blob_compress_head_read(
 
 void
 row_blob_compress_head_write(
-			byte		*head,		/* 一个字节，存储头 */
-			my_bool 	isCompress, /* 表示是否压缩 */
-			ulint		len,		/* 后续用几个字节存储长度 */
-			int			algo_type);	/* 算法类型 */
+	byte* head,				/*!< out: one byte for header */
+	my_bool		isCompress, /*!< in: whether or not to be compressed */
+	ulint		len,		/*!< in: the number of bytes to store packet length */
+	int			algo_type);	/*!< in: type of algorithm */
 
 byte*
-row_blob_compress_alloc(/* 函数返回压缩后的结果 */
-			const byte			*packet,     /* 待压缩内容 */
-			ulint				len,         /* 待压缩的长度 */
-			ulint				*complen,	 /* 压缩后的长度 */
-			row_prebuilt_t		*prebuilt);	 /* heap相关 */
-
+row_blob_compress_alloc( /* do compression and return compressed data */
+			const byte* packet,			 /*!< in: packet to be compressed */
+			ulint		len,			 /*!< in: original packet length */
+			ulint*		complen,		 /*!< out: packet length after compression */
+			row_prebuilt_t* prebuilt);	 /*!< prebuilt, relevant to heap */
 
 const byte*
-row_blob_uncompress(/* 函数返回解压后原数据的地址 */
-			const byte			*packet,     /* 待解压内容 */
-			ulint				len,         /* 待解压的内容及head信息的总长度 */
-			ulint				*complen,	 /* 解缩后的长度 */
-			row_prebuilt_t		*prebuilt);	 /* heap相关 */
+row_blob_uncompress(/* do uncompression and return uncompressed data */
+			const byte* packet,			 /*!< in: packet to be uncompressed */
+			ulint		len,			 /*!< in: packet length */
+			ulint* complen,				 /*!< out: packet length after uncompression */
+			row_prebuilt_t* prebuilt);	 /*!< prebuilt, relevant to heap */
+
 
 /* A struct describing a place for an individual column in the MySQL
 row format which is presented to the table handler in ha_innobase.
