@@ -1802,6 +1802,28 @@ public:
 #endif
 };
 
+bool is_perfix_index(TABLE* table, int key, uint key_parts)
+{
+  if (!table || !table->key_info)
+  {
+    return false;
+  }
+  KEY_PART_INFO* key_part = table->key_info[key].key_part;
+  KEY* key_info = table->key_info;
+
+  for (uint i = 0; i < key_parts; i++, key_parts++)
+  {
+    if (key_part->field &&
+      (key_part->length !=
+        table->field[key_part->fieldnr - 1]->key_length() &&
+        !(key_info->flags & (HA_FULLTEXT | HA_SPATIAL))))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 /**
   Test if we can skip ordering by using an index.
@@ -1981,6 +2003,14 @@ test_if_skip_sort_order(JOIN_TAB *tab, ORDER *order, ha_rows select_limit,
     // The optimizer has decided to use an index scan.
     ref_key=       tab->index();
     ref_key_parts= actual_key_parts(&table->key_info[tab->index()]);
+  }
+
+  if (sort_when_partition_prefix_order &&
+    is_perfix_index(table, ref_key, ref_key_parts) &&
+    table && table->is_partition()
+    && order)
+  {
+    DBUG_RETURN(0);
   }
 
   Opt_trace_context * const trace= &thd->opt_trace;
