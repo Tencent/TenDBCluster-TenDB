@@ -325,6 +325,7 @@ extern "C" MYSQL_PLUGIN_IMPORT char **orig_argv;
 extern my_thread_attr_t connection_attrib;
 extern my_bool old_mode;
 extern my_bool avoid_temporal_upgrade;
+extern my_bool sort_when_partition_prefix_order;
 extern my_bool datetime_precision_use_v1;
 extern LEX_STRING opt_init_connect, opt_init_slave;
 extern char err_shared_dir[];
