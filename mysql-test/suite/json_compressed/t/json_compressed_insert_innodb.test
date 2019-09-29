@@ -1,0 +1,10 @@
+######## suite/json/t/json_compressed_insert_innodb.test             #
+# Tests insert into json columns compressed using the innodb         #
+# storage engine                                                     #
+# This test copies some tests originally in json.test                #
+######################################################################
+# Set the session storage engine
+set default_storage_engine=innodb;
+
+# Run the test
+--source suite/json_compressed/inc/json_compressed_insert.inc
