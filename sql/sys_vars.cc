@@ -2142,7 +2142,7 @@ static Sys_var_enum Sys_log_timestamps(
        "of the latter can be converted at will.",
        GLOBAL_VAR(opt_log_timestamps),
        CMD_LINE(REQUIRED_ARG),
-       timestamp_type_names, DEFAULT(0),
+       timestamp_type_names, DEFAULT(1),
        NO_MUTEX_GUARD, NOT_IN_BINLOG);
 
 static Sys_var_mybool Sys_log_statements_unsafe_for_binlog(
