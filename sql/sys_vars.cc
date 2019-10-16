@@ -2142,7 +2142,7 @@ static Sys_var_enum Sys_log_timestamps(
        "of the latter can be converted at will.",
        GLOBAL_VAR(opt_log_timestamps),
        CMD_LINE(REQUIRED_ARG),
-       timestamp_type_names, DEFAULT(0),
+       timestamp_type_names, DEFAULT(1),
        NO_MUTEX_GUARD, NOT_IN_BINLOG);
 
 static Sys_var_mybool Sys_log_statements_unsafe_for_binlog(
@@ -6320,3 +6320,9 @@ static Sys_var_charptr Sys_disabled_storage_engines(
        READ_ONLY GLOBAL_VAR(opt_disabled_storage_engines),
        CMD_LINE(REQUIRED_ARG), IN_SYSTEM_CHARSET,
        DEFAULT(""));
+
+static Sys_var_mybool Sys_sort_when_partition_prefix_order(
+  "sort_when_partition_prefix_order",
+  " using file sort when query with partition table + prefix index + order by ",
+  GLOBAL_VAR(sort_when_partition_prefix_order),
+  CMD_LINE(OPT_ARG), DEFAULT(TRUE));

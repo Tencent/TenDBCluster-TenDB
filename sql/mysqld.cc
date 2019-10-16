@@ -530,6 +530,7 @@ ulong stored_program_cache_size= 0;
   during certain ALTER TABLE operations.
 */
 my_bool avoid_temporal_upgrade;
+my_bool sort_when_partition_prefix_order;
 
 /* if ON, use DATETIME/TIME/TIMESTAMP type when create table */
 my_bool datetime_precision_use_v1;
