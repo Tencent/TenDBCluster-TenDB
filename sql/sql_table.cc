@@ -3180,11 +3180,7 @@ int prepare_create_field(Create_field *sql_field,
     if (sql_field->charset->state & MY_CS_BINSORT)
       sql_field->pack_flag|=FIELDFLAG_BINARY;
     sql_field->length=8;			// Unireg field length
-    sql_field->unireg_check=Field::BLOB_FIELD;
-		if(sql_field->flags & COMPRESSED_BLOB_FLAG)
-		{
-			sql_field->unireg_check=Field::COMPRESSED_BLOB_FIELD;
-		}
+    sql_field->unireg_check= (sql_field->flags & COMPRESSED_BLOB_FLAG) ? Field::COMPRESSED_BLOB_FIELD : Field::BLOB_FIELD;
     (*blob_columns)++;
     break;
   case MYSQL_TYPE_GEOMETRY:
@@ -3211,7 +3207,7 @@ int prepare_create_field(Create_field *sql_field,
     if (sql_field->charset->state & MY_CS_BINSORT)
       sql_field->pack_flag|=FIELDFLAG_BINARY;
     sql_field->length=8;                        // Unireg field length
-    sql_field->unireg_check=Field::BLOB_FIELD;
+    sql_field->unireg_check = (sql_field->flags & COMPRESSED_BLOB_FLAG) ? Field::COMPRESSED_BLOB_FIELD : Field::BLOB_FIELD;	
     (*blob_columns)++;
     break;
   case MYSQL_TYPE_VARCHAR:
@@ -3630,6 +3626,8 @@ mysql_prepare_create_table(THD *thd, const char *error_schema_name,
   List_iterator<Create_field> it(alter_info->create_list);
   List_iterator<Create_field> it2(alter_info->create_list);
   uint total_uneven_bit_length= 0;
+  my_bool engine_support_blob_compressed = FALSE; /* in Tendb, this is used to check if blob compressed is supported */
+  engine_support_blob_compressed = !!(file->ha_table_flags() & HA_BLOB_COMPRESSED);
   DBUG_ENTER("mysql_prepare_create_table");
 
   LEX_STRING* connect_string = &create_info->connect_string;
@@ -3673,6 +3671,14 @@ mysql_prepare_create_table(THD *thd, const char *error_schema_name,
         if (create_info->db_type->create_zip_dict != 0)
           sql_field->set_column_format(COLUMN_FORMAT_TYPE_COMPRESSED);
       );
+	  if ((sql_field->flags & COMPRESSED_BLOB_FLAG) && !engine_support_blob_compressed)
+	  {
+		/* In Tendb, this is to test if a field is blob compressed WITHOUT engine support 
+		   NOTE that ONLY InnoDB supports blob compressed
+		*/
+	    my_error(ER_FIELD_CAN_NOT_COMPRESSED_IN_CURRENT_ENGINESS, MYF(0), sql_field->field_name);
+	    DBUG_RETURN(1);
+	  }
     }
     else
     {
@@ -4432,7 +4438,12 @@ mysql_prepare_create_table(THD *thd, const char *error_schema_name,
           my_error(ER_JSON_USED_AS_KEY, MYF(0), column->field_name.str);
           DBUG_RETURN(TRUE);
         }
-
+    if (f_is_blob(sql_field->pack_flag) && (sql_field->flags & COMPRESSED_BLOB_FLAG)) 
+	{
+	  /* In Tendb, a blob compressed column cannot be indexed */
+	  my_error(ER_FIELD_CAN_NOT_COMPRESSED_AND_INDEX, MYF(0), sql_field->field_name);
+	  DBUG_RETURN(1);
+	}
 	if (f_is_blob(sql_field->pack_flag) ||
             (f_is_geom(sql_field->pack_flag) && key->type != KEYTYPE_SPATIAL))
 	{

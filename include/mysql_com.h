@@ -127,7 +127,10 @@
                                            NULL by the user */
 #define CLUSTERING_FLAG (1 << 28)       /* Field has a secondary clustering
                                         key */
-#define COMPRESSED_BLOB_FLAG (1 << 31)    /** field is blob and set compressed, bit 31**/
+#define COMPRESSED_BLOB_FLAG (1U << 31)    /** field is blob and set compressed, bit 31 (unsigned)
+										NOTE that missing the 'unsigned' flag may bring some potential danger
+										example (unsigned long long)(1 << 31) = 0xffffffffffffffff8000000000000000
+										**/
 
 #define REFRESH_GRANT		1	/* Refresh grant tables */
 #define REFRESH_LOG		2	/* Start on new log file */

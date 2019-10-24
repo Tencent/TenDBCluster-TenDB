@@ -1,0 +1,10 @@
+######## suite/json_compressed/t/json_compressed_ddl_innodb.test                #
+# Tests ddl with json-compressed column types using the innodb storage engine   #
+#                                                                               #
+# This test copies some tests originally in json.test                           #
+#################################################################################
+# Set the session storage engine
+set default_storage_engine=innodb;
+
+# Run the test
+--source suite/json_compressed/inc/json_compressed_ddl.inc
