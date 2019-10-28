@@ -432,13 +432,15 @@ private:
     Checked and reset at XA-commit/rollback.
   */
   bool m_is_binlogged;
+  time_t prepare_state_time;
 
 public:
   XID_STATE()
   : xa_state(XA_NOTR),
     in_recovery(false),
     rm_error(0),
-    m_is_binlogged(false)
+    m_is_binlogged(false),
+    prepare_state_time(0)
   { m_xid.null(); }
 
   void set_state(xa_states state)
@@ -580,6 +582,15 @@ public:
   */
 
   bool check_in_xa(bool report_error) const;
+  void set_prepare_state_time(time_t prepaer_time)
+  {
+    prepare_state_time = prepaer_time;
+  }
+  time_t get_prepare_state_time()
+  {
+    return prepare_state_time;
+  }
+
 };
 
 
