@@ -24,6 +24,8 @@
 #include <pfs_transaction_provider.h>
 #include <mysql/psi/mysql_transaction.h>
 #include "binlog.h"
+#include "sql_time.h"
+#include "tztime.h"
 
 const char *XID_STATE::xa_state_names[]={
   "NON-EXISTING", "ACTIVE", "IDLE", "PREPARED", "ROLLBACK ONLY"
@@ -808,6 +810,7 @@ bool Sql_cmd_xa_prepare::trans_xa_prepare(THD *thd)
     else
     {
       xid_state->set_state(XID_STATE::XA_PREPARED);
+      xid_state->set_prepare_state_time(my_time(0));
       MYSQL_SET_TRANSACTION_XA_STATE(thd->m_transaction_psi,
                                      (int)xid_state->get_state());
       if (thd->rpl_thd_ctx.session_gtids_ctx().notify_after_xa_prepare(thd))
@@ -865,6 +868,8 @@ bool Sql_cmd_xa_recover::trans_xa_recover(THD *thd)
   field_list.push_back(new Item_int(NAME_STRING("bqual_length"), 0,
                                     MY_INT32_NUM_DECIMAL_DIGITS));
   field_list.push_back(new Item_empty_string("data", XIDDATASIZE*2+2));
+  field_list.push_back(new Item_temporal(MYSQL_TYPE_DATETIME, NAME_STRING("prepare_time"), 0, 0));
+//  field_list.push_back(new Item_int(NAME_STRING("prepare_time"), 0, MY_INT32_NUM_DECIMAL_DIGITS));
 
   if (thd->send_result_metadata(&field_list,
                                 Protocol::SEND_NUM_ROWS | Protocol::SEND_EOF))
@@ -978,6 +983,7 @@ void XID_STATE::set_error(THD *thd)
 
 void XID_STATE::store_xid_info(Protocol *protocol, bool print_xid_as_hex) const
 {
+  MYSQL_TIME ltime;
   protocol->store_longlong(static_cast<longlong>(m_xid.formatID), false);
   protocol->store_longlong(static_cast<longlong>(m_xid.gtrid_length), false);
   protocol->store_longlong(static_cast<longlong>(m_xid.bqual_length), false);
@@ -1004,8 +1010,9 @@ void XID_STATE::store_xid_info(Protocol *protocol, bool print_xid_as_hex) const
     protocol->store(m_xid.data, m_xid.gtrid_length + m_xid.bqual_length,
                     &my_charset_bin);
   }
-
-
+  my_tz_SYSTEM->gmt_sec_to_TIME(&ltime, prepare_state_time);
+  protocol->store(&ltime, 0);
+//  protocol->store_longlong(static_cast<longlong>(prepare_state_time), false);
 }
 
 
@@ -1169,7 +1176,7 @@ bool transaction_cache_insert(XID *xid, Transaction_ctx *transaction)
 }
 
 
-inline bool create_and_insert_new_transaction(XID *xid, bool is_binlogged_arg)
+inline bool create_and_insert_new_transaction(XID *xid, bool is_binlogged_arg, time_t prepare_state_time)
 {
   Transaction_ctx *transaction= new (std::nothrow) Transaction_ctx();
   XID_STATE *xs;
@@ -1181,6 +1188,7 @@ inline bool create_and_insert_new_transaction(XID *xid, bool is_binlogged_arg)
   }
   xs= transaction->xid_state();
   xs->start_recovery_xa(xid, is_binlogged_arg);
+  xs->set_prepare_state_time(prepare_state_time);
 
   return my_hash_insert(&transaction_cache, (uchar*)transaction);
 }
@@ -1191,6 +1199,7 @@ bool transaction_cache_detach(Transaction_ctx *transaction)
   bool res= false;
   XID_STATE *xs= transaction->xid_state();
   XID xid= *(xs->get_xid());
+  ulonglong prepare_state_time = xs->get_prepare_state_time();
   bool was_logged= xs->is_binlogged();
 
 
@@ -1202,7 +1211,7 @@ bool transaction_cache_detach(Transaction_ctx *transaction)
                              xid.key_length()));
 
   my_hash_delete(&transaction_cache, (uchar *)transaction);
-  res= create_and_insert_new_transaction(&xid, was_logged);
+  res= create_and_insert_new_transaction(&xid, was_logged, prepare_state_time);
 
   mysql_mutex_unlock(&LOCK_transaction_cache);
 
@@ -1227,7 +1236,7 @@ bool transaction_cache_insert_recovery(XID *xid)
     COMMIT or XA ROLLBACK of this transaction may be logged alone into
     the binary log.
   */
-  bool res= create_and_insert_new_transaction(xid, true);
+  bool res= create_and_insert_new_transaction(xid, true, 0);
 
   mysql_mutex_unlock(&LOCK_transaction_cache);
 
