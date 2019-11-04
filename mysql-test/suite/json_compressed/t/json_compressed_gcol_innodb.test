@@ -1,0 +1,10 @@
+####### suite/json_compressed/t/json_compressed_gcol_innodb.test     #
+# Tests generated columns compressed with json using the innobase    #
+# storage engine                                                     #
+# This test copies some tests originally in json.test                #
+######################################################################
+# Set the session storage engine
+set default_storage_engine=innodb;
+
+# Run the test
+--source suite/json_compressed/inc/json_compressed_gcol.inc
