@@ -689,6 +689,7 @@ protected:
   /** Post header content */
   Table_id m_table_id;
   uint16_t m_flags;           /** Flags for row-level events */
+  size_t   m_flags_pos;       /* The position of the m_flags */
 
   /* Body of the event */
   unsigned long m_width;      /** The width of the columns bitmap */
@@ -700,6 +701,7 @@ protected:
   std::vector<uint8_t> columns_before_image;
   std::vector<uint8_t> columns_after_image;
   std::vector<uint8_t> row;
+  size_t   m_rows_before_size;  /* The length before m_rows_buf */
 
 public:
   unsigned long long get_table_id() const

@@ -43,6 +43,7 @@
 #include "rpl_tblmap.h"              // table_mapping
 #include "sql_const.h"               // MAX_TIME_ZONE_NAME_LENGTH
 #include "sql_list.h"                // I_List
+#include "sql_string.h"
 #endif
 
 #include <list>
@@ -385,6 +386,7 @@ typedef struct st_print_event_info
   uint charset_database_number;
   my_thread_id thread_id;
   bool thread_id_printed;
+  static const uint max_delimiter_size= 16;
 
   st_print_event_info();
 
@@ -803,6 +805,10 @@ public:
   void print_base64(IO_CACHE* file, PRINT_EVENT_INFO* print_event_info,
                     bool is_more);
 #endif // ifdef MYSQL_SERVER ... else
+#ifdef MYSQL_CLIENT
+    my_bool is_flashback;
+    String  output_buf; // Storing the event flashback output
+#endif
 
   void *operator new(size_t size);
 
@@ -2969,6 +2975,7 @@ public:
   void set_flags(flag_set flags_arg) { m_flags |= flags_arg; }
   void clear_flags(flag_set flags_arg) { m_flags &= ~flags_arg; }
   flag_set get_flags(flag_set flags_arg) const { return m_flags & flags_arg; }
+  void update_flags() { int2store(temp_buf + m_flags_pos, m_flags); }
 
   virtual Log_event_type get_general_type_code() = 0; /* General rows op type, no version */
 
@@ -2979,12 +2986,14 @@ public:
 #ifdef MYSQL_CLIENT
   /* not for direct call, each derived has its own ::print() */
   virtual void print(FILE *file, PRINT_EVENT_INFO *print_event_info)= 0;
+  void change_to_flashback_event(PRINT_EVENT_INFO *print_event_info, uchar *rows_buff, Log_event_type ev_type);
   void print_verbose(IO_CACHE *file,
                      PRINT_EVENT_INFO *print_event_info);
   size_t print_verbose_one_row(IO_CACHE *file, table_def *td,
                                PRINT_EVENT_INFO *print_event_info,
                                MY_BITMAP *cols_bitmap,
-                               const uchar *ptr, const uchar *prefix);
+                               const uchar *ptr, const uchar *prefix,
+                               const my_bool no_fill_output=0);
 #endif
 
 #ifdef MYSQL_SERVER
@@ -4549,6 +4558,10 @@ public:
   */
   rpl_gno get_seq_number() { return seq_number; }
 };
+
+#ifdef MYSQL_CLIENT
+bool copy_event_cache_to_string_and_reinit(IO_CACHE *cache, LEX_STRING *to);
+#endif
 
 inline bool is_gtid_event(Log_event* evt)
 {

@@ -196,6 +196,7 @@ Rows_event::Rows_event(const char *buf, unsigned int event_len,
 
   memcpy(&m_flags, post_start, sizeof(m_flags));
   m_flags= le16toh(m_flags);
+  m_flags_pos = post_start - buf + LOG_EVENT_HEADER_LEN; /* buf is advanced in Binary_log_event constructor to point to beginning of post-header */
   post_start+= 2;
 
   uint16_t var_header_len= 0;
@@ -283,6 +284,7 @@ Rows_event::Rows_event(const char *buf, unsigned int event_len,
   }
 
   const unsigned char* ptr_rows_data= (unsigned char*) ptr_after_width;
+  m_rows_before_size= ptr_rows_data - (const unsigned char *) buf + LOG_EVENT_HEADER_LEN; // Get the size that before SET part
 
   size_t const data_size= event_len -
                           (ptr_rows_data + common_header_len -
