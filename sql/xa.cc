@@ -26,10 +26,16 @@
 #include "binlog.h"
 #include "sql_time.h"
 #include "tztime.h"
+#include "sql_base.h"
+
 
 const char *XID_STATE::xa_state_names[]={
   "NON-EXISTING", "ACTIVE", "IDLE", "PREPARED", "ROLLBACK ONLY"
 };
+
+
+static int64 current_commitlog_id = 0;
+static volatile bool current_id_init = FALSE;
 
 /* for recover() handlerton call */
 static const int MIN_XID_LIST_SIZE= 128;
@@ -363,9 +369,24 @@ bool Sql_cmd_xa_commit::trans_xa_commit(THD *thd)
   else if (xid_state->has_state(XID_STATE::XA_IDLE) &&
            m_xa_opt == XA_ONE_PHASE)
   {
-    int r= ha_commit_trans(thd, true);
-    if ((res= MY_TEST(r)))
-      my_error(r == 1 ? ER_XA_RBROLLBACK : ER_XAER_RMERR, MYF(0));
+    bool rc = FALSE;
+    if (m_commit_with_log)
+    {
+      trans_rollback_end_status(thd);
+      rc = trans_write_commit_log(thd);
+      trans_set_end_status(thd);
+    }
+    if (rc)
+    {
+      ha_rollback_trans(thd, true);
+      res = thd->is_error();
+    }
+    else
+    {
+      int r = ha_commit_trans(thd, true);
+      if ((res = MY_TEST(r)))
+        my_error(r == 1 ? ER_XA_RBROLLBACK : ER_XAER_RMERR, MYF(0));
+    }
   }
   else if (xid_state->has_state(XID_STATE::XA_PREPARED) &&
            m_xa_opt == XA_NONE)
@@ -476,6 +497,146 @@ bool Sql_cmd_xa_commit::execute(THD *thd)
     my_ok(thd);
   }
   return st;
+}
+
+void Sql_cmd_xa_commit::trans_rollback_end_status(THD* thd)
+{
+  XID_STATE* xid_state = thd->get_transaction()->xid_state();
+  DBUG_ASSERT(xid_state->has_state(XID_STATE::XA_IDLE) && m_xa_opt == XA_ONE_PHASE);
+  xid_state->set_state(XID_STATE::XA_ACTIVE);
+  MYSQL_SET_TRANSACTION_XA_STATE(thd->m_transaction_psi, (int)xid_state->get_state());
+  thd->lex->sql_command = SQLCOM_INSERT;
+}
+
+void Sql_cmd_xa_commit::trans_set_end_status(THD* thd)
+{
+  XID_STATE* xid_state = thd->get_transaction()->xid_state();
+  xid_state->set_state(XID_STATE::XA_IDLE);
+  MYSQL_SET_TRANSACTION_XA_STATE(thd->m_transaction_psi, (int)xid_state->get_state());
+  thd->lex->sql_command = SQLCOM_XA_COMMIT;
+}
+
+void xa_write_commit_log_store_row(
+  TABLE* table, 
+  XID_STATE* xid_state, 
+  MYSQL_TIME mt_time, 
+  ulonglong id)
+{
+  // id, auto increment
+  table->field[0]->store(id);
+  // xid
+  table->field[1]->store(xid_state->get_xid()->get_data(), 
+    xid_state->get_xid()->get_bqual_length() + xid_state->get_xid()->get_gtrid_length(),
+    system_charset_info);
+  // commit time
+  table->field[2]->store_time(&mt_time, 0);
+}
+
+bool Sql_cmd_xa_commit::trans_write_commit_log(THD* thd)
+{
+  TABLE_LIST tables;
+  TABLE* table;
+  int error, i = 0;
+  ulonglong nr = 0;
+  int64 current_id;
+  MYSQL_TIME mt_time;
+  XID_STATE* xid_state = thd->get_transaction()->xid_state();
+
+  tables.init_one_table("mysql", 5, "xa_commit_log", 13, "xa_commit_log", TL_WRITE_CONCURRENT_INSERT);
+
+// TODO, which lock is needed ?
+  table = open_ltable(thd, &tables, TL_WRITE, MYSQL_LOCK_IGNORE_TIMEOUT);
+
+  tmp_disable_binlog(table->in_use);
+  table->use_all_columns();
+  empty_record(table);
+
+  if (!my_atomic_load64(&current_commitlog_id) && 
+     !my_atomic_add64(&current_commitlog_id, 1))
+  {// current_id = my_atomic_load64(&current_commitlog_id) = 0
+    table->file->ha_index_init(table->s->primary_key, 1);
+    error = table->file->ha_index_last(table->record[0]);
+
+    if (error)
+    {
+      if (error == HA_ERR_END_OF_FILE || error == HA_ERR_KEY_NOT_FOUND)
+      {
+        /* No entry found, start with 1. */
+        nr = 0;
+      }
+      else
+      {
+        DBUG_ASSERT(0);
+        nr = ULONG_MAX;
+      }
+    }
+    else
+    {
+      nr = (ulonglong)table->field[0]->val_int_offset(0);
+//      nr = ((ulonglong)table->next_number_field->val_int_offset(table->s->rec_buff_length) + 1);
+    }
+    table->file->ha_index_end();
+    my_atomic_store64(&current_commitlog_id, nr);
+    my_atomic_add64(&current_commitlog_id, 1); // current_id = nr + 1;
+    current_id_init = TRUE;
+  }
+ 
+  while (!current_id_init && i < 3000)
+  {
+    my_sleep(10000); // wait 10 ms
+  }
+
+  current_id = my_atomic_add64(&current_commitlog_id, 1) % max_xa_commit_logs;
+  if (current_id == 0)
+    current_id = max_xa_commit_logs;
+
+
+  table->field[0]->store(current_id);
+  error = table->file->ha_index_read_idx_map(
+    table->record[0], 0,
+    table->field[0]->ptr,
+    HA_WHOLE_KEY,
+    HA_READ_KEY_EXACT);
+
+  
+  if (error)
+  {// insert
+    if (error != HA_ERR_KEY_NOT_FOUND && error != HA_ERR_END_OF_FILE)
+      table->file->print_error(error, MYF(0));
+    else
+    {
+      my_tz_SYSTEM->gmt_sec_to_TIME(&mt_time, my_time(0));
+      xa_write_commit_log_store_row(table, xid_state, mt_time, current_id);
+      if ((error = table->file->ha_write_row(table->record[0])))
+        table->file->print_error(error, MYF(0));
+    }
+  }
+  else
+  {// update
+    store_record(table, record[1]);
+    my_tz_SYSTEM->gmt_sec_to_TIME(&mt_time, my_time(0));
+    xa_write_commit_log_store_row(table, xid_state, mt_time, current_id);
+
+    if ((error = table->file->ha_update_row(table->record[1],
+      table->record[0])) && error != HA_ERR_RECORD_IS_THE_SAME)
+      table->file->print_error(error, MYF(0));
+  }
+
+  reenable_binlog(table->in_use);
+
+  if (error)
+    trans_rollback_stmt(thd);
+  else
+  {
+    thd->get_stmt_da()->set_overwrite_status(true);
+    trans_commit_stmt(thd);
+    thd->get_stmt_da()->set_overwrite_status(false);
+  }
+  close_mysql_tables(thd);
+
+  //if (error == 0 && !thd->killed)
+  //  my_ok(thd, 1);
+  return(error != 0 || thd->killed);
 }
 
 
@@ -868,8 +1029,9 @@ bool Sql_cmd_xa_recover::trans_xa_recover(THD *thd)
   field_list.push_back(new Item_int(NAME_STRING("bqual_length"), 0,
                                     MY_INT32_NUM_DECIMAL_DIGITS));
   field_list.push_back(new Item_empty_string("data", XIDDATASIZE*2+2));
-  field_list.push_back(new Item_temporal(MYSQL_TYPE_DATETIME, NAME_STRING("prepare_time"), 0, 0));
-//  field_list.push_back(new Item_int(NAME_STRING("prepare_time"), 0, MY_INT32_NUM_DECIMAL_DIGITS));
+  if(m_print_xid_prepare_time)
+    field_list.push_back(new Item_temporal(MYSQL_TYPE_DATETIME, 
+                                           NAME_STRING("prepare_time"), 0, 0));
 
   if (thd->send_result_metadata(&field_list,
                                 Protocol::SEND_NUM_ROWS | Protocol::SEND_EOF))
@@ -884,7 +1046,7 @@ bool Sql_cmd_xa_recover::trans_xa_recover(THD *thd)
     if (xs->has_state(XID_STATE::XA_PREPARED))
     {
       protocol->start_row();
-      xs->store_xid_info(protocol, m_print_xid_as_hex);
+      xs->store_xid_info(protocol, m_print_xid_as_hex, m_print_xid_prepare_time);
 
       if (protocol->end_row())
       {
@@ -981,9 +1143,9 @@ void XID_STATE::set_error(THD *thd)
 }
 
 
-void XID_STATE::store_xid_info(Protocol *protocol, bool print_xid_as_hex) const
+void XID_STATE::store_xid_info(Protocol *protocol, bool print_xid_as_hex, 
+                               bool print_xid_prepare_time) const
 {
-  MYSQL_TIME ltime;
   protocol->store_longlong(static_cast<longlong>(m_xid.formatID), false);
   protocol->store_longlong(static_cast<longlong>(m_xid.gtrid_length), false);
   protocol->store_longlong(static_cast<longlong>(m_xid.bqual_length), false);
@@ -1010,9 +1172,12 @@ void XID_STATE::store_xid_info(Protocol *protocol, bool print_xid_as_hex) const
     protocol->store(m_xid.data, m_xid.gtrid_length + m_xid.bqual_length,
                     &my_charset_bin);
   }
-  my_tz_SYSTEM->gmt_sec_to_TIME(&ltime, prepare_state_time);
-  protocol->store(&ltime, 0);
-//  protocol->store_longlong(static_cast<longlong>(prepare_state_time), false);
+  if (print_xid_prepare_time)
+  {
+    MYSQL_TIME ltime;
+    my_tz_SYSTEM->gmt_sec_to_TIME(&ltime, prepare_state_time);
+    protocol->store(&ltime, 0);
+  }
 }
 
 

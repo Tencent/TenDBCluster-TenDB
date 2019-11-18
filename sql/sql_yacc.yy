@@ -768,6 +768,7 @@ bool my_yyoverflow(short **a, YYSTYPE **b, YYLTYPE **c, ulong *yystacksize);
 %token  LOCKS_SYM
 %token  LOCK_SYM
 %token  LOGFILE_SYM
+%token  LOG_SYM
 %token  LOGS_SYM
 %token  LONGBLOB
 %token  LONGTEXT
@@ -1424,6 +1425,7 @@ END_OF_INPUT
 %type <xa_option_type> opt_one_phase;
 
 %type <is_not_empty> opt_convert_xid opt_ignore
+%type <is_not_empty> opt_with_log opt_with_time
 
 %type <NONE>
         '-' '+' '*' '/' '%' '(' ')'
@@ -15697,20 +15699,20 @@ xa:
             Lex->sql_command = SQLCOM_XA_PREPARE;
             Lex->m_sql_cmd= new (YYTHD->mem_root) Sql_cmd_xa_prepare($3);
           }
-        | XA_SYM COMMIT_SYM xid opt_one_phase
+        | XA_SYM COMMIT_SYM xid opt_one_phase opt_with_log
           {
             Lex->sql_command = SQLCOM_XA_COMMIT;
-            Lex->m_sql_cmd= new (YYTHD->mem_root) Sql_cmd_xa_commit($3, $4);
+            Lex->m_sql_cmd= new (YYTHD->mem_root) Sql_cmd_xa_commit($3, $4, $5);
           }
         | XA_SYM ROLLBACK_SYM xid
           {
             Lex->sql_command = SQLCOM_XA_ROLLBACK;
             Lex->m_sql_cmd= new (YYTHD->mem_root) Sql_cmd_xa_rollback($3);
           }
-        | XA_SYM RECOVER_SYM opt_convert_xid
+        | XA_SYM RECOVER_SYM opt_convert_xid opt_with_time
           {
             Lex->sql_command = SQLCOM_XA_RECOVER;
-            Lex->m_sql_cmd= new (YYTHD->mem_root) Sql_cmd_xa_recover($3);
+            Lex->m_sql_cmd= new (YYTHD->mem_root) Sql_cmd_xa_recover($3, $4);
           }
         ;
 
@@ -15769,6 +15771,16 @@ opt_join_or_resume:
 opt_one_phase:
           /* nothing */     { $$= XA_NONE;        }
         | ONE_SYM PHASE_SYM { $$= XA_ONE_PHASE;   }
+        ;
+
+opt_with_log:
+          /* nothing */     { $$= false;  }
+        | WITH LOG_SYM      { $$= true;   }
+        ;
+
+opt_with_time:
+          /* empty */     { $$= false; }
+        | WITH TIME_SYM   { $$= true; }
         ;
 
 opt_suspend:

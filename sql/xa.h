@@ -123,8 +123,8 @@ private:
 class Sql_cmd_xa_recover : public Sql_cmd
 {
 public:
-  explicit Sql_cmd_xa_recover(bool print_xid_as_hex)
-  : m_print_xid_as_hex(print_xid_as_hex)
+  explicit Sql_cmd_xa_recover(bool print_xid_as_hex, bool print_xid_prepare_time)
+  : m_print_xid_as_hex(print_xid_as_hex), m_print_xid_prepare_time(print_xid_prepare_time)
   {}
 
   virtual enum_sql_command sql_command_code() const
@@ -138,6 +138,7 @@ private:
   bool trans_xa_recover(THD *thd);
 
   bool m_print_xid_as_hex;
+  bool m_print_xid_prepare_time;
 };
 
 
@@ -149,8 +150,8 @@ private:
 class Sql_cmd_xa_commit : public Sql_cmd
 {
 public:
-  Sql_cmd_xa_commit(xid_t *xid_arg, enum xa_option_words xa_option)
-  : m_xid(xid_arg), m_xa_opt(xa_option)
+  Sql_cmd_xa_commit(xid_t *xid_arg, enum xa_option_words xa_option, bool commit_with_log)
+  : m_xid(xid_arg), m_xa_opt(xa_option), m_commit_with_log(commit_with_log)
   {}
 
   virtual enum_sql_command sql_command_code() const
@@ -164,11 +165,19 @@ public:
   {
     return m_xa_opt;
   }
+  bool get_commit_with_log() const
+  {
+    return m_commit_with_log;
+  }
 private:
   bool trans_xa_commit(THD *thd);
+  void trans_rollback_end_status(THD *thd);
+  void trans_set_end_status(THD *thd);
+  bool trans_write_commit_log(THD* thd);
 
   xid_t *m_xid;
   enum xa_option_words m_xa_opt;
+  bool m_commit_with_log;
 };
 
 
@@ -525,7 +534,8 @@ public:
   void unset_binlogged()
   { m_is_binlogged= false; }
 
-  void store_xid_info(Protocol *protocol, bool print_xid_as_hex) const;
+  void store_xid_info(Protocol *protocol, bool print_xid_as_hex, 
+                      bool print_xid_prepare_time) const;
 
   /**
      Mark a XA transaction as rollback-only if the RM unilaterally

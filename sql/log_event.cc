@@ -7697,9 +7697,12 @@ int XA_prepare_log_event::pack_info(Protocol *protocol)
   compile_time_assert(ser_buf_size == XID::ser_buf_size);
   serialize_xid(buf, my_xid.formatID, my_xid.gtrid_length,
                 my_xid.bqual_length, my_xid.data);
-  sprintf(query,
-          (one_phase ? "XA COMMIT %s ONE PHASE" :  "XA PREPARE %s"),
-          buf);
+  if (one_phase == 0)
+    sprintf(query, "XA PREPARE %s", buf);
+  else if(one_phase == 1)
+    sprintf(query, "XA COMMIT %s ONE PHASE", buf);
+  else // one_phase == 2, with log
+    sprintf(query, "XA COMMIT %s ONE PHASE /*!99302 WITH LOG */", buf);
 
   protocol->store(query, strlen(query), &my_charset_bin);
   return 0;
@@ -7746,8 +7749,15 @@ void XA_prepare_log_event::print(FILE* file, PRINT_EVENT_INFO* print_event_info)
   serialize_xid(buf, my_xid.formatID, my_xid.gtrid_length,
                         my_xid.bqual_length, my_xid.data);
   my_b_printf(head, "\tXA PREPARE %s\n", buf);
-  my_b_printf(head, one_phase ? "XA COMMIT %s ONE PHASE\n%s\n" : "XA PREPARE %s\n%s\n",
-              buf, print_event_info->delimiter);
+  if(one_phase == 0) 
+    my_b_printf(head, "XA PREPARE %s\n%s\n",
+      buf, print_event_info->delimiter);
+  else if(one_phase == 1)
+    my_b_printf(head, "XA COMMIT %s ONE PHASE\n%s\n",
+      buf, print_event_info->delimiter);
+  else // one_phase ==2 , with log
+    my_b_printf(head, "XA COMMIT %s ONE PHASE /*!99302 WITH LOG */ \n%s\n",
+      buf, print_event_info->delimiter);
 }
 #endif /* MYSQL_CLIENT */
 
@@ -7803,7 +7813,10 @@ bool XA_prepare_log_event::do_commit(THD *thd)
   else
   {
     thd->lex->sql_command= SQLCOM_XA_COMMIT;
-    thd->lex->m_sql_cmd= new Sql_cmd_xa_commit(&xid, XA_ONE_PHASE);
+    if(one_phase == 1)
+      thd->lex->m_sql_cmd = new Sql_cmd_xa_commit(&xid, XA_ONE_PHASE, FALSE);
+    else // with log
+      thd->lex->m_sql_cmd= new Sql_cmd_xa_commit(&xid, XA_ONE_PHASE, TRUE);
     error= thd->lex->m_sql_cmd->execute(thd);
   }
   error|= mysql_bin_log.gtid_end_transaction(thd);
