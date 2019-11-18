@@ -712,7 +712,7 @@ protected:
     8 + 2 * MY_XIDDATASIZE + 4 * sizeof(long) + 1;
   MY_XID my_xid;
   void *xid; /* Master side only */
-  bool one_phase;
+  uint8_t one_phase;
 
 public:
   /**
@@ -720,7 +720,7 @@ public:
     instance variable xid and set the type_code as XID_EVENT in the
     header object in Binary_log_event
   */
-  XA_prepare_event(void *xid_arg, bool oph_arg)
+  XA_prepare_event(void *xid_arg, uint8_t oph_arg)
     : Binary_log_event(XA_PREPARE_LOG_EVENT), xid(xid_arg), one_phase(oph_arg)
   {
   }

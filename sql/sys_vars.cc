@@ -6326,3 +6326,9 @@ static Sys_var_mybool Sys_sort_when_partition_prefix_order(
   " using file sort when query with partition table + prefix index + order by ",
   GLOBAL_VAR(sort_when_partition_prefix_order),
   CMD_LINE(OPT_ARG), DEFAULT(TRUE));
+
+static Sys_var_ulong Sys_max_xa_commit_logs(
+  "max_xa_commit_logs",
+  "The max rows of mysql_xa_commit_log",
+  GLOBAL_VAR(max_xa_commit_logs), CMD_LINE(REQUIRED_ARG),
+  VALID_RANGE(10, ULONG_MAX), DEFAULT(1000000), BLOCK_SIZE(1));

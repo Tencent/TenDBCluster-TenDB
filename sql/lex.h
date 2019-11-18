@@ -344,6 +344,7 @@ static const SYMBOL symbols[] = {
   { SYM("LOCK",                     LOCK_SYM)},
   { SYM("LOCKS",                    LOCKS_SYM)},
   { SYM("LOGFILE",                  LOGFILE_SYM)},
+  { SYM("LOG",                      LOG_SYM)},
   { SYM("LOGS",                     LOGS_SYM)},
   { SYM("LONG",                     LONG_SYM)},
   { SYM("LONGBLOB",                 LONGBLOB)},

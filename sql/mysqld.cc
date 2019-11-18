@@ -447,6 +447,7 @@ uint protocol_version;
 uint lower_case_table_names;
 long tc_heuristic_recover;
 ulong back_log, connect_timeout, server_id;
+ulong max_xa_commit_logs;
 ulong table_cache_size, table_def_size;
 ulong table_cache_instances;
 ulong table_cache_size_per_instance;
