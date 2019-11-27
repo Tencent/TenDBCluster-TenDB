@@ -649,7 +649,7 @@ bool File_query_log::open()
 
   if ((cur_log_ext == (ulong)-1) || max_slowlog_size == 0)
   {
-    if (generate_new_log_name(log_file_name, &cur_log_ext, name, false))
+    if (generate_new_log_name(log_file_name, &cur_log_ext, name, false,0,NULL))
       goto err;
   } else {
     my_snprintf(log_file_name, sizeof(log_file_name),
@@ -2191,7 +2191,7 @@ int File_query_log::new_file()
   if ((cur_log_ext == (ulong)-1) || max_slowlog_size == 0)
   {
     strcpy(new_name, name);
-    if ((error= generate_new_log_name(new_name, &cur_log_ext, name, false)))
+    if ((error= generate_new_log_name(new_name, &cur_log_ext, name, false,0,NULL)))
       goto end;
   }
   else
