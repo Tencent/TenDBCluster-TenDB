@@ -1,0 +1,2102 @@
+create database test_rotate_db;
+use test_rotate_db;
+#currrent engine=myisam
+show binary logs;
+Log_name	File_size
+master-bin.000001	0
+CREATE TABLE t1_myisam (c1 INT) ENGINE=myisam;
+insert into t1_myisam values(0),(1);
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000001	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000002	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000003	0			
+flush logs;
+# left times= 99
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000004	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000005	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000006	0			
+flush logs;
+# left times= 98
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000007	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000008	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000009	0			
+flush logs;
+# left times= 97
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000010	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000011	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000012	0			
+flush logs;
+# left times= 96
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000013	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000014	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000015	0			
+flush logs;
+# left times= 95
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000016	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000017	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000018	0			
+flush logs;
+# left times= 94
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000019	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000020	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000021	0			
+flush logs;
+# left times= 93
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000022	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000023	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000024	0			
+flush logs;
+# left times= 92
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000025	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000026	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000027	0			
+flush logs;
+# left times= 91
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000028	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000029	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000030	0			
+flush logs;
+# left times= 90
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000031	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000032	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000033	0			
+flush logs;
+# left times= 89
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000034	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000035	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000036	0			
+flush logs;
+# left times= 88
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000037	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000038	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000039	0			
+flush logs;
+# left times= 87
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000040	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000041	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000042	0			
+flush logs;
+# left times= 86
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000043	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000044	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000045	0			
+flush logs;
+# left times= 85
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000046	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000047	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000048	0			
+flush logs;
+# left times= 84
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000049	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000050	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000051	0			
+flush logs;
+# left times= 83
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000052	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000053	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000054	0			
+flush logs;
+# left times= 82
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000055	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000056	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000057	0			
+flush logs;
+# left times= 81
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000058	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000059	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000060	0			
+flush logs;
+# left times= 80
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000061	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000062	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000063	0			
+flush logs;
+# left times= 79
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000064	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000065	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000066	0			
+flush logs;
+# left times= 78
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000067	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000068	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000069	0			
+flush logs;
+# left times= 77
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000070	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000071	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000072	0			
+flush logs;
+# left times= 76
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000073	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000074	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000075	0			
+flush logs;
+# left times= 75
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000076	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000077	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000078	0			
+flush logs;
+# left times= 74
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000079	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000080	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000081	0			
+flush logs;
+# left times= 73
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000082	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000083	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000084	0			
+flush logs;
+# left times= 72
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000085	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000086	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000087	0			
+flush logs;
+# left times= 71
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000088	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000089	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000090	0			
+flush logs;
+# left times= 70
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000091	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000092	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000093	0			
+flush logs;
+# left times= 69
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000094	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000095	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000096	0			
+flush logs;
+# left times= 68
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000097	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000098	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000099	0			
+flush logs;
+# left times= 67
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000100	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000101	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000102	0			
+flush logs;
+# left times= 66
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000103	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000104	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000105	0			
+flush logs;
+# left times= 65
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000106	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000107	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000108	0			
+flush logs;
+# left times= 64
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000109	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000110	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000111	0			
+flush logs;
+# left times= 63
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000112	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000113	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000114	0			
+flush logs;
+# left times= 62
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000115	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000116	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000117	0			
+flush logs;
+# left times= 61
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000118	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000119	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000120	0			
+flush logs;
+# left times= 60
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000121	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000122	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000123	0			
+flush logs;
+# left times= 59
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000124	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000125	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000126	0			
+flush logs;
+# left times= 58
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000127	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000128	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000129	0			
+flush logs;
+# left times= 57
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000130	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000131	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000132	0			
+flush logs;
+# left times= 56
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000133	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000134	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000135	0			
+flush logs;
+# left times= 55
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000136	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000137	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000138	0			
+flush logs;
+# left times= 54
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000139	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000140	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000141	0			
+flush logs;
+# left times= 53
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000142	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000143	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000144	0			
+flush logs;
+# left times= 52
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000145	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000146	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000147	0			
+flush logs;
+# left times= 51
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000148	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000149	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000150	0			
+flush logs;
+# left times= 50
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000151	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000152	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000153	0			
+flush logs;
+# left times= 49
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000154	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000155	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000156	0			
+flush logs;
+# left times= 48
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000157	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000158	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000159	0			
+flush logs;
+# left times= 47
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000160	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000161	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000162	0			
+flush logs;
+# left times= 46
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000163	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000164	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000165	0			
+flush logs;
+# left times= 45
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000166	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000167	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000168	0			
+flush logs;
+# left times= 44
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000169	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000170	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000171	0			
+flush logs;
+# left times= 43
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000172	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000173	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000174	0			
+flush logs;
+# left times= 42
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000175	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000176	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000177	0			
+flush logs;
+# left times= 41
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000178	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000179	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000180	0			
+flush logs;
+# left times= 40
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000181	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000182	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000183	0			
+flush logs;
+# left times= 39
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000184	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000185	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000186	0			
+flush logs;
+# left times= 38
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000187	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000188	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000189	0			
+flush logs;
+# left times= 37
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000190	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000191	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000192	0			
+flush logs;
+# left times= 36
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000193	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000194	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000195	0			
+flush logs;
+# left times= 35
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000196	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000197	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000198	0			
+flush logs;
+# left times= 34
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000199	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000200	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000201	0			
+flush logs;
+# left times= 33
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000202	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000203	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000204	0			
+flush logs;
+# left times= 32
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000205	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000206	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000207	0			
+flush logs;
+# left times= 31
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000208	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000209	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000210	0			
+flush logs;
+# left times= 30
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000211	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000212	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000213	0			
+flush logs;
+# left times= 29
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000214	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000215	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000216	0			
+flush logs;
+# left times= 28
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000217	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000218	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000219	0			
+flush logs;
+# left times= 27
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000220	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000221	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000222	0			
+flush logs;
+# left times= 26
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000223	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000224	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000225	0			
+flush logs;
+# left times= 25
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000226	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000227	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000228	0			
+flush logs;
+# left times= 24
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000229	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000230	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000231	0			
+flush logs;
+# left times= 23
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000232	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000233	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000234	0			
+flush logs;
+# left times= 22
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000235	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000236	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000237	0			
+flush logs;
+# left times= 21
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000238	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000239	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000240	0			
+flush logs;
+# left times= 20
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000241	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000242	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000243	0			
+flush logs;
+# left times= 19
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000244	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000245	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000246	0			
+flush logs;
+# left times= 18
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000247	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000248	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000249	0			
+flush logs;
+# left times= 17
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000250	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000251	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000252	0			
+flush logs;
+# left times= 16
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000253	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000254	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000255	0			
+flush logs;
+# left times= 15
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000256	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000257	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000258	0			
+flush logs;
+# left times= 14
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000259	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000260	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000261	0			
+flush logs;
+# left times= 13
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000262	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000263	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000264	0			
+flush logs;
+# left times= 12
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000265	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000266	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000267	0			
+flush logs;
+# left times= 11
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000268	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000269	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000270	0			
+flush logs;
+# left times= 10
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000271	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000272	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000273	0			
+flush logs;
+# left times= 9
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000274	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000275	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000276	0			
+flush logs;
+# left times= 8
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000277	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000278	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000279	0			
+flush logs;
+# left times= 7
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000280	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000281	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000282	0			
+flush logs;
+# left times= 6
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000283	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000284	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000285	0			
+flush logs;
+# left times= 5
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000286	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000287	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000288	0			
+flush logs;
+# left times= 4
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000289	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000290	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000291	0			
+show binary logs;
+Log_name	File_size
+master-bin.000001	0
+master-bin.000002	0
+master-bin.000003	0
+master-bin.000004	0
+master-bin.000005	0
+master-bin.000006	0
+master-bin.000007	0
+master-bin.000008	0
+master-bin.000009	0
+master-bin.000010	0
+master-bin.000011	0
+master-bin.000012	0
+master-bin.000013	0
+master-bin.000014	0
+master-bin.000015	0
+master-bin.000016	0
+master-bin.000017	0
+master-bin.000018	0
+master-bin.000019	0
+master-bin.000020	0
+master-bin.000021	0
+master-bin.000022	0
+master-bin.000023	0
+master-bin.000024	0
+master-bin.000025	0
+master-bin.000026	0
+master-bin.000027	0
+master-bin.000028	0
+master-bin.000029	0
+master-bin.000030	0
+master-bin.000031	0
+master-bin.000032	0
+master-bin.000033	0
+master-bin.000034	0
+master-bin.000035	0
+master-bin.000036	0
+master-bin.000037	0
+master-bin.000038	0
+master-bin.000039	0
+master-bin.000040	0
+master-bin.000041	0
+master-bin.000042	0
+master-bin.000043	0
+master-bin.000044	0
+master-bin.000045	0
+master-bin.000046	0
+master-bin.000047	0
+master-bin.000048	0
+master-bin.000049	0
+master-bin.000050	0
+master-bin.000051	0
+master-bin.000052	0
+master-bin.000053	0
+master-bin.000054	0
+master-bin.000055	0
+master-bin.000056	0
+master-bin.000057	0
+master-bin.000058	0
+master-bin.000059	0
+master-bin.000060	0
+master-bin.000061	0
+master-bin.000062	0
+master-bin.000063	0
+master-bin.000064	0
+master-bin.000065	0
+master-bin.000066	0
+master-bin.000067	0
+master-bin.000068	0
+master-bin.000069	0
+master-bin.000070	0
+master-bin.000071	0
+master-bin.000072	0
+master-bin.000073	0
+master-bin.000074	0
+master-bin.000075	0
+master-bin.000076	0
+master-bin.000077	0
+master-bin.000078	0
+master-bin.000079	0
+master-bin.000080	0
+master-bin.000081	0
+master-bin.000082	0
+master-bin.000083	0
+master-bin.000084	0
+master-bin.000085	0
+master-bin.000086	0
+master-bin.000087	0
+master-bin.000088	0
+master-bin.000089	0
+master-bin.000090	0
+master-bin.000091	0
+master-bin.000092	0
+master-bin.000093	0
+master-bin.000094	0
+master-bin.000095	0
+master-bin.000096	0
+master-bin.000097	0
+master-bin.000098	0
+master-bin.000099	0
+master-bin.000100	0
+master-bin.000101	0
+master-bin.000102	0
+master-bin.000103	0
+master-bin.000104	0
+master-bin.000105	0
+master-bin.000106	0
+master-bin.000107	0
+master-bin.000108	0
+master-bin.000109	0
+master-bin.000110	0
+master-bin.000111	0
+master-bin.000112	0
+master-bin.000113	0
+master-bin.000114	0
+master-bin.000115	0
+master-bin.000116	0
+master-bin.000117	0
+master-bin.000118	0
+master-bin.000119	0
+master-bin.000120	0
+master-bin.000121	0
+master-bin.000122	0
+master-bin.000123	0
+master-bin.000124	0
+master-bin.000125	0
+master-bin.000126	0
+master-bin.000127	0
+master-bin.000128	0
+master-bin.000129	0
+master-bin.000130	0
+master-bin.000131	0
+master-bin.000132	0
+master-bin.000133	0
+master-bin.000134	0
+master-bin.000135	0
+master-bin.000136	0
+master-bin.000137	0
+master-bin.000138	0
+master-bin.000139	0
+master-bin.000140	0
+master-bin.000141	0
+master-bin.000142	0
+master-bin.000143	0
+master-bin.000144	0
+master-bin.000145	0
+master-bin.000146	0
+master-bin.000147	0
+master-bin.000148	0
+master-bin.000149	0
+master-bin.000150	0
+master-bin.000151	0
+master-bin.000152	0
+master-bin.000153	0
+master-bin.000154	0
+master-bin.000155	0
+master-bin.000156	0
+master-bin.000157	0
+master-bin.000158	0
+master-bin.000159	0
+master-bin.000160	0
+master-bin.000161	0
+master-bin.000162	0
+master-bin.000163	0
+master-bin.000164	0
+master-bin.000165	0
+master-bin.000166	0
+master-bin.000167	0
+master-bin.000168	0
+master-bin.000169	0
+master-bin.000170	0
+master-bin.000171	0
+master-bin.000172	0
+master-bin.000173	0
+master-bin.000174	0
+master-bin.000175	0
+master-bin.000176	0
+master-bin.000177	0
+master-bin.000178	0
+master-bin.000179	0
+master-bin.000180	0
+master-bin.000181	0
+master-bin.000182	0
+master-bin.000183	0
+master-bin.000184	0
+master-bin.000185	0
+master-bin.000186	0
+master-bin.000187	0
+master-bin.000188	0
+master-bin.000189	0
+master-bin.000190	0
+master-bin.000191	0
+master-bin.000192	0
+master-bin.000193	0
+master-bin.000194	0
+master-bin.000195	0
+master-bin.000196	0
+master-bin.000197	0
+master-bin.000198	0
+master-bin.000199	0
+master-bin.000200	0
+master-bin.000201	0
+master-bin.000202	0
+master-bin.000203	0
+master-bin.000204	0
+master-bin.000205	0
+master-bin.000206	0
+master-bin.000207	0
+master-bin.000208	0
+master-bin.000209	0
+master-bin.000210	0
+master-bin.000211	0
+master-bin.000212	0
+master-bin.000213	0
+master-bin.000214	0
+master-bin.000215	0
+master-bin.000216	0
+master-bin.000217	0
+master-bin.000218	0
+master-bin.000219	0
+master-bin.000220	0
+master-bin.000221	0
+master-bin.000222	0
+master-bin.000223	0
+master-bin.000224	0
+master-bin.000225	0
+master-bin.000226	0
+master-bin.000227	0
+master-bin.000228	0
+master-bin.000229	0
+master-bin.000230	0
+master-bin.000231	0
+master-bin.000232	0
+master-bin.000233	0
+master-bin.000234	0
+master-bin.000235	0
+master-bin.000236	0
+master-bin.000237	0
+master-bin.000238	0
+master-bin.000239	0
+master-bin.000240	0
+master-bin.000241	0
+master-bin.000242	0
+master-bin.000243	0
+master-bin.000244	0
+master-bin.000245	0
+master-bin.000246	0
+master-bin.000247	0
+master-bin.000248	0
+master-bin.000249	0
+master-bin.000250	0
+master-bin.000251	0
+master-bin.000252	0
+master-bin.000253	0
+master-bin.000254	0
+master-bin.000255	0
+master-bin.000256	0
+master-bin.000257	0
+master-bin.000258	0
+master-bin.000259	0
+master-bin.000260	0
+master-bin.000261	0
+master-bin.000262	0
+master-bin.000263	0
+master-bin.000264	0
+master-bin.000265	0
+master-bin.000266	0
+master-bin.000267	0
+master-bin.000268	0
+master-bin.000269	0
+master-bin.000270	0
+master-bin.000271	0
+master-bin.000272	0
+master-bin.000273	0
+master-bin.000274	0
+master-bin.000275	0
+master-bin.000276	0
+master-bin.000277	0
+master-bin.000278	0
+master-bin.000279	0
+master-bin.000280	0
+master-bin.000281	0
+master-bin.000282	0
+master-bin.000283	0
+master-bin.000284	0
+master-bin.000285	0
+master-bin.000286	0
+master-bin.000287	0
+master-bin.000288	0
+master-bin.000289	0
+master-bin.000290	0
+master-bin.000291	0
+reset master;
+# left times= 3
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000001	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000002	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000003	0			
+reset master;
+# left times= 2
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000001	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000002	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000003	0			
+reset master;
+# left times= 1
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000001	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000002	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000003	0			
+reset master;
+# left times= 0
+# [engine=myisam] after first loop_times=0, show master logs results
+show master logs;
+Log_name	File_size
+master-bin.000001	0
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000001	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000002	0			
+flush logs;
+show master logs;
+Log_name	File_size
+master-bin.000001	0
+master-bin.000002	0
+master-bin.000003	0
+#begin to restart mysqld current loop_times=10
+# restart
+# left restart times= 9
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000004	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000005	0			
+flush logs;
+show master logs;
+Log_name	File_size
+master-bin.000001	0
+master-bin.000002	0
+master-bin.000003	0
+master-bin.000004	0
+master-bin.000005	0
+master-bin.000006	0
+#begin to restart mysqld current loop_times=9
+# restart
+# left restart times= 8
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000007	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000008	0			
+flush logs;
+show master logs;
+Log_name	File_size
+master-bin.000001	0
+master-bin.000002	0
+master-bin.000003	0
+master-bin.000004	0
+master-bin.000005	0
+master-bin.000006	0
+master-bin.000007	0
+master-bin.000008	0
+master-bin.000009	0
+#begin to restart mysqld current loop_times=8
+# restart
+# left restart times= 7
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000010	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000011	0			
+flush logs;
+show master logs;
+Log_name	File_size
+master-bin.000001	0
+master-bin.000002	0
+master-bin.000003	0
+master-bin.000004	0
+master-bin.000005	0
+master-bin.000006	0
+master-bin.000007	0
+master-bin.000008	0
+master-bin.000009	0
+master-bin.000010	0
+master-bin.000011	0
+master-bin.000012	0
+#begin to restart mysqld current loop_times=7
+# restart
+# left restart times= 6
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000013	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000014	0			
+flush logs;
+show master logs;
+Log_name	File_size
+master-bin.000001	0
+master-bin.000002	0
+master-bin.000003	0
+master-bin.000004	0
+master-bin.000005	0
+master-bin.000006	0
+master-bin.000007	0
+master-bin.000008	0
+master-bin.000009	0
+master-bin.000010	0
+master-bin.000011	0
+master-bin.000012	0
+master-bin.000013	0
+master-bin.000014	0
+master-bin.000015	0
+#begin to restart mysqld current loop_times=6
+# restart
+# left restart times= 5
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000016	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000017	0			
+flush logs;
+show master logs;
+Log_name	File_size
+master-bin.000001	0
+master-bin.000002	0
+master-bin.000003	0
+master-bin.000004	0
+master-bin.000005	0
+master-bin.000006	0
+master-bin.000007	0
+master-bin.000008	0
+master-bin.000009	0
+master-bin.000010	0
+master-bin.000011	0
+master-bin.000012	0
+master-bin.000013	0
+master-bin.000014	0
+master-bin.000015	0
+master-bin.000016	0
+master-bin.000017	0
+master-bin.000018	0
+#begin to restart mysqld current loop_times=5
+# restart
+# left restart times= 4
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000019	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000020	0			
+flush logs;
+show master logs;
+Log_name	File_size
+master-bin.000001	0
+master-bin.000002	0
+master-bin.000003	0
+master-bin.000004	0
+master-bin.000005	0
+master-bin.000006	0
+master-bin.000007	0
+master-bin.000008	0
+master-bin.000009	0
+master-bin.000010	0
+master-bin.000011	0
+master-bin.000012	0
+master-bin.000013	0
+master-bin.000014	0
+master-bin.000015	0
+master-bin.000016	0
+master-bin.000017	0
+master-bin.000018	0
+master-bin.000019	0
+master-bin.000020	0
+master-bin.000021	0
+#begin to restart mysqld current loop_times=4
+# restart
+# left restart times= 3
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000022	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000023	0			
+flush logs;
+show master logs;
+Log_name	File_size
+master-bin.000001	0
+master-bin.000002	0
+master-bin.000003	0
+master-bin.000004	0
+master-bin.000005	0
+master-bin.000006	0
+master-bin.000007	0
+master-bin.000008	0
+master-bin.000009	0
+master-bin.000010	0
+master-bin.000011	0
+master-bin.000012	0
+master-bin.000013	0
+master-bin.000014	0
+master-bin.000015	0
+master-bin.000016	0
+master-bin.000017	0
+master-bin.000018	0
+master-bin.000019	0
+master-bin.000020	0
+master-bin.000021	0
+master-bin.000022	0
+master-bin.000023	0
+master-bin.000024	0
+#begin to restart mysqld current loop_times=3
+# restart
+# left restart times= 2
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000025	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000026	0			
+flush logs;
+show master logs;
+Log_name	File_size
+master-bin.000001	0
+master-bin.000002	0
+master-bin.000003	0
+master-bin.000004	0
+master-bin.000005	0
+master-bin.000006	0
+master-bin.000007	0
+master-bin.000008	0
+master-bin.000009	0
+master-bin.000010	0
+master-bin.000011	0
+master-bin.000012	0
+master-bin.000013	0
+master-bin.000014	0
+master-bin.000015	0
+master-bin.000016	0
+master-bin.000017	0
+master-bin.000018	0
+master-bin.000019	0
+master-bin.000020	0
+master-bin.000021	0
+master-bin.000022	0
+master-bin.000023	0
+master-bin.000024	0
+master-bin.000025	0
+master-bin.000026	0
+master-bin.000027	0
+#begin to restart mysqld current loop_times=2
+# restart
+# left restart times= 1
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000028	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+master-bin.000029	0			
+flush logs;
+show master logs;
+Log_name	File_size
+master-bin.000001	0
+master-bin.000002	0
+master-bin.000003	0
+master-bin.000004	0
+master-bin.000005	0
+master-bin.000006	0
+master-bin.000007	0
+master-bin.000008	0
+master-bin.000009	0
+master-bin.000010	0
+master-bin.000011	0
+master-bin.000012	0
+master-bin.000013	0
+master-bin.000014	0
+master-bin.000015	0
+master-bin.000016	0
+master-bin.000017	0
+master-bin.000018	0
+master-bin.000019	0
+master-bin.000020	0
+master-bin.000021	0
+master-bin.000022	0
+master-bin.000023	0
+master-bin.000024	0
+master-bin.000025	0
+master-bin.000026	0
+master-bin.000027	0
+master-bin.000028	0
+master-bin.000029	0
+master-bin.000030	0
+#begin to restart mysqld current loop_times=1
+# restart
+# left restart times= 0
+# [engine=myisam] after second loop_times=0, show master logs results
+# ====================================now try to change the log-bin config for mysqld========================
+#begin to restart mysqld
+# restart: --log-bin=new_log_bin
+show binary logs;
+Log_name	File_size
+new_log_bin.000001	0
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000002	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000003	0			
+flush logs;
+# left times= 9
+show binary logs;
+Log_name	File_size
+new_log_bin.000001	0
+new_log_bin.000002	0
+new_log_bin.000003	0
+new_log_bin.000004	0
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000005	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000006	0			
+flush logs;
+# left times= 8
+show binary logs;
+Log_name	File_size
+new_log_bin.000001	0
+new_log_bin.000002	0
+new_log_bin.000003	0
+new_log_bin.000004	0
+new_log_bin.000005	0
+new_log_bin.000006	0
+new_log_bin.000007	0
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000008	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000009	0			
+flush logs;
+# left times= 7
+show binary logs;
+Log_name	File_size
+new_log_bin.000001	0
+new_log_bin.000002	0
+new_log_bin.000003	0
+new_log_bin.000004	0
+new_log_bin.000005	0
+new_log_bin.000006	0
+new_log_bin.000007	0
+new_log_bin.000008	0
+new_log_bin.000009	0
+new_log_bin.000010	0
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000011	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000012	0			
+flush logs;
+# left times= 6
+show binary logs;
+Log_name	File_size
+new_log_bin.000001	0
+new_log_bin.000002	0
+new_log_bin.000003	0
+new_log_bin.000004	0
+new_log_bin.000005	0
+new_log_bin.000006	0
+new_log_bin.000007	0
+new_log_bin.000008	0
+new_log_bin.000009	0
+new_log_bin.000010	0
+new_log_bin.000011	0
+new_log_bin.000012	0
+new_log_bin.000013	0
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000014	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000015	0			
+flush logs;
+# left times= 5
+show binary logs;
+Log_name	File_size
+new_log_bin.000001	0
+new_log_bin.000002	0
+new_log_bin.000003	0
+new_log_bin.000004	0
+new_log_bin.000005	0
+new_log_bin.000006	0
+new_log_bin.000007	0
+new_log_bin.000008	0
+new_log_bin.000009	0
+new_log_bin.000010	0
+new_log_bin.000011	0
+new_log_bin.000012	0
+new_log_bin.000013	0
+new_log_bin.000014	0
+new_log_bin.000015	0
+new_log_bin.000016	0
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000017	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000018	0			
+flush logs;
+# left times= 4
+show binary logs;
+Log_name	File_size
+new_log_bin.000001	0
+new_log_bin.000002	0
+new_log_bin.000003	0
+new_log_bin.000004	0
+new_log_bin.000005	0
+new_log_bin.000006	0
+new_log_bin.000007	0
+new_log_bin.000008	0
+new_log_bin.000009	0
+new_log_bin.000010	0
+new_log_bin.000011	0
+new_log_bin.000012	0
+new_log_bin.000013	0
+new_log_bin.000014	0
+new_log_bin.000015	0
+new_log_bin.000016	0
+new_log_bin.000017	0
+new_log_bin.000018	0
+new_log_bin.000019	0
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000020	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000021	0			
+reset master;
+# left times= 3
+show binary logs;
+Log_name	File_size
+new_log_bin.000001	0
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000002	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000003	0			
+reset master;
+# left times= 2
+show binary logs;
+Log_name	File_size
+new_log_bin.000001	0
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000002	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000003	0			
+reset master;
+# left times= 1
+show binary logs;
+Log_name	File_size
+new_log_bin.000001	0
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000002	0			
+flush logs;
+show master status;
+File	Position	Binlog_Do_DB	Binlog_Ignore_DB	Executed_Gtid_Set
+new_log_bin.000003	0			
+reset master;
+# left times= 0
+# [engine=myisam] after third loop_times=0, show master logs results
+show binary logs;
+Log_name	File_size
+new_log_bin.000001	0
+drop database test_rotate_db;

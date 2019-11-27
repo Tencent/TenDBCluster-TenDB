@@ -3427,6 +3427,7 @@ MYSQL_BIN_LOG::MYSQL_BIN_LOG(uint *sync_period,
 #endif
    bytes_written(0), file_id(1), open_count(1),
    sync_period_ptr(sync_period), sync_counter(0),
+   m_cur_bin_suffix(0), m_cur_tmp_suffix(0),
    is_relay_log(0), signal_cnt(0),
    checksum_alg_reset(binary_log::BINLOG_CHECKSUM_ALG_UNDEF),
    relay_log_checksum_alg(binary_log::BINLOG_CHECKSUM_ALG_UNDEF),
@@ -3565,7 +3566,7 @@ static bool is_number(const char *str,
     nonzero if not possible to get unique filename.
 */
 
-static int find_uniq_filename(char *name, ulong *next, bool need_next)
+static int find_uniq_filename(char *name, ulong *next, bool need_next, ulong cur_max_suffix, ulong *res_suffix_idx)
 {
   uint                  i;
   char                  buff[FN_REFLEN], ext_buf[FN_REFLEN];
@@ -3585,23 +3586,30 @@ static int find_uniq_filename(char *name, ulong *next, bool need_next)
   *end='.';
   length= (size_t) (end - start + 1);
 
-  if ((DBUG_EVALUATE_IF("error_unique_log_filename", 1, 
-      !(dir_info= my_dir(buff,MYF(MY_DONT_SORT))))))
-  {						// This shouldn't happen
-    my_stpcpy(end,".1");				// use name+1
-    DBUG_RETURN(1);
+  DBUG_EXECUTE_IF("error_unique_log_filename", {
+	  my_stpcpy(end,".1");				// use name+1
+  DBUG_RETURN(1);
+  });
+  if (0 == cur_max_suffix || need_next== false) {
+	  if (!(dir_info = my_dir(buff, MYF(MY_DONT_SORT)))) {
+		  my_stpcpy(end, ".1");				// use name+1
+		  DBUG_RETURN(1);
+	  }
+	  //use scan dir if 0
+	  file_info = dir_info->dir_entry;
+	  for (i = dir_info->number_off_files; i--; file_info++)
+	  {
+		  if (strncmp(file_info->name, start, length) == 0 &&
+			  is_number(file_info->name + length, &number, 0))
+		  {
+			  set_if_bigger(max_found, number);
+		  }
+	  }
+	  my_dirend(dir_info);
+  } else {
+	  max_found = cur_max_suffix;
+	  DBUG_PRINT("info", ("no scan using input idx=%lu", cur_max_suffix));
   }
-  file_info= dir_info->dir_entry;
-  for (i= dir_info->number_off_files ; i-- ; file_info++)
-  {
-    if (strncmp(file_info->name, start, length) == 0 &&
-	is_number(file_info->name+length, &number,0))
-    {
-      set_if_bigger(max_found, number);
-    }
-  }
-  my_dirend(dir_info);
-
   /* check if reached the maximum possible extension number */
   if (max_found == MAX_LOG_UNIQUE_FN_EXT)
   {
@@ -3645,37 +3653,48 @@ index files.", name, ext_buf, (strlen(ext_buf) + (end - name)));
     sql_print_warning("Next log extension: %lu. \
 Remaining log filename extensions: %lu. \
 Please consider archiving some logs.", *next, (MAX_LOG_UNIQUE_FN_EXT - *next));
+  
+  if (0 == error) {
+	  *res_suffix_idx = *next;
+	  DBUG_PRINT("info", ("res_suffix_idx updated=%lu\n", *res_suffix_idx));
+  }
 
 end:
   DBUG_RETURN(error);
 }
 
-bool generate_new_log_name(char *new_name, ulong *new_ext,
-                           const char *log_name, bool is_binlog)
+ulong MYSQL_BIN_LOG::get_binlog_suffix_idx() const
 {
-  fn_format(new_name, log_name, mysql_data_home, "", 4);
-  if (!fn_ext(log_name)[0])
-  {
-    if (is_binlog || max_slowlog_size > 0)
-    {
-      ulong scratch;
-      if (find_uniq_filename(new_name, new_ext ? new_ext : &scratch,
-                             is_binlog))
-      {
-        my_printf_error(ER_NO_UNIQUE_LOGFILE, ER(ER_NO_UNIQUE_LOGFILE),
-                        MYF(ME_FATALERROR), log_name);
-        sql_print_error(ER(ER_NO_UNIQUE_LOGFILE), log_name);
-        return true;
-      }
-    }
-    else if (max_slowlog_size == 0 && new_ext)
-    {
-      /* For slow query log files, reset any extension counter in progress,
-      if max_slowlog_size has been reset back to zero, meaning no rotation */
-      *new_ext= (ulong)-1;
-    }
-  }
-  return false;
+	return m_cur_bin_suffix;
+}
+
+
+bool generate_new_log_name(char *new_name, ulong *new_ext,
+	const char *log_name, bool is_binlog,const ulong m_cur_bin_suffix,ulong *m_cur_tmp_suffix)
+{
+	fn_format(new_name, log_name, mysql_data_home, "", 4);
+	if (!fn_ext(log_name)[0])
+	{
+		if (is_binlog || max_slowlog_size > 0)
+		{
+			ulong scratch;
+			if (find_uniq_filename(new_name, new_ext ? new_ext : &scratch,
+				is_binlog, m_cur_bin_suffix, m_cur_tmp_suffix))
+			{
+				my_printf_error(ER_NO_UNIQUE_LOGFILE, ER(ER_NO_UNIQUE_LOGFILE),
+					MYF(ME_FATALERROR), log_name);
+				sql_print_error(ER(ER_NO_UNIQUE_LOGFILE), log_name);
+				return true;
+			}
+		}
+		else if (max_slowlog_size == 0 && new_ext)
+		{
+			/* For slow query log files, reset any extension counter in progress,
+			if max_slowlog_size has been reset back to zero, meaning no rotation */
+			*new_ext = (ulong)-1;
+		}
+	}
+	return false;
 }
 
 /**
@@ -3708,7 +3727,7 @@ bool MYSQL_BIN_LOG::init_and_set_log_file_name(const char *log_name,
   if (new_name && !my_stpcpy(log_file_name, new_name))
     return TRUE;
   else if (!new_name && generate_new_log_name(log_file_name, NULL, log_name,
-                                              true))
+                                              true, get_binlog_suffix_idx(), &m_cur_tmp_suffix))
     return TRUE;
 
   return FALSE;
@@ -3736,6 +3755,7 @@ bool MYSQL_BIN_LOG::open(
   my_off_t pos= 0;
   int open_flags= O_CREAT | O_BINARY;
   DBUG_ENTER("MYSQL_BIN_LOG::open");
+  DBUG_PRINT("info", ("MYSQL_BIN_LOG::open, new_name=%s", new_name));
 
   write_error= 0;
 
@@ -5233,6 +5253,8 @@ bool MYSQL_BIN_LOG::open_binlog(const char *log_name,
                       });
       goto err;
     }
+	//update suffix idx only if open new binlog and apply all success
+	update_bin_suffix_idx();
 
 #ifdef HAVE_REPLICATION
     DBUG_EXECUTE_IF("crash_create_after_update_index", DBUG_SUICIDE(););
@@ -5254,6 +5276,8 @@ bool MYSQL_BIN_LOG::open_binlog(const char *log_name,
   DBUG_RETURN(0);
 
 err:
+  //fail invalidate the suffix index cache anyway
+  reset_suffix();
 #ifdef HAVE_REPLICATION
   if (is_inited_purge_index_file())
     purge_index_entry(NULL, NULL, need_lock_index);
@@ -5769,6 +5793,10 @@ bool MYSQL_BIN_LOG::reset_logs(THD* thd, bool delete_only)
   close(LOG_CLOSE_TO_BE_OPENED, false/*need_lock_log=false*/,
         false/*need_lock_index=false*/);
 
+  /*
+  * reset currently binlog suffix, if delete fail, still be ok
+  */
+  reset_suffix();
   /*
     First delete all old log files and then update the index file.
     As we first delete the log files and do not use sort of logging,
@@ -6997,8 +7025,9 @@ int MYSQL_BIN_LOG::new_file_impl(bool need_lock_log, Format_description_log_even
     We have to do this here and not in open as we want to store the
     new file name in the current binary log file.
   */
+
   new_name_ptr= new_name;
-  if ((error= generate_new_log_name(new_name, NULL, name, true)))
+  if ((error= generate_new_log_name(new_name, NULL, name, true, get_binlog_suffix_idx(), &m_cur_tmp_suffix)))
   {
     // Use the old name if generation of new name fails.
     strcpy(new_name, name);
