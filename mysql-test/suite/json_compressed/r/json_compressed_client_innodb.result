@@ -5,8 +5,8 @@ SHOW CREATE TABLE t;
 Table	Create Table
 t	CREATE TABLE `t` (
   `i` int(11) DEFAULT NULL,
-  `j1` json DEFAULT NULL /*!9930x COMPRESSED */,
-  `j2` json NOT NULL /*!9930x COMPRESSED */
+  `j1` json DEFAULT NULL /*!99302 COMPRESSED */,
+  `j2` json NOT NULL /*!99302 COMPRESSED */
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1
 INSERT INTO t VALUES
 (0, NULL, 'null'),
