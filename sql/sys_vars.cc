@@ -2108,7 +2108,7 @@ static Sys_var_ulong Sys_log_warnings(
        "Log some not critical warnings to the log file",
        GLOBAL_VAR(log_warnings),
        CMD_LINE(OPT_ARG, 'W'),
-       VALID_RANGE(0, 2), DEFAULT(2), BLOCK_SIZE(1), NO_MUTEX_GUARD,
+       VALID_RANGE(0, 2), DEFAULT(1), BLOCK_SIZE(1), NO_MUTEX_GUARD,
        NOT_IN_BINLOG, ON_CHECK(0), ON_UPDATE(update_log_warnings),
        DEPRECATED("log_error_verbosity"));
 

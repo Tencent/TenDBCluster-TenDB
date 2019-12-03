@@ -1695,7 +1695,7 @@ int store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
 	if ((field->column_format() != COLUMN_FORMAT_TYPE_COMPRESSED) && (field_type == MYSQL_TYPE_JSON)
 		&& field->is_compressed())
 	{
-	  packet->append(STRING_WITH_LEN(" /*!9930x COMPRESSED */"));
+	  packet->append(STRING_WITH_LEN(" /*!99302 COMPRESSED */"));
 	}
 
     if (field->comment.length)
