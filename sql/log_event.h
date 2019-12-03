@@ -2093,7 +2093,7 @@ private:
   static const int xid_bufs_size= 12;
 public:
 #ifdef MYSQL_SERVER
-  XA_prepare_log_event(THD* thd_arg, XID *xid_arg, bool one_phase_arg= false)
+  XA_prepare_log_event(THD* thd_arg, XID *xid_arg, uint8 one_phase_arg= 0)
     : binary_log::XA_prepare_event((void*) xid_arg, one_phase_arg),
       Xid_apply_log_event(thd_arg, header(), footer())
   {}

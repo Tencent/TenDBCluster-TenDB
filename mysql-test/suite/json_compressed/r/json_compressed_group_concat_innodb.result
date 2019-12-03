@@ -3,7 +3,7 @@ create table t(j json compressed, c varchar(20));
 show create table t;
 Table	Create Table
 t	CREATE TABLE `t` (
-  `j` json DEFAULT NULL /*!9930x COMPRESSED */,
+  `j` json DEFAULT NULL /*!99302 COMPRESSED */,
   `c` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1
 insert into t values (cast('[1,2,3]' as json), '[a,b,c]');

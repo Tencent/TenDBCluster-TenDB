@@ -602,7 +602,7 @@ XA_prepare_event(const char* buf,
 
   buf+= description_event->post_header_len[XA_PREPARE_LOG_EVENT - 1];
   memcpy(&temp_byte, buf, 1);
-  one_phase= (bool) temp_byte;
+  one_phase= (uint8_t)temp_byte;
   buf += sizeof(temp_byte);
   memcpy(&temp, buf, sizeof(temp));
   my_xid.formatID= le32toh(temp);

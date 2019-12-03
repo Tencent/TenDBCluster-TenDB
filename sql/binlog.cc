@@ -1738,6 +1738,20 @@ inline enum xa_option_words get_xa_opt(THD *thd)
   return xa_opt;
 }
 
+inline bool get_commit_with_log(THD* thd)
+{
+  bool commit_with_log = FALSE;
+  switch (thd->lex->sql_command)
+  {
+  case SQLCOM_XA_COMMIT:
+    commit_with_log = static_cast<Sql_cmd_xa_commit*>(thd->lex->m_sql_cmd)->get_commit_with_log();
+    break;
+  default:
+    break;
+  }
+
+  return commit_with_log;
+}
 
 /**
    Predicate function yields true when XA transaction is
@@ -8687,7 +8701,13 @@ TC_LOG::enum_result MYSQL_BIN_LOG::commit(THD *thd, bool all)
     {
       /* The prepare phase of XA transaction two phase logging. */
       int err= 0;
-      bool one_phase= get_xa_opt(thd) == XA_ONE_PHASE;
+      uint8 one_phase = 0;
+      if (get_xa_opt(thd) == XA_ONE_PHASE)
+      {
+        one_phase = 1;
+        if (get_commit_with_log(thd))
+          one_phase = 2;
+      }
 
       DBUG_ASSERT(thd->lex->sql_command != SQLCOM_XA_COMMIT || one_phase);
 
