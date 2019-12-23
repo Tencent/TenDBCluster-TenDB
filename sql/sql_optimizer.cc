@@ -1809,9 +1809,9 @@ bool is_perfix_index(TABLE* table, int key, uint key_parts)
     return false;
   }
   KEY_PART_INFO* key_part = table->key_info[key].key_part;
-  KEY* key_info = table->key_info;
+  KEY* key_info = table->key_info + key;
 
-  for (uint i = 0; i < key_parts; i++, key_parts++)
+  for (uint i = 0; i < key_parts; i++, key_part++)
   {
     if (key_part->field &&
       (key_part->length !=
@@ -2006,9 +2006,8 @@ test_if_skip_sort_order(JOIN_TAB *tab, ORDER *order, ha_rows select_limit,
   }
 
   if (sort_when_partition_prefix_order &&
-    is_perfix_index(table, ref_key, ref_key_parts) &&
-    table && table->is_partition()
-    && order)
+    table && table->is_partition() && order &&
+    is_perfix_index(table, ref_key, ref_key_parts))
   {
     DBUG_RETURN(0);
   }
