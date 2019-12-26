@@ -7817,6 +7817,7 @@ ER_PER_INDEX_CF_DEPRECATED
 
 ER_BINLOG_UNCOMPRESS_ERROR
   eng "Uncompress the compressed binlog failed"
+
 #
 # End of MyRocks specific messages
 #

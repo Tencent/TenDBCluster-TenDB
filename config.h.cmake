@@ -155,6 +155,7 @@
 #cmakedefine GWINSZ_IN_SYS_IOCTL 1
 #cmakedefine FIONREAD_IN_SYS_IOCTL 1
 #cmakedefine FIONREAD_IN_SYS_FILIO 1
+#cmakedefine HAVE_MADV_DONTDUMP 1
 #cmakedefine HAVE_SIGEV_THREAD_ID 1
 #cmakedefine HAVE_SIGEV_PORT 1
 #cmakedefine HAVE_LOG2 1
