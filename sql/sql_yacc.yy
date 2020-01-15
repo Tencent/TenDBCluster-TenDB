@@ -768,7 +768,6 @@ bool my_yyoverflow(short **a, YYSTYPE **b, YYLTYPE **c, ulong *yystacksize);
 %token  LOCKS_SYM
 %token  LOCK_SYM
 %token  LOGFILE_SYM
-%token  LOG_SYM
 %token  LOGS_SYM
 %token  LONGBLOB
 %token  LONGTEXT
@@ -15775,7 +15774,7 @@ opt_one_phase:
 
 opt_with_log:
           /* nothing */     { $$= false;  }
-        | WITH LOG_SYM      { $$= true;   }
+        | WITH LOGS_SYM      { $$= true;   }
         ;
 
 opt_with_time:
