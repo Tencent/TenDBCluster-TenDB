@@ -31,6 +31,7 @@ time_zone_name
 time_zone_transition
 time_zone_transition_type
 user
+xa_commit_log
 show create table db;
 Table	Create Table
 db	CREATE TABLE `db` (

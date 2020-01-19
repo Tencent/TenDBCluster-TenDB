@@ -7,12 +7,10 @@ if (`SELECT VERSION() LIKE '%embedded%'`)
 {
    --skip This test cannot run with the embedded server.
 }
-
 --source suite/perfschema_stress/include/settings.inc
 
---disable_query_log
---disable_result_log
-
+# --disable_query_log
+# --disable_result_log
 if (!$engine_type) {
   let $engine_type= $default_engine_type;
 }

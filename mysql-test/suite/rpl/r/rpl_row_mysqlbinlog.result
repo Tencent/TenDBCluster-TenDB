@@ -173,7 +173,7 @@ SET @@session.collation_database=DEFAULT/*!*/;
 SET @@session.explicit_defaults_for_timestamp=0/*!*/;
 CREATE TABLE t3(c1 INT NOT NULL PRIMARY KEY, c2 LONGBLOB, c3 TIMESTAMP, c4 TEXT, c5 FLOAT)
 /*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -212,7 +212,7 @@ SET TIMESTAMP=#/*!*/;
 SET @@session.explicit_defaults_for_timestamp=0/*!*/;
 CREATE TABLE t3(c1 INT NOT NULL PRIMARY KEY, c2 LONGBLOB, c3 TIMESTAMP, c4 TEXT, c5 FLOAT)
 /*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -295,7 +295,7 @@ include/mysqlbinlog.inc
 /*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -334,7 +334,7 @@ SET TIMESTAMP=#/*!*/;
 SET @@session.explicit_defaults_for_timestamp=0/*!*/;
 CREATE TABLE t3(c1 INT NOT NULL PRIMARY KEY, c2 LONGBLOB, c3 TIMESTAMP, c4 TEXT, c5 FLOAT)
 /*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
@@ -360,7 +360,7 @@ SET @@session.collation_database=DEFAULT/*!*/;
 SET @@session.explicit_defaults_for_timestamp=0/*!*/;
 CREATE TABLE t3(c1 INT NOT NULL PRIMARY KEY, c2 LONGBLOB, c3 TIMESTAMP, c4 TEXT, c5 FLOAT)
 /*!*/;
-SET @@SESSION.GTID_NEXT= '#' /* added by mysqlbinlog */ /*!*/;
+/*!50607 SET @@SESSION.GTID_NEXT= '#'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;

@@ -16,5 +16,5 @@ ERROR 42000: Variable 'log_timestamps' can't be set to the value of '2'
 SET GLOBAL  log_timestamps=DEFAULT;
 SELECT      @@global.log_timestamps;
 @@global.log_timestamps
-UTC
+SYSTEM
 SET GLOBAL log_timestamps      = @old_log_timestamps;
