@@ -6067,6 +6067,11 @@ static int get_schema_column_record(THD *thd, TABLE_LIST *tables,
                                             cs);
     if (print_on_update_clause(field, &type, true))
       table->field[IS_COLUMNS_EXTRA]->store(type.ptr(), type.length(), cs);
+
+	if ((field->column_format() != COLUMN_FORMAT_TYPE_COMPRESSED) && field->is_compressed()) {
+	  table->field[IS_COLUMNS_EXTRA]->store(STRING_WITH_LEN("COMPRESSED COLUMN"), cs);
+	}
+
     if (field->gcol_info)
     {
       if (field->stored_in_db)

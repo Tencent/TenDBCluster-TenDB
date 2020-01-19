@@ -3182,6 +3182,7 @@ row_sel_store_mysql_field_func(
 
 		ut_a(len_is_stored(len));
 
+		/* check if data needs uncompression */
 		if(dict_col_is_compressed(&prebuilt->table->cols[pos_in_mysql]))
 		{
 			if (UNIV_UNLIKELY(templ->type == DATA_BLOB)) {
@@ -3189,32 +3190,23 @@ row_sel_store_mysql_field_func(
 					prebuilt->blob_heap = mem_heap_create(
 							UNIV_PAGE_SIZE);
 				}
-				/* check if data needs uncompression */
-				if (dict_col_is_compressed(&prebuilt->table->cols[pos_in_mysql]))
-				{
-					/* do uncompression */
-					byte* org_data = (byte*)data;
-					ulint org_len = len;
+				/* do uncompression */
+				byte* org_data = (byte*)data;
+				ulint org_len = len;
 
-					data = row_blob_uncompress(data, len, &len, prebuilt);
-					if (!data){
-						/* Uncompression failed, this is probably due to invalid use of sql_compressed.
-						   We need to restore original data here.
-						*/
-						data = static_cast<byte*>(memcpy(mem_heap_alloc(
-										prebuilt->blob_heap, org_len),
-									org_data, org_len));
-						len = org_len;
+				data = row_blob_uncompress(data, len, &len, prebuilt);
+				if (!data) {
+					/* Uncompression failed, this is probably due to invalid use of sql_compressed.
+					   We need to restore original data here.
+					*/
+					data = static_cast<byte*>(memcpy(mem_heap_alloc(
+						prebuilt->blob_heap, org_len),
+						org_data, org_len));
+					len = org_len;
 
-						ut_print_timestamp(stderr);
-						fprintf(stderr, " [InnoDB compress ERROR] BLOB UNCOMPRESS FAILED, table_name : %s\n",
-								(prebuilt->table->name).m_name);
-					}
-				}
-				else{
-					/* data uncompression is not needed */
-					data = static_cast<byte*>(
-							mem_heap_dup(prebuilt->blob_heap, data, len));
+					ut_print_timestamp(stderr);
+					fprintf(stderr, " [InnoDB compress ERROR] BLOB UNCOMPRESS FAILED, table_name : %s\n",
+						(prebuilt->table->name).m_name);
 				}
 			}
 		}
