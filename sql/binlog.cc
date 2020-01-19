@@ -3654,7 +3654,7 @@ index files.", name, ext_buf, (strlen(ext_buf) + (end - name)));
 Remaining log filename extensions: %lu. \
 Please consider archiving some logs.", *next, (MAX_LOG_UNIQUE_FN_EXT - *next));
   
-  if (0 == error) {
+  if (0 == error && need_next) {
 	  *res_suffix_idx = *next;
 	  DBUG_PRINT("info", ("res_suffix_idx updated=%lu\n", *res_suffix_idx));
   }
