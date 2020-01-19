@@ -14,7 +14,7 @@ Warnings:
 Warning	1287	'@@log_warnings' is deprecated and will be removed in a future release. Please use log_error_verbosity instead
 SELECT @@global.log_warnings;
 @@global.log_warnings
-2
+1
 Warnings:
 Warning	1287	'@@log_warnings' is deprecated and will be removed in a future release. Please use log_error_verbosity instead
 '#--------------------FN_DYNVARS_067_02-------------------------#'
@@ -23,7 +23,7 @@ Warnings:
 Warning	1287	'@@log_warnings' is deprecated and will be removed in a future release. Please use log_error_verbosity instead
 SELECT @@global.log_warnings = 2;
 @@global.log_warnings = 2
-1
+0
 Warnings:
 Warning	1287	'@@log_warnings' is deprecated and will be removed in a future release. Please use log_error_verbosity instead
 '#--------------------FN_DYNVARS_067_03-------------------------#'

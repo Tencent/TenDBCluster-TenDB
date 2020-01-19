@@ -42,6 +42,8 @@ mysql/time_zone_leap_second	5	33	PRIMARY	3	3	1	50
 mysql/time_zone_name	5	33	PRIMARY	3	3	1	50
 mysql/time_zone_transition	6	33	PRIMARY	3	3	2	50
 mysql/time_zone_transition_type	8	33	PRIMARY	3	3	2	50
+mysql/xa_commit_log	6	33	PRIMARY	3	3	1	50
+mysql/xa_commit_log	6	33	kx	4	0	1	50
 CREATE TABLE t1 (a INT KEY, b TEXT) ROW_FORMAT=REDUNDANT ENGINE=innodb;
 CREATE TABLE t2 (a INT KEY, b TEXT) ROW_FORMAT=COMPACT ENGINE=innodb;
 CREATE TABLE t3 (a INT KEY, b TEXT) ROW_FORMAT=COMPRESSED ENGINE=innodb;

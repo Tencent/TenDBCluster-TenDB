@@ -616,6 +616,8 @@ The following options may be given as the first argument:
  --max-write-lock-count=# 
  After this many write locks, allow some read locks to run
  in between
+ --max-xa-commit-logs=# 
+ The max rows of mysql_xa_commit_log
  --memlock           Lock mysqld in memory.
  --metadata-locks-cache-size=# 
  Has no effect, deprecated
@@ -1271,6 +1273,10 @@ The following options may be given as the first argument:
  --sort-buffer-size=# 
  Each thread that needs to do a sort allocates a buffer of
  this size
+ --sort-when-partition-prefix-order 
+ using file sort when query with partition table + prefix
+ index + order by 
+ (Defaults to on; use --skip-sort-when-partition-prefix-order to disable.)
  --sporadic-binlog-dump-fail 
  Option used by mysql-test for debugging and testing of
  replication.
@@ -1510,7 +1516,7 @@ log-syslog-tag
 log-tc tc.log
 log-tc-size 24576
 log-throttle-queries-not-using-indexes 0
-log-timestamps UTC
+log-timestamps SYSTEM
 log-warnings 0
 long-query-time 10
 low-priority-updates FALSE
@@ -1545,6 +1551,7 @@ max-sp-recursion-depth 0
 max-tmp-tables 32
 max-user-connections 0
 max-write-lock-count 18446744073709551615
+max-xa-commit-logs 1000000
 memlock FALSE
 metadata-locks-cache-size 1024
 metadata-locks-hash-instances 8
@@ -1716,6 +1723,7 @@ slow-query-log FALSE
 slow-query-log-always-write-time 10
 slow-query-log-use-global-control 
 sort-buffer-size 262144
+sort-when-partition-prefix-order TRUE
 sporadic-binlog-dump-fail FALSE
 sql-mode ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
 stored-program-cache 256

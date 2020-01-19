@@ -291,6 +291,9 @@ def	mysql	user	Update_priv	5	N	NO	enum	1	3	NULL	NULL	NULL	utf8	utf8_general_ci	e
 def	mysql	user	User	2		NO	char	32	96	NULL	NULL	NULL	utf8	utf8_bin	char(32)	PRI		select,insert,update,references		
 def	mysql	user	x509_issuer	34	NULL	NO	blob	65535	65535	NULL	NULL	NULL	NULL	NULL	blob			select,insert,update,references		
 def	mysql	user	x509_subject	35	NULL	NO	blob	65535	65535	NULL	NULL	NULL	NULL	NULL	blob			select,insert,update,references		
+def	mysql	xa_commit_log	commit_time	3	CURRENT_TIMESTAMP	NO	timestamp	NULL	NULL	NULL	NULL	0	NULL	NULL	timestamp		on update CURRENT_TIMESTAMP	select,insert,update,references		
+def	mysql	xa_commit_log	id	1	NULL	NO	bigint	NULL	NULL	19	0	NULL	NULL	NULL	bigint(20)	PRI		select,insert,update,references		
+def	mysql	xa_commit_log	xid	2	NULL	NO	char	128	128	NULL	NULL	NULL	latin1	latin1_swedish_ci	char(128)	MUL		select,insert,update,references		
 ##########################################################################
 # Show the quotient of CHARACTER_OCTET_LENGTH and CHARACTER_MAXIMUM_LENGTH
 ##########################################################################
@@ -649,4 +652,7 @@ NULL	mysql	user	max_user_connections	int	NULL	NULL	NULL	NULL	int(11) unsigned
 NULL	mysql	user	password_last_changed	timestamp	NULL	NULL	NULL	NULL	timestamp
 NULL	mysql	user	password_lifetime	smallint	NULL	NULL	NULL	NULL	smallint(5) unsigned
 3.0000	mysql	user	account_locked	enum	1	3	utf8	utf8_general_ci	enum('N','Y')
+NULL	mysql	xa_commit_log	id	bigint	NULL	NULL	NULL	NULL	bigint(20)
+1.0000	mysql	xa_commit_log	xid	char	128	128	latin1	latin1_swedish_ci	char(128)
+NULL	mysql	xa_commit_log	commit_time	timestamp	NULL	NULL	NULL	NULL	timestamp
 SET sql_mode = default;

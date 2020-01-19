@@ -157,7 +157,7 @@ SYSTEM
 SET GLOBAL  log_timestamps=DEFAULT;
 SELECT      @@global.log_timestamps;
 @@global.log_timestamps
-UTC
+SYSTEM
 # Spec Ed  "SUPER required" -- see 4e
 # Spec Ee  "SYSTEM = old behavior" -- no test
 
