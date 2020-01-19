@@ -22520,6 +22520,33 @@ innobase_get_computed_value(
                                templ->mysql_col_len);
                 } else {
 
+			/* check if data needs uncompression */
+			if (templ->type == DATA_BLOB && dict_col_is_compressed(&prebuilt->table->cols[col_no]))
+			{
+				if (prebuilt->blob_heap == NULL) {
+					prebuilt->blob_heap = mem_heap_create(
+						UNIV_PAGE_SIZE);
+				}
+				/* do uncompression */
+				byte* org_data = (byte*)data;
+				ulint org_len = len;
+
+				data = row_blob_uncompress(data, len, &len, prebuilt);
+				if (!data) {
+					/* Uncompression failed, this is probably due to invalid use of sql_compressed.
+					   We need to restore original data here.
+					*/
+					data = static_cast<byte*>(memcpy(mem_heap_alloc(
+						prebuilt->blob_heap, org_len),
+						org_data, org_len));
+					len = org_len;
+
+					ut_print_timestamp(stderr);
+					fprintf(stderr, " [InnoDB compress ERROR] BLOB UNCOMPRESS FAILED, table_name : %s\n",
+						(prebuilt->table->name).m_name);
+				}
+			}
+
 			row_sel_field_store_in_mysql_format(
 				mysql_rec + templ->mysql_col_offset,
 				templ, index, templ->clust_rec_field_no,

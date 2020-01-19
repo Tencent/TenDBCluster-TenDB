@@ -1,0 +1,467 @@
+#### suite/json_compressed/t/json_compressed_vcol_index.test         #
+# Tests indexs on blob/json compressed virtual column                #
+#                                                                    #
+######################################################################
+
+--echo There might be some problem in regard to compressed columns,
+--echo when it comes to index on their virtual columns.
+--echo Basically, there are FOUR DDL operations (DROP TABLE excluded) and ONE DML operation.
+--echo DDL:
+--echo 1. Create a COMPRESSED column [bcol/jcol]. (Either a BLOB column or a JSON one)
+--echo    CREATE(bcol)/CREATE(jcol)
+--echo 2. Create a VIRTUAL/STORED GENERATED column [vcol] based on bcol/jcol.
+--echo    ADD(vcol/scol)
+--echo 3. Create an INDEX [idx] on vcol or scol.
+--echo    ADD(idx)
+--echo DML:
+--echo i. Insert into bcol/jcol.
+--echo    INSERT(bcol)/INSERT(jcol)
+--echo SELECT:
+--echo SELECT on vcol/scol
+--echo    SELECT(vcol)/SELECT(scol)
+
+--echo Basical Tests Begins
+--echo a. CREATE(bcol/jcol, vcol/scol, idx)
+--echo b. CREATE(bcol/jcol, vcol/scol) --> ADD(idx)
+--echo 1st, test on BLOB Columns:
+--echo Test Situtation a(BLOB)
+--echo VIRTUAL GENERATED
+CREATE TABLE t1(
+    bcol BLOB COMPRESSED, 
+    vcol VARCHAR(20) GENERATED ALWAYS AS (left(bcol, 10)), 
+    index idx(vcol)
+);
+INSERT INTO t1(bcol) VALUES(repeat("abcde", 100)), (repeat("abc", 200)), (repeat("xzyaaabbbcccdddeeefghi",300));
+SELECT * FROM t1 WHERE vcol = "abcdeabcde";
+SELECT * FROM t1 WHERE vcol = "xzyaaabbbc";
+SELECT * FROM t1 WHERE vcol not in ("abcabcabca");
+SELECT * FROM t1 WHERE vcol LIKE "a%";
+DROP TABLE t1;
+--echo STORED GENERATED 
+CREATE TABLE t1(
+    bcol BLOB COMPRESSED, 
+    scol VARCHAR(20) GENERATED ALWAYS AS (left(bcol, 10)) STORED,
+    index idx(scol)
+);
+INSERT INTO t1(bcol) VALUES(repeat("abcde", 100)), (repeat("abc", 200)), (repeat("xzyaaabbbcccdddeeefghi",300));
+SELECT * FROM t1 WHERE scol = "abcdeabcde";
+SELECT * FROM t1 WHERE scol = "xzyaaabbbc";
+SELECT * FROM t1 WHERE scol not in ("abcabcabca");
+SELECT * FROM t1 WHERE scol LIKE "a%";
+DROP TABLE t1;
+--echo Test Situation b(BLOB)
+--echo VIRTUAL GENERATED
+CREATE TABLE t1(
+    bcol BLOB COMPRESSED, 
+    vcol VARCHAR(20) GENERATED ALWAYS AS (left(bcol, 10))
+);
+INSERT INTO t1(bcol) VALUES(repeat("abcde", 100)), (repeat("abc", 200)), (repeat("xzyaaabbbcccdddeeefghi",300));
+ALTER TABLE t1 ADD index idx(vcol);
+SELECT * FROM t1 WHERE vcol = "abcdeabcde";
+SELECT * FROM t1 WHERE vcol = "xzyaaabbbc";
+SELECT * FROM t1 WHERE vcol not in ("abcabcabca");
+SELECT * FROM t1 WHERE vcol LIKE "a%";
+INSERT INTO t1(bcol) VALUES (repeat("m", 15));
+SELECT * FROM t1 WHERE vcol LIKE "%m%";
+SELECT * FROM t1 WHERE vcol = "mmmmmmmmmm";
+SELECT * FROM t1 WHERE vcol in (repeat('m', 10), 'abcdeabcde');
+SELECT * FROM t1;
+DROP TABLE t1;
+--echo STORED GENERATED 
+CREATE TABLE t1(
+    bcol BLOB COMPRESSED, 
+    scol VARCHAR(20) GENERATED ALWAYS AS (left(bcol, 10)) STORED
+);
+INSERT INTO t1(bcol) VALUES(repeat("abcde", 100)), (repeat("abc", 200)), (repeat("xzyaaabbbcccdddeeefghi",300));
+ALTER TABLE t1 ADD index idx(scol);
+SELECT * FROM t1 WHERE scol = "abcdeabcde";
+SELECT * FROM t1 WHERE scol = "xzyaaabbbc";
+SELECT * FROM t1 WHERE scol not in ("abcabcabca");
+SELECT * FROM t1 WHERE scol LIKE "a%";
+INSERT INTO t1(bcol) VALUES (repeat("m", 15));
+SELECT * FROM t1 WHERE scol LIKE "%m%";
+SELECT * FROM t1 WHERE scol = "mmmmmmmmmm";
+SELECT * FROM t1 WHERE scol in (repeat('m', 10), 'abcdeabcde');
+SELECT * FROM t1;
+DROP TABLE t1;
+--echo 2nd, test on JSON Columns:
+--echo Test Situtation a(JSON)
+--echo VIRTUAL GENERATED
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    vcol VARCHAR(20) GENERATED ALWAYS AS (jcol->"$.name"),
+    index idx(vcol)
+);
+INSERT INTO t1(jcol) VALUES
+('{"id":3, "name":"allen", "info":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "info2":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "info3":"abcdefghijklmnopqrstuvwxyz"}'),
+('{"id":4, "name":"barry"}'),
+('{"id":5, "name":"clair"}');
+SELECT * FROM t1 WHERE vcol LIKE "%a%";
+SELECT * FROM t1 WHERE vcol IN ("\"allen\"","\"clair\"");
+SELECT * FROM t1 WHERE vcol = "\"barry\"";
+DROP TABLE t1;
+--echo STORED GENERATED 
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    scol VARCHAR(20) GENERATED ALWAYS AS (jcol->"$.name"),
+    index idx(scol)
+);
+INSERT INTO t1(jcol) VALUES
+('{"id":3, "name":"allen", "info":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "info2":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "info3":"abcdefghijklmnopqrstuvwxyz"}'),
+('{"id":4, "name":"barry"}'),
+('{"id":5, "name":"clair"}');
+SELECT * FROM t1 WHERE scol LIKE "%a%";
+SELECT * FROM t1 WHERE scol IN ("\"allen\"","\"clair\"");
+SELECT * FROM t1 WHERE scol = "\"barry\"";
+DROP TABLE t1;
+--echo Test Situation b(JSON)
+--echo VIRTUAL GENERATED
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    vcol VARCHAR(20) GENERATED ALWAYS AS (jcol->"$.name")
+);
+INSERT INTO t1(jcol) VALUES
+('{"id":3, "name":"allen", "info":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "info2":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "info3":"abcdefghijklmnopqrstuvwxyz"}'),
+('{"id":4, "name":"barry"}'),
+('{"id":5, "name":"clair"}');
+ALTER TABLE t1 ADD index idx(vcol);
+SELECT * FROM t1 WHERE vcol LIKE "%a%";
+SELECT * FROM t1 WHERE vcol IN ("\"allen\"","\"clair\"");
+SELECT * FROM t1 WHERE vcol = "\"barry\"";
+INSERT INTO t1(jcol) VALUES('{"id":10, "name":"mike", "info":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "info2":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "info3":"abcdefghijklmnopqrstuvwxyz"}');
+SELECT * FROM t1 WHERE vcol = "\"mike\"";
+SELECT * FROM t1 WHERE vcol NOT IN ("\"allen\"","\"clair\"");
+DROP TABLE t1;
+--echo STORED GENERATED 
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    scol VARCHAR(20) GENERATED ALWAYS AS (jcol->"$.name") STORED
+);
+INSERT INTO t1(jcol) VALUES
+('{"id":3, "name":"allen", "info":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "info2":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "info3":"abcdefghijklmnopqrstuvwxyz"}'),
+('{"id":4, "name":"barry"}'),
+('{"id":5, "name":"clair"}');
+ALTER TABLE t1 ADD index idx(scol);
+SELECT * FROM t1 WHERE scol LIKE "%a%";
+SELECT * FROM t1 WHERE scol IN ("\"allen\"","\"clair\"");
+SELECT * FROM t1 WHERE scol = "\"barry\"";
+INSERT INTO t1(jcol) VALUES('{"id":10, "name":"mike", "info":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "info2":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "info3":"abcdefghijklmnopqrstuvwxyz"}');
+SELECT * FROM t1 WHERE scol = "\"mike\"";
+SELECT * FROM t1 WHERE scol NOT IN ("\"allen\"","\"clair\"");
+DROP TABLE t1;
+--echo Basical Tests Ends Here
+
+--echo Advanced Tests Begins
+--echo a. CREATE(bcol/jcol, vcol1/scol1, vcol2/scol2, idx1, idx2)
+--echo b. CREATE(bcol/jcol, vcol1/scol1, vcol2/scol2) --> ADD(idx1, idx2)
+--echo 1st, test on BLOB Columns:
+--echo Test Situation a(BLOB).
+--echo VIRTUAL GENERATED: vcol1, vcol2
+--echo STORED  GENERATED: none
+CREATE TABLE t1 (
+    bcol BLOB COMPRESSED, 
+    vcol1 VARCHAR(30) GENERATED ALWAYS AS(left(bcol, 20)), 
+    vcol2 VARCHAR(20) GENERATED ALWAYS AS(left(vcol1, 10)),
+    index idx1(vcol1),
+    index idx2(vcol2)
+);
+INSERT INTO t1 (bcol) VALUES (repeat('abcde', 100)), (repeat('abcdefghi', 400)), (repeat('advdfsdfewrqqqqqqwwwwwweeffrrrrqweads',80));
+SELECT * FROM t1 WHERE vcol1 = 'abcdeabcdeabcdeabcde';
+SELECT * FROM t1 WHERE vcol1 LIKE 'advdfsdfew%';
+SELECT * FROM t1 WHERE vcol1 not in ('abcdefghiabcdefghiab');
+SELECT * FROM t1 WHERE vcol1 not in ('abcdefghiabcdefghia');
+SELECT * FROM t1 WHERE vcol2 = 'abcdeabcde';
+SELECT * FROM t1 WHERE vcol2 = 'advdfsdfew';
+SELECT * FROM t1 WHERE vcol2 LIKE 'a%';
+SELECT * FROM t1 WHERE vcol2 in ('advdfsdfew', 'abcdeabcde');
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: none
+--echo STORED  GENERATED: scol1, scol2
+CREATE TABLE t1 (
+    bcol BLOB COMPRESSED, 
+    scol1 VARCHAR(30) GENERATED ALWAYS AS(left(bcol, 20)) STORED, 
+    scol2 VARCHAR(20) GENERATED ALWAYS AS(left(scol1, 10)) STORED,
+    index idx1(scol1),
+    index idx2(scol2)
+);
+INSERT INTO t1 (bcol) VALUES (repeat('abcde', 100)), (repeat('abcdefghi', 400)), (repeat('advdfsdfewrqqqqqqwwwwwweeffrrrrqweads',80));
+SELECT * FROM t1 WHERE scol1 = 'abcdeabcdeabcdeabcde';
+SELECT * FROM t1 WHERE scol1 LIKE 'advdfsdfew%';
+SELECT * FROM t1 WHERE scol1 not in ('abcdefghiabcdefghiab');
+SELECT * FROM t1 WHERE scol1 not in ('abcdefghiabcdefghia');
+SELECT * FROM t1 WHERE scol2 = 'abcdeabcde';
+SELECT * FROM t1 WHERE scol2 = 'advdfsdfew';
+SELECT * FROM t1 WHERE scol2 LIKE 'a%';
+SELECT * FROM t1 WHERE scol2 in ('advdfsdfew', 'abcdeabcde');
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: vcol1
+--echo STORED  GENERATED: scol2
+CREATE TABLE t1 (
+    bcol BLOB COMPRESSED, 
+    vcol1 VARCHAR(30) GENERATED ALWAYS AS(left(bcol, 20)), 
+    scol2 VARCHAR(20) GENERATED ALWAYS AS(left(vcol1, 10)) STORED,
+    index idx1(vcol1),
+    index idx2(scol2)
+);
+INSERT INTO t1 (bcol) VALUES (repeat('abcde', 100)), (repeat('abcdefghi', 400)), (repeat('advdfsdfewrqqqqqqwwwwwweeffrrrrqweads',80));
+SELECT * FROM t1 WHERE vcol1 = 'abcdeabcdeabcdeabcde';
+SELECT * FROM t1 WHERE vcol1 LIKE 'advdfsdfew%';
+SELECT * FROM t1 WHERE vcol1 not in ('abcdefghiabcdefghiab');
+SELECT * FROM t1 WHERE vcol1 not in ('abcdefghiabcdefghia');
+SELECT * FROM t1 WHERE scol2 = 'abcdeabcde';
+SELECT * FROM t1 WHERE scol2 = 'advdfsdfew';
+SELECT * FROM t1 WHERE scol2 LIKE 'a%';
+SELECT * FROM t1 WHERE scol2 in ('advdfsdfew', 'abcdeabcde');
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: scol1
+--echo STORED  GENERATED: vcol2
+CREATE TABLE t1 (
+    bcol BLOB COMPRESSED, 
+    scol1 VARCHAR(30) GENERATED ALWAYS AS(left(bcol, 20)) STORED, 
+    vcol2 VARCHAR(20) GENERATED ALWAYS AS(left(scol1, 10)),
+    index idx1(scol1),
+    index idx2(vcol2)
+);
+INSERT INTO t1 (bcol) VALUES (repeat('abcde', 100)), (repeat('abcdefghi', 400)), (repeat('advdfsdfewrqqqqqqwwwwwweeffrrrrqweads',80));
+SELECT * FROM t1 WHERE scol1 = 'abcdeabcdeabcdeabcde';
+SELECT * FROM t1 WHERE scol1 LIKE 'advdfsdfew%';
+SELECT * FROM t1 WHERE scol1 not in ('abcdefghiabcdefghiab');
+SELECT * FROM t1 WHERE scol1 not in ('abcdefghiabcdefghia');
+SELECT * FROM t1 WHERE vcol2 = 'abcdeabcde';
+SELECT * FROM t1 WHERE vcol2 = 'advdfsdfew';
+SELECT * FROM t1 WHERE vcol2 LIKE 'a%';
+SELECT * FROM t1 WHERE vcol2 in ('advdfsdfew', 'abcdeabcde');
+DROP TABLE t1;
+--echo Test Situation b(BLOB).
+--echo VIRTUAL GENERATED: vcol1, vcol2
+--echo STORED  GENERATED: none
+CREATE TABLE t1 (
+    bcol BLOB COMPRESSED, 
+    vcol1 VARCHAR(30) GENERATED ALWAYS AS(left(bcol, 20)), 
+    vcol2 VARCHAR(20) GENERATED ALWAYS AS(left(vcol1, 10))
+);
+INSERT INTO t1 (bcol) VALUES (repeat('abcde', 100)), (repeat('abcdefghi', 400)), (repeat('advdfsdfewrqqqqqqwwwwwweeffrrrrqweads',80));
+ALTER TABLE t1 ADD index idx1(vcol1), ADD index idx2(vcol2);
+SELECT * FROM t1 WHERE vcol1 = 'abcdeabcdeabcdeabcde';
+SELECT * FROM t1 WHERE vcol1 LIKE 'advdfsdfew%';
+SELECT * FROM t1 WHERE vcol1 not in ('abcdefghiabcdefghiab');
+SELECT * FROM t1 WHERE vcol1 not in ('abcdefghiabcdefghia');
+SELECT * FROM t1 WHERE vcol2 = 'abcdeabcde';
+SELECT * FROM t1 WHERE vcol2 = 'advdfsdfew';
+SELECT * FROM t1 WHERE vcol2 LIKE 'a%';
+SELECT * FROM t1 WHERE vcol2 in ('advdfsdfew', 'abcdeabcde');
+INSERT INTO t1 (bcol) VALUES (repeat('m', 300));
+SELECT * FROM t1 WHERE vcol1 = repeat('m', 20);
+SELECT * FROM t1 WHERE vcol2 = repeat('m', 10); 
+SELECT * FROM t1 WHERE vcol2 in ('advdfsdfew', 'abcdeabcde');
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: none,
+--echo STORED  GENERATED: scol1, scol2
+CREATE TABLE t1 (
+    bcol BLOB COMPRESSED, 
+    scol1 VARCHAR(30) GENERATED ALWAYS AS(left(bcol, 20)) STORED, 
+    scol2 VARCHAR(20) GENERATED ALWAYS AS(left(scol1, 10)) STORED
+);
+INSERT INTO t1 (bcol) VALUES (repeat('abcde', 100)), (repeat('abcdefghi', 400)), (repeat('advdfsdfewrqqqqqqwwwwwweeffrrrrqweads',80));
+ALTER TABLE t1 ADD index idx1(scol1), ADD index idx2(scol2);
+SELECT * FROM t1 WHERE scol1 = 'abcdeabcdeabcdeabcde';
+SELECT * FROM t1 WHERE scol1 LIKE 'advdfsdfew%';
+SELECT * FROM t1 WHERE scol1 not in ('abcdefghiabcdefghiab');
+SELECT * FROM t1 WHERE scol1 not in ('abcdefghiabcdefghia');
+SELECT * FROM t1 WHERE scol2 = 'abcdeabcde';
+SELECT * FROM t1 WHERE scol2 = 'advdfsdfew';
+SELECT * FROM t1 WHERE scol2 LIKE 'a%';
+SELECT * FROM t1 WHERE scol2 in ('advdfsdfew', 'abcdeabcde');
+INSERT INTO t1 (bcol) VALUES (repeat('m', 300));
+SELECT * FROM t1 WHERE scol1 = repeat('m', 20);
+SELECT * FROM t1 WHERE scol2 = repeat('m', 10); 
+SELECT * FROM t1 WHERE scol2 in ('advdfsdfew', 'abcdeabcde');
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: vcol1
+--echo STORED  GENERATED: scol2
+CREATE TABLE t1 (
+    bcol BLOB COMPRESSED, 
+    vcol1 VARCHAR(30) GENERATED ALWAYS AS(left(bcol, 20)), 
+    scol2 VARCHAR(20) GENERATED ALWAYS AS(left(vcol1, 10)) STORED
+);
+INSERT INTO t1 (bcol) VALUES (repeat('abcde', 100)), (repeat('abcdefghi', 400)), (repeat('advdfsdfewrqqqqqqwwwwwweeffrrrrqweads',80));
+ALTER TABLE t1 ADD index idx1(vcol1), ADD index idx2(scol2);
+SELECT * FROM t1 WHERE vcol1 = 'abcdeabcdeabcdeabcde';
+SELECT * FROM t1 WHERE vcol1 LIKE 'advdfsdfew%';
+SELECT * FROM t1 WHERE vcol1 not in ('abcdefghiabcdefghiab');
+SELECT * FROM t1 WHERE vcol1 not in ('abcdefghiabcdefghia');
+SELECT * FROM t1 WHERE scol2 = 'abcdeabcde';
+SELECT * FROM t1 WHERE scol2 = 'advdfsdfew';
+SELECT * FROM t1 WHERE scol2 LIKE 'a%';
+SELECT * FROM t1 WHERE scol2 in ('advdfsdfew', 'abcdeabcde');
+INSERT INTO t1 (bcol) VALUES (repeat('m', 300));
+SELECT * FROM t1 WHERE vcol1 = repeat('m', 20);
+SELECT * FROM t1 WHERE scol2 = repeat('m', 10); 
+SELECT * FROM t1 WHERE scol2 in ('advdfsdfew', 'abcdeabcde');
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: vcol2
+--echo STORED  GENERATED: scol1
+CREATE TABLE t1 (bcol BLOB COMPRESSED, 
+    scol1 VARCHAR(30) GENERATED ALWAYS AS(left(bcol, 20)) STORED, 
+    vcol2 VARCHAR(20) GENERATED ALWAYS AS(left(scol1, 10))
+);
+INSERT INTO t1 (bcol) VALUES (repeat('abcde', 100)), (repeat('abcdefghi', 400)), (repeat('advdfsdfewrqqqqqqwwwwwweeffrrrrqweads',80));
+ALTER TABLE t1 ADD index idx1(scol1), ADD index idx2(vcol2);
+SELECT * FROM t1 WHERE scol1 = 'abcdeabcdeabcdeabcde';
+SELECT * FROM t1 WHERE scol1 LIKE 'advdfsdfew%';
+SELECT * FROM t1 WHERE scol1 not in ('abcdefghiabcdefghiab');
+SELECT * FROM t1 WHERE scol1 not in ('abcdefghiabcdefghia');
+SELECT * FROM t1 WHERE vcol2 = 'abcdeabcde';
+SELECT * FROM t1 WHERE vcol2 = 'advdfsdfew';
+SELECT * FROM t1 WHERE vcol2 LIKE 'a%';
+SELECT * FROM t1 WHERE vcol2 in ('advdfsdfew', 'abcdeabcde');
+INSERT INTO t1 (bcol) VALUES (repeat('m', 300));
+SELECT * FROM t1 WHERE scol1 = repeat('m', 20);
+SELECT * FROM t1 WHERE vcol2 = repeat('m', 10); 
+SELECT * FROM t1 WHERE vcol2 in ('advdfsdfew', 'abcdeabcde');
+DROP TABLE t1;
+--echo 1st, test on JSON Columns:
+--echo Test Situation a(JSON).
+--echo VIRTUAL GENERATED: vcol1, vcol2
+--echo STORED  GENERATED: none
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    vcol1 JSON GENERATED ALWAYS AS (jcol->"$.detail"),
+    vcol2 VARCHAR(50) GENERATED ALWAYS AS (vcol1->"$.md5"),
+    index idx(vcol2)
+);
+INSERT into t1(jcol) VALUES
+('{"md5":"c4ca4238a0b923820dcc509a6f75849b", "id":"900150983cd24fb0d6963f7d28e17f72", "name":"allen", "detail":{"md5":"a34c3d45b6018d3fd5560b103c2a00e2", "age":"18", "hobby":"basketball", "birthday":"Jul, 1st", "telephone":"1234567890", "message1":"hbMphllxm3VmHQoNp9HDEeV4NvazoiuL3yQoftOezWS7VqpdgmyEJzv70Q0cQhttOwYUvUDtZXxMExlx1xDrLdHSAlsv4dngFwp", "message2":"F4fqzhktGBXgV0lOvwma9mT7rTO1LxZohfxeYVEtCjDjUGwsJvzrCuaUWIJTcagL4AZlPqnHsI5b8RNNjoT7f9YQJoamvsifz8D"}}'),
+('{"md5":"c81e728d9d4c2f636f067f89cc14862c", "id":"d4b7c284882ca9e208bb65e8abd5f4c8", "name":"barry", "detail":{"md5":"f9d900b378f3389d07fd328278715788", "age":"24", "hobby":"basketball", "birthday":"Mar, 9th", "telephone":"1234567890", "message1":"aw5iMeOEiLpvJTjkaPhxx3vS7OqKRWP5Cuom5davKQ8R9b0cFTWg8eV4w85aTBbVJdXJlTiy6jCnWvh6udYiCANOVGk1m65KyS3", "message2":"h2ZxzkbV9IkIKhpxlGNOTeXLugX2ZOG7e0szsm9iMR7pa6hy8fS7C2jEzGxcgk8ekAIbta75em94su8xdWXsgxpHMYiZPAlnnoi"}}'),
+('{"md5":"eccbc87e4b5ce2fe28308fd9f2a7baf3", "id":"4ed9407630eb1000c0f6b63842defa7d", "name":"clair", "detail":{"md5":"7582b9974a1186715aba1d2adc5eca44", "age":"35", "hobby":"basketball", "birthday":"Apr, 3rd", "telephone":"1234567890", "message1":"9iT7M9wiyGWm8NwKX5yJa97GH8N63nPYNN7QQm4fYmf3PLybW4T3B0Om18IKDOhdBhHBsHefdVncLbfrRhcsqUOm5AFzLwDdizr", "message2":"LtQWw5mXGzx11Fq5juxmCfMVgrfiKjuswgQAeaf0d4pw6IXPTdb9zlWqkToj8d4rZl3t3ixl7U9h32F66bymoa0JmNGr4mzC7c1"}}');
+SELECT * FROM t1 WHERE vcol2 LIKE "%a%";
+SELECT * FROM t1 WHERE vcol2 IN ("\"a34c3d45b6018d3fd5560b103c2a00e2\"","\"7582b9974a1186715aba1d2adc5eca44\"");
+SELECT * FROM t1 WHERE vcol2 = "\"f9d900b378f3389d07fd328278715788\"";
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: none
+--echo STORED  GENERATED: scol1, scol2
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    scol1 JSON GENERATED ALWAYS AS (jcol->"$.detail") STORED,
+    scol2 VARCHAR(50) GENERATED ALWAYS AS (scol1->"$.md5") STORED,
+    index idx(scol2)
+);
+INSERT into t1(jcol) VALUES
+('{"md5":"c4ca4238a0b923820dcc509a6f75849b", "id":"900150983cd24fb0d6963f7d28e17f72", "name":"allen", "detail":{"md5":"a34c3d45b6018d3fd5560b103c2a00e2", "age":"18", "hobby":"basketball", "birthday":"Jul, 1st", "telephone":"1234567890", "message1":"hbMphllxm3VmHQoNp9HDEeV4NvazoiuL3yQoftOezWS7VqpdgmyEJzv70Q0cQhttOwYUvUDtZXxMExlx1xDrLdHSAlsv4dngFwp", "message2":"F4fqzhktGBXgV0lOvwma9mT7rTO1LxZohfxeYVEtCjDjUGwsJvzrCuaUWIJTcagL4AZlPqnHsI5b8RNNjoT7f9YQJoamvsifz8D"}}'),
+('{"md5":"c81e728d9d4c2f636f067f89cc14862c", "id":"d4b7c284882ca9e208bb65e8abd5f4c8", "name":"barry", "detail":{"md5":"f9d900b378f3389d07fd328278715788", "age":"24", "hobby":"basketball", "birthday":"Mar, 9th", "telephone":"1234567890", "message1":"aw5iMeOEiLpvJTjkaPhxx3vS7OqKRWP5Cuom5davKQ8R9b0cFTWg8eV4w85aTBbVJdXJlTiy6jCnWvh6udYiCANOVGk1m65KyS3", "message2":"h2ZxzkbV9IkIKhpxlGNOTeXLugX2ZOG7e0szsm9iMR7pa6hy8fS7C2jEzGxcgk8ekAIbta75em94su8xdWXsgxpHMYiZPAlnnoi"}}'),
+('{"md5":"eccbc87e4b5ce2fe28308fd9f2a7baf3", "id":"4ed9407630eb1000c0f6b63842defa7d", "name":"clair", "detail":{"md5":"7582b9974a1186715aba1d2adc5eca44", "age":"35", "hobby":"basketball", "birthday":"Apr, 3rd", "telephone":"1234567890", "message1":"9iT7M9wiyGWm8NwKX5yJa97GH8N63nPYNN7QQm4fYmf3PLybW4T3B0Om18IKDOhdBhHBsHefdVncLbfrRhcsqUOm5AFzLwDdizr", "message2":"LtQWw5mXGzx11Fq5juxmCfMVgrfiKjuswgQAeaf0d4pw6IXPTdb9zlWqkToj8d4rZl3t3ixl7U9h32F66bymoa0JmNGr4mzC7c1"}}');
+SELECT * FROM t1 WHERE scol2 LIKE "%a%";
+SELECT * FROM t1 WHERE scol2 IN ("\"a34c3d45b6018d3fd5560b103c2a00e2\"","\"7582b9974a1186715aba1d2adc5eca44\"");
+SELECT * FROM t1 WHERE scol2 = "\"f9d900b378f3389d07fd328278715788\"";
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: vcol1
+--echo STORED  GENERATED: scol2
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    vcol1 JSON GENERATED ALWAYS AS (jcol->"$.detail"),
+    scol2 VARCHAR(50) GENERATED ALWAYS AS (vcol1->"$.md5") STORED,
+    index idx(scol2)
+);
+INSERT into t1(jcol) VALUES
+('{"md5":"c4ca4238a0b923820dcc509a6f75849b", "id":"900150983cd24fb0d6963f7d28e17f72", "name":"allen", "detail":{"md5":"a34c3d45b6018d3fd5560b103c2a00e2", "age":"18", "hobby":"basketball", "birthday":"Jul, 1st", "telephone":"1234567890", "message1":"hbMphllxm3VmHQoNp9HDEeV4NvazoiuL3yQoftOezWS7VqpdgmyEJzv70Q0cQhttOwYUvUDtZXxMExlx1xDrLdHSAlsv4dngFwp", "message2":"F4fqzhktGBXgV0lOvwma9mT7rTO1LxZohfxeYVEtCjDjUGwsJvzrCuaUWIJTcagL4AZlPqnHsI5b8RNNjoT7f9YQJoamvsifz8D"}}'),
+('{"md5":"c81e728d9d4c2f636f067f89cc14862c", "id":"d4b7c284882ca9e208bb65e8abd5f4c8", "name":"barry", "detail":{"md5":"f9d900b378f3389d07fd328278715788", "age":"24", "hobby":"swimming", "birthday":"Mar, 9th", "telephone":"1234567890", "message1":"aw5iMeOEiLpvJTjkaPhxx3vS7OqKRWP5Cuom5davKQ8R9b0cFTWg8eV4w85aTBbVJdXJlTiy6jCnWvh6udYiCANOVGk1m65KyS3", "message2":"h2ZxzkbV9IkIKhpxlGNOTeXLugX2ZOG7e0szsm9iMR7pa6hy8fS7C2jEzGxcgk8ekAIbta75em94su8xdWXsgxpHMYiZPAlnnoi"}}'),
+('{"md5":"eccbc87e4b5ce2fe28308fd9f2a7baf3", "id":"4ed9407630eb1000c0f6b63842defa7d", "name":"clair", "detail":{"md5":"7582b9974a1186715aba1d2adc5eca44", "age":"35", "hobby":"paino", "birthday":"Apr, 3rd", "telephone":"1234567890", "message1":"9iT7M9wiyGWm8NwKX5yJa97GH8N63nPYNN7QQm4fYmf3PLybW4T3B0Om18IKDOhdBhHBsHefdVncLbfrRhcsqUOm5AFzLwDdizr", "message2":"LtQWw5mXGzx11Fq5juxmCfMVgrfiKjuswgQAeaf0d4pw6IXPTdb9zlWqkToj8d4rZl3t3ixl7U9h32F66bymoa0JmNGr4mzC7c1"}}');
+SELECT * FROM t1 WHERE scol2 LIKE "%a%";
+SELECT * FROM t1 WHERE scol2 IN ("\"a34c3d45b6018d3fd5560b103c2a00e2\"","\"7582b9974a1186715aba1d2adc5eca44\"");
+SELECT * FROM t1 WHERE scol2 = "\"f9d900b378f3389d07fd328278715788\"";
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: scol1
+--echo STORED  GENERATED: vcol2
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    scol1 JSON GENERATED ALWAYS AS (jcol->"$.detail") STORED,
+    vcol2 VARCHAR(50) GENERATED ALWAYS AS (scol1->"$.md5"),
+    index idx(vcol2)
+);
+INSERT into t1(jcol) VALUES
+('{"md5":"c4ca4238a0b923820dcc509a6f75849b", "id":"900150983cd24fb0d6963f7d28e17f72", "name":"allen", "detail":{"md5":"a34c3d45b6018d3fd5560b103c2a00e2", "age":"18", "hobby":"basketball", "birthday":"Jul, 1st", "telephone":"1234567890", "message1":"hbMphllxm3VmHQoNp9HDEeV4NvazoiuL3yQoftOezWS7VqpdgmyEJzv70Q0cQhttOwYUvUDtZXxMExlx1xDrLdHSAlsv4dngFwp", "message2":"F4fqzhktGBXgV0lOvwma9mT7rTO1LxZohfxeYVEtCjDjUGwsJvzrCuaUWIJTcagL4AZlPqnHsI5b8RNNjoT7f9YQJoamvsifz8D"}}'),
+('{"md5":"c81e728d9d4c2f636f067f89cc14862c", "id":"d4b7c284882ca9e208bb65e8abd5f4c8", "name":"barry", "detail":{"md5":"f9d900b378f3389d07fd328278715788", "age":"24", "hobby":"swimming", "birthday":"Mar, 9th", "telephone":"1234567890", "message1":"aw5iMeOEiLpvJTjkaPhxx3vS7OqKRWP5Cuom5davKQ8R9b0cFTWg8eV4w85aTBbVJdXJlTiy6jCnWvh6udYiCANOVGk1m65KyS3", "message2":"h2ZxzkbV9IkIKhpxlGNOTeXLugX2ZOG7e0szsm9iMR7pa6hy8fS7C2jEzGxcgk8ekAIbta75em94su8xdWXsgxpHMYiZPAlnnoi"}}'),
+('{"md5":"eccbc87e4b5ce2fe28308fd9f2a7baf3", "id":"4ed9407630eb1000c0f6b63842defa7d", "name":"clair", "detail":{"md5":"7582b9974a1186715aba1d2adc5eca44", "age":"35", "hobby":"paino", "birthday":"Apr, 3rd", "telephone":"1234567890", "message1":"9iT7M9wiyGWm8NwKX5yJa97GH8N63nPYNN7QQm4fYmf3PLybW4T3B0Om18IKDOhdBhHBsHefdVncLbfrRhcsqUOm5AFzLwDdizr", "message2":"LtQWw5mXGzx11Fq5juxmCfMVgrfiKjuswgQAeaf0d4pw6IXPTdb9zlWqkToj8d4rZl3t3ixl7U9h32F66bymoa0JmNGr4mzC7c1"}}');
+SELECT * FROM t1 WHERE vcol2 LIKE "%a%";
+SELECT * FROM t1 WHERE vcol2 IN ("\"a34c3d45b6018d3fd5560b103c2a00e2\"","\"7582b9974a1186715aba1d2adc5eca44\"");
+SELECT * FROM t1 WHERE vcol2 = "\"f9d900b378f3389d07fd328278715788\"";
+DROP TABLE t1;
+--echo Test Situation b(JSON).
+--echo VIRTUAL GENERATED: vcol1, vcol2
+--echo STORED  GENERATED: none
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    vcol1 JSON GENERATED ALWAYS AS (jcol->"$.detail"),
+    vcol2 VARCHAR(50) GENERATED ALWAYS AS (vcol1->"$.md5")
+);
+INSERT into t1(jcol) VALUES
+('{"md5":"c4ca4238a0b923820dcc509a6f75849b", "id":"900150983cd24fb0d6963f7d28e17f72", "name":"allen", "detail":{"md5":"a34c3d45b6018d3fd5560b103c2a00e2", "age":"18", "hobby":"basketball", "birthday":"Jul, 1st", "telephone":"1234567890", "message1":"hbMphllxm3VmHQoNp9HDEeV4NvazoiuL3yQoftOezWS7VqpdgmyEJzv70Q0cQhttOwYUvUDtZXxMExlx1xDrLdHSAlsv4dngFwp", "message2":"F4fqzhktGBXgV0lOvwma9mT7rTO1LxZohfxeYVEtCjDjUGwsJvzrCuaUWIJTcagL4AZlPqnHsI5b8RNNjoT7f9YQJoamvsifz8D"}}'),
+('{"md5":"c81e728d9d4c2f636f067f89cc14862c", "id":"d4b7c284882ca9e208bb65e8abd5f4c8", "name":"barry", "detail":{"md5":"f9d900b378f3389d07fd328278715788", "age":"24", "hobby":"swimming", "birthday":"Mar, 9th", "telephone":"1234567890", "message1":"aw5iMeOEiLpvJTjkaPhxx3vS7OqKRWP5Cuom5davKQ8R9b0cFTWg8eV4w85aTBbVJdXJlTiy6jCnWvh6udYiCANOVGk1m65KyS3", "message2":"h2ZxzkbV9IkIKhpxlGNOTeXLugX2ZOG7e0szsm9iMR7pa6hy8fS7C2jEzGxcgk8ekAIbta75em94su8xdWXsgxpHMYiZPAlnnoi"}}'),
+('{"md5":"eccbc87e4b5ce2fe28308fd9f2a7baf3", "id":"4ed9407630eb1000c0f6b63842defa7d", "name":"clair", "detail":{"md5":"7582b9974a1186715aba1d2adc5eca44", "age":"35", "hobby":"paino", "birthday":"Apr, 3rd", "telephone":"1234567890", "message1":"9iT7M9wiyGWm8NwKX5yJa97GH8N63nPYNN7QQm4fYmf3PLybW4T3B0Om18IKDOhdBhHBsHefdVncLbfrRhcsqUOm5AFzLwDdizr", "message2":"LtQWw5mXGzx11Fq5juxmCfMVgrfiKjuswgQAeaf0d4pw6IXPTdb9zlWqkToj8d4rZl3t3ixl7U9h32F66bymoa0JmNGr4mzC7c1"}}');
+ALTER TABLE t1 ADD index idx(vcol2);
+SELECT * FROM t1 WHERE vcol2 LIKE "%a%";
+SELECT * FROM t1 WHERE vcol2 IN ("\"a34c3d45b6018d3fd5560b103c2a00e2\"","\"7582b9974a1186715aba1d2adc5eca44\"");
+SELECT * FROM t1 WHERE vcol2 = "\"f9d900b378f3389d07fd328278715788\"";
+INSERT INTO t1(jcol) VALUES
+('{"md5":"a87ff679a2f3e71d9181a67b7542122c", "id":"7d09898e18511cf7c0c1815d07728d23", "name":"david", "detail":{"md5":"172522ec1028ab781d9dfd17eaca4427", "age":"41", "hobby":"painting", "birthday":"Feb, 27th", "telephone":"1234567890", "message1":"9nFsmf8mgt2i9lZLAmQt1rxzHKffmUuujnpAgzuKcb857n93GdqJGzxyQfp532a4GmskMiNBvzSbEH4uYKGrSSgVTF8qhcI0P0K", "message2":"7Dm8rJ4wpnekCeM02yhH1opqkqahvhoUAx39mM9He9mQBNdFKVU0VEAfm82ELJTxW46QRwkM2fi3pQ6ESizKZX27Wk1GKygWA7x"}}');
+SELECT * FROM t1 WHERE vcol2 = "\"172522ec1028ab781d9dfd17eaca4427\"";
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: none,
+--echo STORED  GENERATED: scol1, scol2
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    scol1 JSON GENERATED ALWAYS AS (jcol->"$.detail") STORED,
+    scol2 VARCHAR(50) GENERATED ALWAYS AS (scol1->"$.md5") STORED
+);
+INSERT into t1(jcol) VALUES
+('{"md5":"c4ca4238a0b923820dcc509a6f75849b", "id":"900150983cd24fb0d6963f7d28e17f72", "name":"allen", "detail":{"md5":"a34c3d45b6018d3fd5560b103c2a00e2", "age":"18", "hobby":"basketball", "birthday":"Jul, 1st", "telephone":"1234567890", "message1":"hbMphllxm3VmHQoNp9HDEeV4NvazoiuL3yQoftOezWS7VqpdgmyEJzv70Q0cQhttOwYUvUDtZXxMExlx1xDrLdHSAlsv4dngFwp", "message2":"F4fqzhktGBXgV0lOvwma9mT7rTO1LxZohfxeYVEtCjDjUGwsJvzrCuaUWIJTcagL4AZlPqnHsI5b8RNNjoT7f9YQJoamvsifz8D"}}'),
+('{"md5":"c81e728d9d4c2f636f067f89cc14862c", "id":"d4b7c284882ca9e208bb65e8abd5f4c8", "name":"barry", "detail":{"md5":"f9d900b378f3389d07fd328278715788", "age":"24", "hobby":"swimming", "birthday":"Mar, 9th", "telephone":"1234567890", "message1":"aw5iMeOEiLpvJTjkaPhxx3vS7OqKRWP5Cuom5davKQ8R9b0cFTWg8eV4w85aTBbVJdXJlTiy6jCnWvh6udYiCANOVGk1m65KyS3", "message2":"h2ZxzkbV9IkIKhpxlGNOTeXLugX2ZOG7e0szsm9iMR7pa6hy8fS7C2jEzGxcgk8ekAIbta75em94su8xdWXsgxpHMYiZPAlnnoi"}}'),
+('{"md5":"eccbc87e4b5ce2fe28308fd9f2a7baf3", "id":"4ed9407630eb1000c0f6b63842defa7d", "name":"clair", "detail":{"md5":"7582b9974a1186715aba1d2adc5eca44", "age":"35", "hobby":"paino", "birthday":"Apr, 3rd", "telephone":"1234567890", "message1":"9iT7M9wiyGWm8NwKX5yJa97GH8N63nPYNN7QQm4fYmf3PLybW4T3B0Om18IKDOhdBhHBsHefdVncLbfrRhcsqUOm5AFzLwDdizr", "message2":"LtQWw5mXGzx11Fq5juxmCfMVgrfiKjuswgQAeaf0d4pw6IXPTdb9zlWqkToj8d4rZl3t3ixl7U9h32F66bymoa0JmNGr4mzC7c1"}}');
+ALTER TABLE t1 ADD index idx(scol2);
+SELECT * FROM t1 WHERE scol2 LIKE "%a%";
+SELECT * FROM t1 WHERE scol2 IN ("\"a34c3d45b6018d3fd5560b103c2a00e2\"","\"7582b9974a1186715aba1d2adc5eca44\"");
+SELECT * FROM t1 WHERE scol2 = "\"f9d900b378f3389d07fd328278715788\"";
+INSERT INTO t1(jcol) VALUES
+('{"md5":"a87ff679a2f3e71d9181a67b7542122c", "id":"7d09898e18511cf7c0c1815d07728d23", "name":"david", "detail":{"md5":"172522ec1028ab781d9dfd17eaca4427", "age":"41", "hobby":"painting", "birthday":"Feb, 27th", "telephone":"1234567890", "message1":"9nFsmf8mgt2i9lZLAmQt1rxzHKffmUuujnpAgzuKcb857n93GdqJGzxyQfp532a4GmskMiNBvzSbEH4uYKGrSSgVTF8qhcI0P0K", "message2":"7Dm8rJ4wpnekCeM02yhH1opqkqahvhoUAx39mM9He9mQBNdFKVU0VEAfm82ELJTxW46QRwkM2fi3pQ6ESizKZX27Wk1GKygWA7x"}}');
+SELECT * FROM t1 WHERE scol2 = "\"172522ec1028ab781d9dfd17eaca4427\"";
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: vcol1
+--echo STORED  GENERATED: scol2
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    vcol1 JSON GENERATED ALWAYS AS (jcol->"$.detail"),
+    scol2 VARCHAR(50) GENERATED ALWAYS AS (vcol1->"$.md5") STORED
+);
+INSERT into t1(jcol) VALUES
+('{"md5":"c4ca4238a0b923820dcc509a6f75849b", "id":"900150983cd24fb0d6963f7d28e17f72", "name":"allen", "detail":{"md5":"a34c3d45b6018d3fd5560b103c2a00e2", "age":"18", "hobby":"basketball", "birthday":"Jul, 1st", "telephone":"1234567890", "message1":"hbMphllxm3VmHQoNp9HDEeV4NvazoiuL3yQoftOezWS7VqpdgmyEJzv70Q0cQhttOwYUvUDtZXxMExlx1xDrLdHSAlsv4dngFwp", "message2":"F4fqzhktGBXgV0lOvwma9mT7rTO1LxZohfxeYVEtCjDjUGwsJvzrCuaUWIJTcagL4AZlPqnHsI5b8RNNjoT7f9YQJoamvsifz8D"}}'),
+('{"md5":"c81e728d9d4c2f636f067f89cc14862c", "id":"d4b7c284882ca9e208bb65e8abd5f4c8", "name":"barry", "detail":{"md5":"f9d900b378f3389d07fd328278715788", "age":"24", "hobby":"swimming", "birthday":"Mar, 9th", "telephone":"1234567890", "message1":"aw5iMeOEiLpvJTjkaPhxx3vS7OqKRWP5Cuom5davKQ8R9b0cFTWg8eV4w85aTBbVJdXJlTiy6jCnWvh6udYiCANOVGk1m65KyS3", "message2":"h2ZxzkbV9IkIKhpxlGNOTeXLugX2ZOG7e0szsm9iMR7pa6hy8fS7C2jEzGxcgk8ekAIbta75em94su8xdWXsgxpHMYiZPAlnnoi"}}'),
+('{"md5":"eccbc87e4b5ce2fe28308fd9f2a7baf3", "id":"4ed9407630eb1000c0f6b63842defa7d", "name":"clair", "detail":{"md5":"7582b9974a1186715aba1d2adc5eca44", "age":"35", "hobby":"paino", "birthday":"Apr, 3rd", "telephone":"1234567890", "message1":"9iT7M9wiyGWm8NwKX5yJa97GH8N63nPYNN7QQm4fYmf3PLybW4T3B0Om18IKDOhdBhHBsHefdVncLbfrRhcsqUOm5AFzLwDdizr", "message2":"LtQWw5mXGzx11Fq5juxmCfMVgrfiKjuswgQAeaf0d4pw6IXPTdb9zlWqkToj8d4rZl3t3ixl7U9h32F66bymoa0JmNGr4mzC7c1"}}');
+ALTER TABLE t1 ADD index idx(scol2);
+SELECT * FROM t1 WHERE scol2 LIKE "%a%";
+SELECT * FROM t1 WHERE scol2 IN ("\"a34c3d45b6018d3fd5560b103c2a00e2\"","\"7582b9974a1186715aba1d2adc5eca44\"");
+SELECT * FROM t1 WHERE scol2 = "\"f9d900b378f3389d07fd328278715788\"";
+INSERT INTO t1(jcol) VALUES
+('{"md5":"a87ff679a2f3e71d9181a67b7542122c", "id":"7d09898e18511cf7c0c1815d07728d23", "name":"david", "detail":{"md5":"172522ec1028ab781d9dfd17eaca4427", "age":"41", "hobby":"painting", "birthday":"Feb, 27th", "telephone":"1234567890", "message1":"9nFsmf8mgt2i9lZLAmQt1rxzHKffmUuujnpAgzuKcb857n93GdqJGzxyQfp532a4GmskMiNBvzSbEH4uYKGrSSgVTF8qhcI0P0K", "message2":"7Dm8rJ4wpnekCeM02yhH1opqkqahvhoUAx39mM9He9mQBNdFKVU0VEAfm82ELJTxW46QRwkM2fi3pQ6ESizKZX27Wk1GKygWA7x"}}');
+SELECT * FROM t1 WHERE scol2 = "\"172522ec1028ab781d9dfd17eaca4427\"";
+DROP TABLE t1;
+--echo VIRTUAL GENERATED: vcol2
+--echo STORED  GENERATED: scol1
+CREATE TABLE t1 (
+    jcol JSON COMPRESSED, 
+    scol1 JSON GENERATED ALWAYS AS (jcol->"$.detail") STORED,
+    vcol2 VARCHAR(50) GENERATED ALWAYS AS (scol1->"$.md5")
+);
+INSERT into t1(jcol) VALUES
+('{"md5":"c4ca4238a0b923820dcc509a6f75849b", "id":"900150983cd24fb0d6963f7d28e17f72", "name":"allen", "detail":{"md5":"a34c3d45b6018d3fd5560b103c2a00e2", "age":"18", "hobby":"basketball", "birthday":"Jul, 1st", "telephone":"1234567890", "message1":"hbMphllxm3VmHQoNp9HDEeV4NvazoiuL3yQoftOezWS7VqpdgmyEJzv70Q0cQhttOwYUvUDtZXxMExlx1xDrLdHSAlsv4dngFwp", "message2":"F4fqzhktGBXgV0lOvwma9mT7rTO1LxZohfxeYVEtCjDjUGwsJvzrCuaUWIJTcagL4AZlPqnHsI5b8RNNjoT7f9YQJoamvsifz8D"}}'),
+('{"md5":"c81e728d9d4c2f636f067f89cc14862c", "id":"d4b7c284882ca9e208bb65e8abd5f4c8", "name":"barry", "detail":{"md5":"f9d900b378f3389d07fd328278715788", "age":"24", "hobby":"swimming", "birthday":"Mar, 9th", "telephone":"1234567890", "message1":"aw5iMeOEiLpvJTjkaPhxx3vS7OqKRWP5Cuom5davKQ8R9b0cFTWg8eV4w85aTBbVJdXJlTiy6jCnWvh6udYiCANOVGk1m65KyS3", "message2":"h2ZxzkbV9IkIKhpxlGNOTeXLugX2ZOG7e0szsm9iMR7pa6hy8fS7C2jEzGxcgk8ekAIbta75em94su8xdWXsgxpHMYiZPAlnnoi"}}'),
+('{"md5":"eccbc87e4b5ce2fe28308fd9f2a7baf3", "id":"4ed9407630eb1000c0f6b63842defa7d", "name":"clair", "detail":{"md5":"7582b9974a1186715aba1d2adc5eca44", "age":"35", "hobby":"paino", "birthday":"Apr, 3rd", "telephone":"1234567890", "message1":"9iT7M9wiyGWm8NwKX5yJa97GH8N63nPYNN7QQm4fYmf3PLybW4T3B0Om18IKDOhdBhHBsHefdVncLbfrRhcsqUOm5AFzLwDdizr", "message2":"LtQWw5mXGzx11Fq5juxmCfMVgrfiKjuswgQAeaf0d4pw6IXPTdb9zlWqkToj8d4rZl3t3ixl7U9h32F66bymoa0JmNGr4mzC7c1"}}');
+ALTER TABLE t1 ADD index idx(vcol2);
+SELECT * FROM t1 WHERE vcol2 LIKE "%a%";
+SELECT * FROM t1 WHERE vcol2 IN ("\"a34c3d45b6018d3fd5560b103c2a00e2\"","\"7582b9974a1186715aba1d2adc5eca44\"");
+SELECT * FROM t1 WHERE vcol2 = "\"f9d900b378f3389d07fd328278715788\"";
+INSERT INTO t1(jcol) VALUES
+('{"md5":"a87ff679a2f3e71d9181a67b7542122c", "id":"7d09898e18511cf7c0c1815d07728d23", "name":"david", "detail":{"md5":"172522ec1028ab781d9dfd17eaca4427", "age":"41", "hobby":"painting", "birthday":"Feb, 27th", "telephone":"1234567890", "message1":"9nFsmf8mgt2i9lZLAmQt1rxzHKffmUuujnpAgzuKcb857n93GdqJGzxyQfp532a4GmskMiNBvzSbEH4uYKGrSSgVTF8qhcI0P0K", "message2":"7Dm8rJ4wpnekCeM02yhH1opqkqahvhoUAx39mM9He9mQBNdFKVU0VEAfm82ELJTxW46QRwkM2fi3pQ6ESizKZX27Wk1GKygWA7x"}}');
+SELECT * FROM t1 WHERE vcol2 = "\"172522ec1028ab781d9dfd17eaca4427\"";
+DROP TABLE t1;
+--echo Advanced Tests Ends Here
+--echo Finished
