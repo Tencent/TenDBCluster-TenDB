@@ -1513,7 +1513,7 @@ bool buf_chunk_t::madvise_dump() {
   }
   return true;
 #else  /* HAVE_MADV_DONTDUMP */
-  ib::warn() << ""Disabling @@core_file because @@innodb_buffer_pool_in_core_file is disabled, yet MADV_DONTDUMP is not supported on this platform"";
+  ib::warn() << "Disabling @@core_file because @@innodb_buffer_pool_in_core_file is disabled, yet MADV_DONTDUMP is not supported on this platform";
   return false;
 #endif /* HAVE_MADV_DONTDUMP */
 }
