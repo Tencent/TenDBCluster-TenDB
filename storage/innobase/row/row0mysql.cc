@@ -6717,7 +6717,6 @@ row_blob_compress_alloc( /* compress data and return compressed data */
 		}
 		else
 		{
-			ut_a(len < 256);
 			mach_write_to_1(compbuf+1, len);
 			n = 1;
 		}
