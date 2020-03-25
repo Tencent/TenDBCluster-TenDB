@@ -42,6 +42,10 @@ change_user $USER;
 
 connection default;
 
+--disable_query_log
+flush tables
+--enable_query_log
+
 update mysql.user set plugin='';
 delete from mysql.user;
 insert into mysql.user select * from mysql_user_bak;
