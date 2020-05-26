@@ -43,7 +43,7 @@ change_user $USER;
 connection default;
 
 --disable_query_log
-flush tables
+flush tables;
 --enable_query_log
 
 update mysql.user set plugin='';
