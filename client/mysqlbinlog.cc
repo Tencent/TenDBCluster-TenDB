@@ -256,6 +256,7 @@ bool rewrite_db_filter(char **buf, ulong *event_len,
     case binary_log::TABLE_MAP_EVENT:
       return Table_map_log_event::rewrite_db_in_buffer(buf, event_len, fde);
     case binary_log::QUERY_EVENT:
+    case binary_log::QUERY_COMPRESSED_EVENT:
     case binary_log::EXECUTE_LOAD_QUERY_EVENT:
       return Query_log_event::rewrite_db_in_buffer(buf, event_len, fde);
     default:
