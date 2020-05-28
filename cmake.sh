@@ -25,7 +25,7 @@ usage(){
 do_install=0
 debug=0
 do_tar=0
-version=3.1
+version=3.2
 do_test=0
 debug_flag=" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_CONFIG=mysql_release "
 bld_dir="bld"
@@ -82,7 +82,7 @@ cd $bld_dir
 
 rm -f CMakeCache.txt
 
-cmd="cmake .. -DDOWNLOAD_BOOST=1 -DWITH_BOOST=$boost_dir -DWITH_ZLIB=bundled -DWITHOUT_TOKUDB_STORAGE_ENGINE=1 -DMYSQL_SERVER_SUFFIX=$suffix $debug_flag -DFEATURE_SET=community  -DWITH_EMBEDDED_SERVER=OFF -DCMAKE_C_COMPILER=$gccdir/bin/gcc -DCMAKE_CXX_COMPILER=$gccdir/bin/g++ -DCMAKE_INSTALL_PREFIX=$install_dir -DWITH_QUERY_RESPONSE_TIME=on $static_flag"
+cmd="cmake .. -DDOWNLOAD_BOOST=1 -DWITH_BOOST=$boost_dir -DCMAKE_PREFIX_PATH=/usr/bin/openssl -DWITH_SSL="system" -DWITH_ZLIB=bundled -DWITHOUT_TOKUDB_STORAGE_ENGINE=1 -DMYSQL_SERVER_SUFFIX=$suffix $debug_flag -DFEATURE_SET=community  -DWITH_EMBEDDED_SERVER=OFF -DCMAKE_C_COMPILER=$gccdir/bin/gcc -DCMAKE_CXX_COMPILER=$gccdir/bin/g++ -DCMAKE_INSTALL_PREFIX=$install_dir -DWITH_QUERY_RESPONSE_TIME=on $static_flag"
 echo "compile args:"
 echo "$cmd"
 $cmd
@@ -102,7 +102,8 @@ fi
 if [ $do_test == 1 ]
 then
     cd mysql-test
-    perl mysql-test-run.pl --max-test-fail=0 --force --parallel=24 &>test.log
+    perl mysql-test-run.pl --timer  --force --parallel=auto --comment=mtr-no-rpl --vardir=var-mtr-no-rpl --ps-protocol --skip-ndb   --skip-rpl --report-unstable-tests --no-warnings --clean-vardir  >&test_no_repl.log &
+    perl mysql-test-run.pl --timer  --force --parallel=auto --comment=rpl --vardir=var-rpl --ps-protocol --skip-ndb   --suite=rpl --clean-vardir --report-unstable-tests --no-warnings  >&test_repl.log &
     cd ..
 fi
 
