@@ -32,7 +32,7 @@ CREATE DATABASE IF NOT EXISTS sys DEFAULT CHARACTER SET utf8;
 
 USE sys;
 
-CREATE OR REPLACE DEFINER = 'mysql.sys'@'localhost' SQL SECURITY INVOKER  VIEW version ( sys_version, mysql_version ) AS  SELECT '1.5.1' AS sys_version,  version() AS mysql_version;
+CREATE OR REPLACE DEFINER = 'mysql.sys'@'localhost' SQL SECURITY INVOKER  VIEW version ( sys_version, mysql_version ) AS  SELECT '1.6.1' AS sys_version,  version() AS mysql_version;
 
 CREATE TABLE IF NOT EXISTS sys_config ( variable VARCHAR(128) PRIMARY KEY, value VARCHAR(128), set_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, set_by VARCHAR(128) ) ENGINE = InnoDB;
 
@@ -80,7 +80,7 @@ CREATE DEFINER='mysql.sys'@'localhost' FUNCTION list_drop ( in_list TEXT, in_dro
 
 DROP FUNCTION IF EXISTS ps_is_account_enabled;
 
-CREATE DEFINER='mysql.sys'@'localhost' FUNCTION ps_is_account_enabled ( in_host VARCHAR(60),  in_user VARCHAR(32) )  RETURNS ENUM('YES', 'NO') COMMENT '\n Description\n \n Determines whether instrumentation of an account is enabled \n within Performance Schema.\n \n Parameters\n \n in_host VARCHAR(60): \n The hostname of the account to check.\n in_user VARCHAR(32):\n The username of the account to check.\n \n Returns\n \n ENUM(\'YES\', \'NO\', \'PARTIAL\')\n \n Example\n \n mysql> SELECT sys.ps_is_account_enabled(\'localhost\', \'root\');\n +------------------------------------------------+\n | sys.ps_is_account_enabled(\'localhost\', \'root\') |\n +------------------------------------------------+\n | YES                                            |\n +------------------------------------------------+\n 1 row in set (0.01 sec)\n ' SQL SECURITY INVOKER DETERMINISTIC  READS SQL DATA  BEGIN RETURN IF(EXISTS(SELECT 1 FROM performance_schema.setup_actors WHERE (`HOST` = '%' OR in_host LIKE `HOST`) AND (`USER` = '%' OR `USER` = in_user) AND (`ENABLED` = 'YES') ), 'YES', 'NO' ); END;
+CREATE DEFINER='mysql.sys'@'localhost' FUNCTION ps_is_account_enabled ( in_host VARCHAR(255),  in_user VARCHAR(32) )  RETURNS ENUM('YES', 'NO') COMMENT '\n Description\n \n Determines whether instrumentation of an account is enabled \n within Performance Schema.\n \n Parameters\n \n in_host VARCHAR(255): \n The hostname of the account to check.\n in_user VARCHAR(32):\n The username of the account to check.\n \n Returns\n \n ENUM(\'YES\', \'NO\', \'PARTIAL\')\n \n Example\n \n mysql> SELECT sys.ps_is_account_enabled(\'localhost\', \'root\');\n +------------------------------------------------+\n | sys.ps_is_account_enabled(\'localhost\', \'root\') |\n +------------------------------------------------+\n | YES                                            |\n +------------------------------------------------+\n 1 row in set (0.01 sec)\n ' SQL SECURITY INVOKER DETERMINISTIC  READS SQL DATA  BEGIN RETURN IF(EXISTS(SELECT 1 FROM performance_schema.setup_actors WHERE (`HOST` = '%' OR in_host LIKE `HOST`) AND (`USER` = '%' OR `USER` = in_user) AND (`ENABLED` = 'YES') ), 'YES', 'NO' ); END;
 
 DROP FUNCTION IF EXISTS ps_is_consumer_enabled;
 

@@ -123,7 +123,7 @@ CHECK(const char* address, int expected_res, bool is_numeric= false)
   char buf1[NDB_ADDR_STRLEN];
   char buf2[NDB_ADDR_STRLEN];
 
-  fprintf(stderr, "Testing '%s'\n", address);
+  fprintf(stderr, "Testing '%s' with length: %u\n", address, (unsigned)strlen(address));
 
   int res= Ndb_getInAddr(&addr, address);
 
@@ -297,6 +297,13 @@ TAPTEST(NdbGetInAddr)
   CHECK("fe80:0:0:0:200:f8ff:fe21:67cf", -1);
   CHECK("fe80::200:f8ff:fe21:67cf", -1);
   CHECK("::1", -1); // the loopback, but still No IPv6
+
+  // 255 byte hostname which does not exist
+  char long_hostname[256];
+  memset(long_hostname, 'y', sizeof(long_hostname) - 1);
+  long_hostname[sizeof(long_hostname) - 1] = 0;
+  assert(strlen(long_hostname) == 255);
+  CHECK(long_hostname, -1);
 
   socket_library_end();
 

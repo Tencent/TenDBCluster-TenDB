@@ -43,7 +43,7 @@ struct st_mysql_information_schema
 /** Fields of information_schema.connection_control_failed_attempts */
 static ST_FIELD_INFO failed_attempts_view_fields[]=
 {
-  {"USERHOST", USERNAME_LENGTH + MAX_HOSTNAME + 5, MYSQL_TYPE_STRING, 0, MY_I_S_UNSIGNED, 0, 0},
+  {"USERHOST", USERNAME_LENGTH + HOSTNAME_LENGTH + 6, MYSQL_TYPE_STRING, 0, MY_I_S_UNSIGNED, 0, 0},
   {"FAILED_ATTEMPTS", 16, MYSQL_TYPE_LONG, 0, MY_I_S_UNSIGNED, 0, 0},
   {0, 0, MYSQL_TYPE_NULL, 0, 0, 0, 0}
 };

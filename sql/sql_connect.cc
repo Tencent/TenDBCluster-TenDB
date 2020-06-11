@@ -1194,6 +1194,16 @@ static int check_connection(THD *thd, bool extra_port_connection)
       return 1;
     }
     thd->m_main_security_ctx.assign_ip(ip, strlen(ip));
+    DBUG_EXECUTE_IF("vio_peer_addr_fake_hostname1", {
+      thd->m_main_security_ctx.assign_host(
+          "host_"
+          "1234567890abcdefghij1234567890abcdefghij1234567890abcdefghij123456"
+          "7890abcdefghij1234567890abcdefghij1234567890abcdefghij1234567890ab"
+          "cdefghij1234567890abcdefghij1234567890abcdefghij1234567890abcdefgh"
+          "ij1234567890abcdefghij1234567890abcdefghij1234567890",
+          255);
+    });
+
     main_sctx_ip= thd->m_main_security_ctx.ip();
     if (!(main_sctx_ip.length))
     {

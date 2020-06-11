@@ -122,7 +122,7 @@
                                                    /* type, db_1, db_2, ... */  \
                                    1U + (MAX_DBS_IN_EVENT_MTS * (1 + NAME_LEN)) + \
                                    3U +            /* type, microseconds */ + \
-                                   1U + 32*3 + 1 + 60 \
+                                   1U + 32*3 + 1 + 255 \
                                    /* type, user_len, user, host_len, host */)
 
 

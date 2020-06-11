@@ -104,7 +104,7 @@ static const TABLE_FIELD_TYPE field_types[]=
   },
   {
     {C_STRING_WITH_LEN("MEMBER_HOST")},
-    {C_STRING_WITH_LEN("char(60)")},
+    {C_STRING_WITH_LEN("char(255)")},
     {NULL, 0}
   },
   {

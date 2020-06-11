@@ -119,7 +119,6 @@ ALTER TABLE tables_priv
   ADD KEY Grantor (Grantor);
 
 ALTER TABLE tables_priv
-  MODIFY Host char(60) NOT NULL default '',
   MODIFY Db char(64) NOT NULL default '',
   MODIFY User char(32) NOT NULL default '',
   MODIFY Table_name char(64) NOT NULL default '',
@@ -135,9 +134,6 @@ ALTER TABLE tables_priv
     COLLATE utf8_general_ci DEFAULT '' NOT NULL,
   COMMENT='Table privileges';
 
-ALTER TABLE tables_priv
-  MODIFY Grantor char(93) NOT NULL default '';
-
 #
 # columns_priv
 #
@@ -149,7 +145,6 @@ ALTER TABLE columns_priv
     COLLATE utf8_general_ci DEFAULT '' NOT NULL;
 
 ALTER TABLE columns_priv
-  MODIFY Host char(60) NOT NULL default '',
   MODIFY Db char(64) NOT NULL default '',
   MODIFY User char(32) NOT NULL default '',
   MODIFY Table_name char(64) NOT NULL default '',
@@ -203,7 +198,9 @@ ADD max_connections int(11) unsigned NOT NULL DEFAULT 0 AFTER max_updates;
 #
 ALTER TABLE proxies_priv MODIFY User char(32) binary DEFAULT '' NOT NULL;
 ALTER TABLE proxies_priv MODIFY Proxied_user char(32) binary DEFAULT '' NOT NULL;
-ALTER TABLE proxies_priv MODIFY Grantor char(93) DEFAULT '' NOT NULL;
+ALTER TABLE proxies_priv MODIFY Host char(255) CHARACTER SET ASCII DEFAULT '' NOT NULL, ENGINE=InnoDB;
+ALTER TABLE proxies_priv MODIFY Proxied_host char(255) CHARACTER SET ASCII DEFAULT '' NOT NULL;
+ALTER TABLE proxies_priv MODIFY Grantor varchar(288) DEFAULT '' NOT NULL;
 
 #
 #  Add Create_tmp_table_priv and Lock_tables_priv to db
@@ -223,7 +220,6 @@ alter table func comment='User defined functions';
 # Convert all tables to UTF-8 with binary collation
 # and reset all char columns to correct width
 ALTER TABLE user
-  MODIFY Host char(60) NOT NULL default '',
   MODIFY User char(32) NOT NULL default '',
   ENGINE=MyISAM, CONVERT TO CHARACTER SET utf8 COLLATE utf8_bin;
 ALTER TABLE user
@@ -251,7 +247,6 @@ ALTER TABLE user
   MODIFY ssl_type enum('','ANY','X509', 'SPECIFIED') COLLATE utf8_general_ci DEFAULT '' NOT NULL;
 
 ALTER TABLE db
-  MODIFY Host char(60) NOT NULL default '',
   MODIFY Db char(64) NOT NULL default '',
   MODIFY User char(32) NOT NULL default '',
   ENGINE=MyISAM, CONVERT TO CHARACTER SET utf8 COLLATE utf8_bin;
@@ -420,8 +415,6 @@ ALTER TABLE procs_priv
 ALTER TABLE procs_priv
   MODIFY Timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER Proc_priv;
 
-ALTER TABLE procs_priv
-  MODIFY Grantor char(93) DEFAULT '' NOT NULL;
 #
 # proc
 #
@@ -939,6 +932,34 @@ SET @str = IF(@had_distributed_proxies_priv > 0, @cmd, "SET @dummy = 0");
 PREPARE stmt FROM @str;
 EXECUTE stmt;
 DROP PREPARE stmt;
+
+# Increase host name length. We need a separate ALTER TABLE to
+# alter the CHARACTER SET to ASCII, because the syntax
+# 'CONVERT TO CHARACTER...' above changes all field charset
+# to utf8_bin.
+
+ALTER TABLE db
+  MODIFY Host char(255) CHARACTER SET ASCII DEFAULT '' NOT NULL;
+
+ALTER TABLE user
+  MODIFY Host char(255) CHARACTER SET ASCII DEFAULT '' NOT NULL;
+
+ALTER TABLE servers
+MODIFY Host char(255) CHARACTER SET ASCII NOT NULL DEFAULT '';
+
+ALTER TABLE tables_priv
+MODIFY Host char(255) CHARACTER SET ASCII DEFAULT '' NOT NULL,
+MODIFY Grantor varchar(288) binary DEFAULT '' NOT NULL;
+
+ALTER TABLE columns_priv
+MODIFY Host char(255) CHARACTER SET ASCII DEFAULT '' NOT NULL;
+
+ALTER TABLE slave_master_info
+MODIFY Host CHAR(255) CHARACTER SET ASCII COMMENT 'The host name of the master.';
+
+ALTER TABLE procs_priv
+MODIFY Host char(255) CHARACTER SET ASCII DEFAULT '' NOT NULL,
+MODIFY Grantor varchar(288) binary DEFAULT '' NOT NULL;
 
 --
 -- MySQL 8.0 adds default_value column to cost tables

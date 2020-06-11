@@ -2757,8 +2757,8 @@ char *THD::get_client_host_port(THD *client)
                             || client_sctx->ip().length) &&
       security_context()->host_or_ip().length)
   {
-    if ((client_host= (char *) this->alloc(LIST_PROCESS_HOST_LEN+1)))
-      my_snprintf((char *) client_host, LIST_PROCESS_HOST_LEN,
+    if ((client_host= (char *) this->alloc(HOSTNAME_LENGTH)))
+      my_snprintf((char *) client_host, HOSTNAME_LENGTH,
                   "%s:%u", client_sctx->host_or_ip().str, client->peer_port);
   }
   else

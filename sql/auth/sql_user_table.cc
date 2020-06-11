@@ -75,7 +75,7 @@ static const
 TABLE_FIELD_TYPE mysql_db_table_fields[MYSQL_DB_FIELD_COUNT] = {
   {
     { C_STRING_WITH_LEN("Host") },            
-    { C_STRING_WITH_LEN("char(60)") },
+    { C_STRING_WITH_LEN("char(255)") },
     {NULL, 0}
   }, 
   {
@@ -189,7 +189,7 @@ static const
 TABLE_FIELD_TYPE mysql_user_table_fields[MYSQL_USER_FIELD_COUNT] = {
   {
     { C_STRING_WITH_LEN("Host") },
-    { C_STRING_WITH_LEN("char(60)") },
+    { C_STRING_WITH_LEN("char(255)") },
     {NULL, 0}
   },
   {
@@ -418,7 +418,7 @@ static const
 TABLE_FIELD_TYPE mysql_proxies_priv_table_fields[MYSQL_PROXIES_PRIV_FIELD_COUNT] = {
   {
    { C_STRING_WITH_LEN("Host") },
-    { C_STRING_WITH_LEN("char(60)") },
+    { C_STRING_WITH_LEN("char(255)") },
     {NULL, 0}
   },
   {
@@ -428,7 +428,7 @@ TABLE_FIELD_TYPE mysql_proxies_priv_table_fields[MYSQL_PROXIES_PRIV_FIELD_COUNT]
   },
   {
     { C_STRING_WITH_LEN("Proxied_host") },
-    { C_STRING_WITH_LEN("char(60)") },
+    { C_STRING_WITH_LEN("char(255)") },
     {NULL, 0}
   },
   {
@@ -443,7 +443,7 @@ TABLE_FIELD_TYPE mysql_proxies_priv_table_fields[MYSQL_PROXIES_PRIV_FIELD_COUNT]
   },
   {
     { C_STRING_WITH_LEN("Grantor") },
-    { C_STRING_WITH_LEN("char(93)") },
+    { C_STRING_WITH_LEN("varchar(288)") },
     {NULL, 0}
   },
   {
@@ -457,7 +457,7 @@ static const
 TABLE_FIELD_TYPE mysql_procs_priv_table_fields[MYSQL_PROCS_PRIV_FIELD_COUNT] = {
   {
     { C_STRING_WITH_LEN("Host") },
-    { C_STRING_WITH_LEN("char(60)") },
+    { C_STRING_WITH_LEN("char(255)") },
     {NULL, 0}
   },
   {
@@ -482,7 +482,7 @@ TABLE_FIELD_TYPE mysql_procs_priv_table_fields[MYSQL_PROCS_PRIV_FIELD_COUNT] = {
   },
   {
     { C_STRING_WITH_LEN("Grantor") },
-    { C_STRING_WITH_LEN("char(93)") },
+    { C_STRING_WITH_LEN("varchar(288)") },
     {NULL, 0}
   },
   {
@@ -501,7 +501,7 @@ static const
 TABLE_FIELD_TYPE mysql_columns_priv_table_fields[MYSQL_COLUMNS_PRIV_FIELD_COUNT] = {
   {
     { C_STRING_WITH_LEN("Host") },
-    { C_STRING_WITH_LEN("char(60)") },
+    { C_STRING_WITH_LEN("char(255)") },
     {NULL, 0}
   },
   {
@@ -540,7 +540,7 @@ static const
 TABLE_FIELD_TYPE mysql_tables_priv_table_fields[MYSQL_TABLES_PRIV_FIELD_COUNT] = {
   {
     { C_STRING_WITH_LEN("Host") },
-    { C_STRING_WITH_LEN("char(60)") },
+    { C_STRING_WITH_LEN("char(255)") },
     {NULL, 0}
   },
   {
@@ -560,7 +560,7 @@ TABLE_FIELD_TYPE mysql_tables_priv_table_fields[MYSQL_TABLES_PRIV_FIELD_COUNT] =
   },
   {
     { C_STRING_WITH_LEN("Grantor") },
-    { C_STRING_WITH_LEN("char(93)") },
+    { C_STRING_WITH_LEN("varchar(288)") },
     {NULL, 0}
   },
   {
