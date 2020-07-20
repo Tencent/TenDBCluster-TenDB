@@ -156,6 +156,7 @@ def	mysql	user	mysql	PRIMARY
 def	mysql	user	mysql	PRIMARY
 def	mysql	xa_commit_log	mysql	PRIMARY
 def	mysql	xa_commit_log	mysql	kx
+def	mysql	xa_commit_log	mysql	kt
 def	sys	sys_config	sys	PRIMARY
 ####################################################################################
 # Testcase 3.2.14.2 + 3.2.14.3: INFORMATION_SCHEMA.STATISTICS accessible information
