@@ -536,7 +536,7 @@ bool Sql_cmd_xa_commit::trans_write_commit_log(THD* thd)
 {
   TABLE_LIST tables;
   TABLE* table;
-  int error, i = 0;
+  int error, i = 0, max_timewait = 3000;
   ulonglong nr = 0;
   int64 current_id;
   MYSQL_TIME mt_time;
@@ -554,7 +554,8 @@ bool Sql_cmd_xa_commit::trans_write_commit_log(THD* thd)
   if (!my_atomic_load64(&current_commitlog_id) && 
      !my_atomic_add64(&current_commitlog_id, 1))
   {// current_id = my_atomic_load64(&current_commitlog_id) = 0
-    table->file->ha_index_init(table->s->primary_key, 1);
+	uint key_time = static_cast<uint>(find_type("kt", &table->s->keynames, FIND_TYPE_NO_PREFIX) - 1);
+    table->file->ha_index_init(key_time, 1);
     error = table->file->ha_index_last(table->record[0]);
 
     if (error)
@@ -562,28 +563,46 @@ bool Sql_cmd_xa_commit::trans_write_commit_log(THD* thd)
       if (error == HA_ERR_END_OF_FILE || error == HA_ERR_KEY_NOT_FOUND)
       {
         /* No entry found, start with 1. */
-        nr = 0;
+        nr = 1;
       }
       else
       {
-        DBUG_ASSERT(0);
-        nr = ULONG_MAX;
+        nr = ULLONG_MAX;
       }
     }
     else
     {
-      nr = (ulonglong)table->field[0]->val_int_offset(0);
+      nr = (ulonglong)table->field[0]->val_int_offset(0) + 1;
 //      nr = ((ulonglong)table->next_number_field->val_int_offset(table->s->rec_buff_length) + 1);
     }
     table->file->ha_index_end();
-    my_atomic_store64(&current_commitlog_id, nr);
-    my_atomic_add64(&current_commitlog_id, 1); // current_id = nr + 1;
-    current_id_init = TRUE;
+
+	if (nr == ULLONG_MAX) { /* Failed to read auto-inc value
+                               from storage engine */
+	  my_atomic_store64(&current_commitlog_id, 0);
+	  my_error(ER_XAER_RMERR, MYF(0));
+	  goto finish;
+	}
+	else {
+	  my_atomic_store64(&current_commitlog_id, nr);
+	  current_id_init = TRUE;
+	}
   }
  
-  while (!current_id_init && i < 3000)
+  /*
+    If multiple threads simultaneously run into this function before
+    current_commitlog_id is initialized, only one of the threads does the
+    initialization. The other ones wait here till the initialization is
+    complete, with a timeout of 30 seconds.
+  */
+  while (!current_id_init && i++ < max_timewait)
   {
     my_sleep(10000); // wait 10 ms
+  }
+  if (i >= max_timewait) {
+	error = 1;
+	my_error(ER_XA_RBTIMEOUT, MYF(0));
+	goto finish;
   }
 
   current_id = my_atomic_add64(&current_commitlog_id, 1) % max_xa_commit_logs;
@@ -622,10 +641,13 @@ bool Sql_cmd_xa_commit::trans_write_commit_log(THD* thd)
       table->file->print_error(error, MYF(0));
   }
 
+finish:
+
   reenable_binlog(table->in_use);
 
-  if (error)
-    trans_rollback_stmt(thd);
+  if (error) {
+	trans_rollback_stmt(thd);
+  }
   else
   {
     thd->get_stmt_da()->set_overwrite_status(true);
