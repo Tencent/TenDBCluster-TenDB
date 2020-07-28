@@ -3130,6 +3130,7 @@ protected:
    of m_rows_buf check if is_valid also needs to be modified
   */
   uchar    *m_rows_buf;		/* The rows in packed format */
+  uchar    *m_rows_compress_buf; /* The rows in packed format, use for compressed event */
   uchar    *m_rows_cur;		/* One-after the end of the data */
   uchar    *m_rows_end;		/* One-after the end of the allocated space */
 
