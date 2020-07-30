@@ -9759,7 +9759,28 @@ bool mysql_alter_table(THD *thd, const char *new_db, const char *new_name,
   if (create_info->row_type == ROW_TYPE_NOT_USED)
   {
     /* ALTER TABLE without explicit row type */
-    create_info->row_type= table->s->row_type;
+    if (table->file->is_gcs_table())
+    {
+      /*
+       is_gcs true, table is upgrade from TenDB1.x, TenDB2.x.
+       In TenDB2.x or lower version, TenDB3.x's ROW_TYPE_PAGE
+       enum value equal to ROW_TYPE_COMPACT, ROW_TYPE_TOKU_UNCOMPRESSED
+       enum value equal to ROW_TYPE_DYNAMIC
+      */
+      switch (table->s->row_type) {
+      case ROW_TYPE_PAGE:
+        create_info->row_type = ROW_TYPE_COMPACT;
+        break;
+      case ROW_TYPE_TOKU_UNCOMPRESSED:
+        create_info->row_type = ROW_TYPE_DYNAMIC;
+        break;
+      default:
+        create_info->row_type= table->s->row_type;
+        break;
+      }
+    }
+    else
+      create_info->row_type= table->s->row_type;
   }
   else
   {
