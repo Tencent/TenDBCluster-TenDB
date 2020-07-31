@@ -13404,7 +13404,7 @@ void Write_rows_compressed_log_event::print(FILE *file, PRINT_EVENT_INFO* print_
 {
   char *new_buf;
   ulong len;
-  if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg, temp_buf, &new_buf, &len))
+  if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg == binary_log::BINLOG_CHECKSUM_ALG_CRC32, temp_buf, &new_buf, &len))
   {
 	my_free(temp_buf);
 	temp_buf = new_buf;
@@ -13551,7 +13551,7 @@ void Delete_rows_compressed_log_event::print(FILE *file,
 {
   char *new_buf;
   ulong len;
-  if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg, temp_buf, &new_buf, &len))
+  if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg == binary_log::BINLOG_CHECKSUM_ALG_CRC32, temp_buf, &new_buf, &len))
   {
 	my_free(temp_buf);
 	temp_buf = new_buf;
@@ -13760,7 +13760,7 @@ void Update_rows_compressed_log_event::print(FILE *file, PRINT_EVENT_INFO *print
 {
   char *new_buf;
   ulong len;
-  if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg, temp_buf, &new_buf, &len))
+  if (!Row_log_event_uncompress(glob_description_event, common_footer->checksum_alg == binary_log::BINLOG_CHECKSUM_ALG_CRC32, temp_buf, &new_buf, &len))
   {
 	my_free(temp_buf);
 	temp_buf = new_buf;
