@@ -9698,6 +9698,7 @@ Rows_log_event::Rows_log_event(THD *thd_arg, TABLE *tbl_arg, const Table_id& tid
   m_table_id= tid;
   m_width= tbl_arg ? tbl_arg->s->fields : 1;
   m_rows_buf= 0; m_rows_cur= 0; m_rows_end= 0; m_flags= 0;
+  m_rows_compress_buf = 0;
   m_type= event_type; m_extra_row_data=0;
 
   DBUG_ASSERT(tbl_arg && tbl_arg->s && tid.is_valid());
@@ -9766,7 +9767,7 @@ Rows_log_event::Rows_log_event(const char *buf, uint event_len,
 #ifndef MYSQL_CLIENT
   m_table(NULL),
 #endif
-  m_rows_buf(0), m_rows_cur(0), m_rows_end(0)
+  m_rows_buf(0), m_rows_cur(0), m_rows_end(0), m_rows_compress_buf(0)
 #if !defined(MYSQL_CLIENT) && defined(HAVE_REPLICATION)
     , m_curr_row(NULL), m_curr_row_end(NULL), m_key(NULL), m_key_info(NULL),
     m_distinct_keys(Key_compare(&m_key_info)), m_distinct_key_spare_buf(NULL)
@@ -9880,23 +9881,19 @@ Rows_log_event::Rows_log_event(const char *buf, uint event_len,
 void Rows_log_event::uncompress_buf()
 {
   size_t un_len = binlog_get_uncompress_len((char *)m_rows_buf);
-  uchar *new_buf = (uchar*)my_malloc(key_memory_log_event, un_len, MYF(MY_WME));
-  if (new_buf)
+  m_rows_compress_buf = (uchar*)my_malloc(key_memory_log_event, un_len, MYF(MY_WME));
+  if (m_rows_compress_buf)
   {
-	if (!binlog_buf_uncompress((char *)m_rows_buf, (char *)new_buf, m_rows_cur - m_rows_buf, &un_len))
-	{
-	  m_rows_buf = new_buf;
+	  if (!binlog_buf_uncompress((char *)m_rows_buf, (char *)m_rows_compress_buf, m_rows_cur - m_rows_buf, &un_len))
+	  {
+	    m_rows_buf = m_rows_compress_buf;
 #if !defined(MYSQL_CLIENT) && defined(HAVE_REPLICATION)
-	  m_curr_row = m_rows_buf;
+	    m_curr_row = m_rows_buf;
 #endif
-	  m_rows_end = m_rows_buf + un_len;
-	  m_rows_cur = m_rows_end;
-	  return;
-	}
-	else
-	{
-	  my_free(new_buf);
-	}
+	    m_rows_end = m_rows_buf + un_len;
+	    m_rows_cur = m_rows_end;
+	    return;
+	  }
   }
   m_cols.bitmap = 0; // catch it in is_valid
 }
@@ -9909,7 +9906,10 @@ Rows_log_event::~Rows_log_event()
       m_cols.bitmap= 0; // so no my_free in bitmap_free
     bitmap_free(&m_cols); // To pair with bitmap_init().
   }
+  if (m_rows_compress_buf)
+    my_free(m_rows_compress_buf);
 }
+
 size_t Rows_log_event::get_data_size()
 {
   int const general_type_code= get_general_type_code();
