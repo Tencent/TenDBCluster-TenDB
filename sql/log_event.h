@@ -352,7 +352,54 @@ enum enum_base64_output_mode {
   /* insert new output modes here */
   BASE64_OUTPUT_MODE_COUNT
 };
+/*
+typedef map<std::string, char> ROW_FILTER
+typedef struct BINLOG_FILTER {
+	ROW_FILTER *row_filters[];
+	MY_BITMAP *row_filter_cols_bitmaps[];
+};
+*/
+typedef std::vector< std::map<int, char*> > map_lines_c;
 
+struct BinrowCmp {
+	bool operator()(const char *l[255], const char *r[255]) const 
+	{ 
+		for (int i = 0; i < 255; i++) {
+			
+			if (strcmp(l[i], r[i]) < 0)
+				return false;
+		}
+		return true;	
+	}
+};
+struct one_line {
+	char *ptr[255];
+	int col_cnt; // max 255
+
+	//bool operator< (const one_line &a)const
+	bool operator()(const char *l[255], const char *r[255]) const
+	{
+		for (int i = 0; i < col_cnt; i++) {
+			if (strcmp(l[i], r[i]) < 0)
+				return false;
+		}
+		return true;
+	}
+};
+
+typedef std::map<int, char*> map_one_line;
+struct filter_def {
+	int cols_cnt;
+	int cols_pos[255];  // [2, 1, 3, 4]  @2,@1,@3,@4
+	int field_pos[255];
+	//int field_type[255];
+	std::map<int, int> map_ishex;  // column index to pos
+	std::map<char*, int> map_col1_pos;
+	// std::set<one_line> set_lines;
+	std::set< std::pair< std::map<int, char*>, int >> set_lines_map;
+	// std::vector< std::map<int, char*> > vec_lines;
+	std::map< std::string, std::vector< std::map<int, std::string> > > map_lines_col; // {100: {@2:100, @1:aaa, @3:-2.0}}
+};
 /*
   A structure for mysqlbinlog to know how to print events
 
@@ -444,6 +491,8 @@ typedef struct st_print_event_info
      False, otherwise.
    */
   bool skipped_event_in_transaction;
+
+  filter_def *filter_lines;
 
 } PRINT_EVENT_INFO;
 #endif
@@ -807,6 +856,7 @@ public:
 #endif // ifdef MYSQL_SERVER ... else
 #ifdef MYSQL_CLIENT
     my_bool is_flashback;
+	my_bool enable_filter_rows;
     String  output_buf; // Storing the event flashback output
 #endif
 
@@ -2987,6 +3037,8 @@ public:
   /* not for direct call, each derived has its own ::print() */
   virtual void print(FILE *file, PRINT_EVENT_INFO *print_event_info)= 0;
   void change_to_flashback_event(PRINT_EVENT_INFO *print_event_info, uchar *rows_buff, Log_event_type ev_type);
+  std::pair<uint, my_bool> filter_rows_from_event(PRINT_EVENT_INFO *print_event_info, uchar *rows_buff, Log_event_type ev_type);
+
   void print_verbose(IO_CACHE *file,
                      PRINT_EVENT_INFO *print_event_info);
   size_t print_verbose_one_row(IO_CACHE *file, table_def *td,
@@ -2994,6 +3046,9 @@ public:
                                MY_BITMAP *cols_bitmap,
                                const uchar *ptr, const uchar *prefix,
                                const my_bool no_fill_output=0);
+  std::pair<size_t, my_bool> filter_binlog_one_row(table_def *td, PRINT_EVENT_INFO *print_event_info,
+	  MY_BITMAP *cols_bitmap,
+	  const uchar *ptr, const my_bool no_fill_output = 0);
 #endif
 
 #ifdef MYSQL_SERVER
