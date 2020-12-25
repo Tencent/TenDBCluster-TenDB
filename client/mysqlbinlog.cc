@@ -353,16 +353,14 @@ static char *flashback_databases= 0, *flashback_tables=0;
 static std::set<std::string> flashback_filter_databases,flashback_filter_tables;
 
 static char *opt_filter_rows = NULL;
-// static char *fields_enclosed = "\'", *fields_terminated = ",", *lines_terminated = 0;
+static char *opt_query_event_handler = NULL;
+static char *opt_filter_statement_match_error = NULL;
+static char *opt_filter_statement_match_ignore = NULL;
 static char *fields_enclosed = 0, *fields_terminated = 0, *lines_terminated = 0;
 
-typedef std::vector< std::pair<char*, int> > map_lines_ccc; // <100,aaa | 0>
-
-
-// filter_def *filter_lines = (filter_def*)my_malloc(PSI_NOT_INSTRUMENTED, sizeof(filter_def), MYF(MY_ZEROFILL | MY_FAE | MY_WME));
-filter_def filter_lines;
-
-// static filter_one_line *filter_line = NULL;
+// st_rows_filter *rows_filter = (st_rows_filter*)my_malloc(PSI_NOT_INSTRUMENTED, sizeof(st_rows_filter), MYF(MY_ZEROFILL | MY_FAE | MY_WME));
+st_rows_filter rows_filter;
+st_event_filter *event_filter = (st_event_filter*)my_malloc(PSI_NOT_INSTRUMENTED, sizeof(st_event_filter), MYF(MY_ZEROFILL | MY_FAE | MY_WME));
 
 static char *output_file= 0;
 static char *rewrite= 0;
@@ -2085,11 +2083,25 @@ static struct my_option my_long_options[] =
    &raw_mode, &raw_mode, 0, GET_BOOL, NO_ARG, 0, 0, 0, 0,
    0, 0},
 
-   {"filter-rows", OPT_FILTER_ROWS, "filter string or file to filter rows from event. (local log only)."
-	"format: '@1,@2 100,aaa'. must work with --tables or --flashback-tables",
-	&opt_filter_rows, &opt_filter_rows, 0, GET_STR, REQUIRED_ARG,
+  { "filter-rows", OPT_FILTER_ROWS, "Filter string or file to filter rows from event. (local log only)."
+   "Format: '@1,@2 100,aaa'. Must work with --tables or --flashback-tables. "
+   "You can use @2:hex format to tell mysqlbinlog its' varchar/varbinary/blob value is a hex. "
+	   "Also you can use @1:signed to mark it as a signed int/tinyint/smallint/mediumint/bigint",
+   &opt_filter_rows, &opt_filter_rows, 0, GET_STR, REQUIRED_ARG,
+   0, 0, 0, 0, 0, 0 },
+  { "query-event-handler", OPT_QUERY_EVENT_HANDLER, "Decide how to handle the query events "
+	   "like statement or ddl.  Only error|keep|ignore|safe allowed. (error: exit when encountered any query event. keep or ignore all query event. "
+	  "safe: work with --filter-statement-match-error and --filter-statement-match-ignore)",
+	&opt_query_event_handler, &opt_query_event_handler, 0, GET_STR, REQUIRED_ARG,
 	0, 0, 0, 0, 0, 0 },
-  { "filter-lines-terminated-by", OPT_LTB,
+  { "filter-statement-match-error", OPT_STATEMENT_ERROR, "Exit when this string is matched in query event. Comma separated. Only work when query-event-handler=keep|ignore|safe",
+	&opt_filter_statement_match_error, &opt_filter_statement_match_error, 0, GET_STR, REQUIRED_ARG,
+	0, 0, 0, 0, 0, 0 },
+  { "filter-statement-match-ignore", OPT_STATEMENT_IGNORE, "Ignore the query event when this string is matched. Comma separated. Only work when query-event-handler=error|safe",
+	&opt_filter_statement_match_ignore, &opt_filter_statement_match_ignore, 0, GET_STR, REQUIRED_ARG,
+	0, 0, 0, 0, 0, 0 },
+
+   { "filter-lines-terminated-by", OPT_LTB,
  "Lines in the filter file are terminated by the given string.",
  &lines_terminated, &lines_terminated, 0, GET_STR,
  REQUIRED_ARG, 0, 0, 0, 0, 0, 0 },
@@ -2438,12 +2450,13 @@ std::string& my_trim(std::string& str, const std::string& chars = "\t\n\v\f\r ")
 }
 
 int
-parse_filter_line_header(std::string raw_line, filter_def *filter_lines, std::string delim) {
+parse_filter_line_header(std::string raw_line, st_rows_filter *rows_filter, std::string delim) {
 
 	std::vector<std::string> colstr = string_split_by(raw_line, delim);
 	int count_col = 0; // colstr->size()
 
 	std::map<int, int> map_pos_type;
+	std::map<int, Binlog_row_field_attr> map_field_attr;
 	std::vector<std::string>::iterator iter;
 	for (iter = colstr.begin(); iter != colstr.end(); ++iter) {
 		count_col++;
@@ -2460,14 +2473,14 @@ parse_filter_line_header(std::string raw_line, filter_def *filter_lines, std::st
 
 		if (std::regex_match(this_col_pos, mres, pattern)) {
 			int col_pos = atoi(mres.str(1).c_str());
-			filter_lines->cols_pos[count_col] = col_pos;
+			rows_filter->cols_pos[count_col] = col_pos;
 			if (mres[2].matched) {
-				//filter_lines->bitmap_is_hex[count_col] = 1;
+				//rows_filter->bitmap_is_hex[count_col] = 1;
 				map_pos_type[col_pos] = 1;
-				// filter_lines->map_ishex[col_pos] = 1;
+				// rows_filter->map_ishex[col_pos] = 1;
 			}
 			else {
-				//filter_lines->bitmap_is_hex[count_col] = 0;
+				//rows_filter->bitmap_is_hex[count_col] = 0;
 				map_pos_type[col_pos] = 0;
 			}
 			continue;
@@ -2488,20 +2501,32 @@ parse_filter_line_header(std::string raw_line, filter_def *filter_lines, std::st
 				int col_pos = atoi(this_col_pos.c_str());
 				
 				if (col_suffix == "hex") {
-					filter_lines->cols_pos[count_col] = col_pos;
+					rows_filter->cols_pos[count_col] = col_pos;
 					map_pos_type[col_pos] = 1;
+					map_field_attr[col_pos] = Binlog_row_field_attr::IS_HEX;
+				}
+				else if (col_suffix == "signed") {
+					rows_filter->cols_pos[count_col] = col_pos;
+					map_pos_type[col_pos] = 0;
+					map_field_attr[col_pos] = Binlog_row_field_attr::IS_SIGNED;
+				}
+				else if (col_suffix == "unsigned") {
+					rows_filter->cols_pos[count_col] = col_pos;
+					map_pos_type[col_pos] = 0;
+					map_field_attr[col_pos] = Binlog_row_field_attr::IS_UNSIGNED;
 				}
 				else
 				{
-					error("Please give the right position format @2,@1,@3 or @2:hex");
+					error("Please give the right position format @2,@1,@3 or @2:hex or @2:signed");
 					exit(1);
 				}
 			}
 			else {
 				int col_pos = atoi(this_col_pos.c_str());
 				// cols_pos=[0, 2, 1, 13] //[@1,@2,@3] column N start from 1. not use 0
-				filter_lines->cols_pos[count_col] = col_pos; 
+				rows_filter->cols_pos[count_col] = col_pos; 
 				map_pos_type[col_pos] = 0;
+				map_field_attr[col_pos] = Binlog_row_field_attr::DEFAULT;
 			}
 		}
 		else {
@@ -2509,13 +2534,14 @@ parse_filter_line_header(std::string raw_line, filter_def *filter_lines, std::st
 			exit(1);
 		}
 	}
-	filter_lines->map_ishex = map_pos_type;
-	filter_lines->cols_cnt = count_col;
+	rows_filter->map_ishex = map_pos_type;
+	rows_filter->map_field_attr = map_field_attr;
+	rows_filter->cols_cnt = count_col;
 	return count_col;
 }
 
 int
-parse_filter_line_body(std::string raw_line, filter_def *filter_lines, std::string delim) {
+parse_filter_line_body(std::string raw_line, st_rows_filter *rows_filter, std::string delim) {
 
 	int count_col = 0;
 	// we save the first column as index(map)
@@ -2532,29 +2558,29 @@ parse_filter_line_body(std::string raw_line, filter_def *filter_lines, std::stri
 		boost::trim_if(col_str, boost::is_any_of(std::string(fields_enclosed)));
 		// boost::trim_if(col_str, is_any_of(field_enclosed)); // 'xx' \sxx\s
 		// const char *col_buff = col_str.c_str();
-		this_col_buf.insert(std::pair<int, std::string>(filter_lines->cols_pos[count_col] , col_str));
+		this_col_buf.insert(std::pair<int, std::string>(rows_filter->cols_pos[count_col] , col_str));
 
 		if (count_col == 1) {
 			first_colstr = col_str;
 		}
 	}
-	if (count_col == filter_lines->cols_cnt) {
+	if (count_col == rows_filter->cols_cnt) {
 		std::map < std::string, std::vector < std::map<int, std::string > > > ::iterator iter;
 
-		iter = filter_lines->map_lines_col.find(first_colstr);
-		if (iter != filter_lines->map_lines_col.end())
+		iter = rows_filter->map_lines_col.find(first_colstr);
+		if (iter != rows_filter->map_lines_col.end())
 		{
 			std::vector< std::map<int, std::string> > mlcv = iter->second;
 			mlcv.push_back(this_col_buf);
-			filter_lines->map_lines_col.erase(iter);
-			filter_lines->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
-			// filter_lines->map_lines_col[first_colstr].push_back(this_col_buf);		
+			rows_filter->map_lines_col.erase(iter);
+			rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
+			// rows_filter->map_lines_col[first_colstr].push_back(this_col_buf);		
 		}
 		else {
 			// std::map<std::string, std::vector<std::map<int, char*>>> *map_lines_cc;
 			std::vector< std::map<int, std::string> > mlcv;
 			mlcv.push_back(this_col_buf);
-			filter_lines->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
+			rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
 
 		}
 	}
@@ -2566,7 +2592,7 @@ parse_filter_line_body(std::string raw_line, filter_def *filter_lines, std::stri
 }
 
 uint
-parse_filter_input(const char *ptr, filter_def *filter_lines, char *field_term, char *line_term)
+parse_filter_input(const char *ptr, st_rows_filter *rows_filter, char *field_term, char *line_term)
 {
 	std::string sfield_term(field_term);
 	std::string sline_term(line_term);
@@ -2586,10 +2612,10 @@ parse_filter_input(const char *ptr, filter_def *filter_lines, char *field_term, 
 		count_line++;
 
 		if (count_line == 1) { // @2,@1,@3
-			count_col = parse_filter_line_header(*it, filter_lines, sfield_term);
+			count_col = parse_filter_line_header(*it, rows_filter, sfield_term);
 		}
 		else if (*it != "") {
-			if (count_col != parse_filter_line_body(*it, filter_lines, sfield_term)) {
+			if (count_col != parse_filter_line_body(*it, rows_filter, sfield_term)) {
 				fprintf(stderr, "%s: Wrong intput line body column number!\n", my_progname);
 				exit(1);
 			}
@@ -2607,7 +2633,7 @@ parse_filter_input(const char *ptr, filter_def *filter_lines, char *field_term, 
 	return count_line;
 }
 
-// parse opt_filter_rows to filter_def
+// parse opt_filter_rows to st_rows_filter
 void parse_filter_rows() {
 	char *tmp_csvbuff;
 	char *field_term = fields_terminated;
@@ -2631,7 +2657,7 @@ void parse_filter_rows() {
 				my_progname);
 			exit(1);
 		}
-		if ((data_file = my_open(opt_filter_rows, O_RDWR, MYF(0))) == -1)
+		if ((data_file = my_open(opt_filter_rows, O_RDONLY, MYF(0))) == -1)
 		{
 			fprintf(stderr, "%s: Could not open filter rows file\n", my_progname);
 			exit(1);
@@ -2644,7 +2670,7 @@ void parse_filter_rows() {
 		my_close(data_file, MYF(0));
 		if (opt_filter_rows)
 		{
-			(void)parse_filter_input(tmp_csvbuff, &filter_lines, field_term, line_term);
+			(void)parse_filter_input(tmp_csvbuff, &rows_filter, field_term, line_term);
 		}
 		my_free(tmp_csvbuff);
 	}
@@ -2653,7 +2679,7 @@ void parse_filter_rows() {
 		if (!lines_terminated) {
 			line_term = " ";
 		}
-		(void)parse_filter_input(opt_filter_rows, &filter_lines, field_term, line_term); // no space allow in col_string
+		(void)parse_filter_input(opt_filter_rows, &rows_filter, field_term, line_term); // no space allow in col_string
 	}
 }
 
@@ -2702,6 +2728,47 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
   case OPT_FILTER_ROWS:
   {
 	  // parse_filter_rows();
+  }
+	  break;
+  case OPT_QUERY_EVENT_HANDLER:
+  {
+	  if (strcmp(opt_query_event_handler, "error") == 0) {
+		  event_filter->query_event_handler = Binlog_query_event_handler::Error;
+	  }
+	  else if (strcmp(opt_query_event_handler, "ignore") == 0) {
+		  event_filter->query_event_handler = Binlog_query_event_handler::Ignore;
+	  }
+	  else if (strcmp(opt_query_event_handler, "safe") == 0) {
+		  event_filter->query_event_handler = Binlog_query_event_handler::Safe;
+		  //fprintf(stderr, "mysqlbinlog: [ERROR] --query-event-handler=safe not implement yet .\n");
+		  //exit(1);
+	  }
+	  else if (strcmp(opt_query_event_handler, "keep") == 0) {
+		  event_filter->query_event_handler = Binlog_query_event_handler::Keep;
+	  }
+	  else {
+		  fprintf(stderr, "mysqlbinlog: [ERROR] --query-event-handler only allowed values error|ignore|safe|keep .\n");
+		  exit(1);
+	  }
+  }
+  break;
+  case OPT_STATEMENT_ERROR:
+  {
+	  //opt_filter_statement_match_error = "LOAD DATA";
+	  // add table to this error_match
+	  std::vector<std::string> filter_statement_errors;
+	  boost::split(filter_statement_errors, opt_filter_statement_match_error,
+		  boost::is_any_of(","), boost::token_compress_on);
+	  event_filter->statement_match_errors = filter_statement_errors;
+  }
+	  break;
+  case OPT_STATEMENT_IGNORE:
+  {
+	  //opt_filter_statement_match_ignore = "flush,checksum,conn_log,db_infobase";
+	  std::vector<std::string> filter_statement_ignores;
+	  boost::split(filter_statement_ignores, opt_filter_statement_match_ignore,
+		  boost::is_any_of(","), boost::token_compress_on);
+	  event_filter->statement_match_ignores = filter_statement_ignores;
   }
 	  break;
   case 'd':
@@ -2995,7 +3062,9 @@ static Exit_status dump_multiple_logs(int argc, char **argv)
   //print_event_info.binlog_filter.row_filter_cols_bitmaps = bitmap_init(&row_filter_cols_bitmaps, NULL, 1, false);
   
   // print_event_info.enable_row_filter = opt_filter_row;
-  print_event_info.filter_lines = &filter_lines;
+  print_event_info.rows_filter = &rows_filter;
+  //print_event_info.query_event_handler = filter_query_event_handler;
+  print_event_info.event_filter = event_filter;
 
   // flashback must skip Gtid_log_event, opt_filter_rows
   if(opt_flashback){
@@ -3939,6 +4008,9 @@ static int args_post_process(void)
   else if (fields_enclosed || fields_terminated || lines_terminated) {
 	warning("The options --filter-lines-terminated-by --filter-fields-terminated-by"
 		"--filter-fields-enclosed-by is ignored when not set --filter-rows.");
+  }
+  if (!opt_query_event_handler) {
+	  event_filter->query_event_handler = Binlog_query_event_handler::Keep;
   }
 
   global_sid_lock->rdlock();

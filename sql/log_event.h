@@ -352,48 +352,34 @@ enum enum_base64_output_mode {
   /* insert new output modes here */
   BASE64_OUTPUT_MODE_COUNT
 };
-/*
-typedef map<std::string, char> ROW_FILTER
-typedef struct BINLOG_FILTER {
-	ROW_FILTER *row_filters[];
-	MY_BITMAP *row_filter_cols_bitmaps[];
-};
-*/
-typedef std::vector< std::map<int, char*> > map_lines_c;
 
-struct BinrowCmp {
-	bool operator()(const char *l[255], const char *r[255]) const 
-	{ 
-		for (int i = 0; i < 255; i++) {
-			
-			if (strcmp(l[i], r[i]) < 0)
-				return false;
-		}
-		return true;	
-	}
+enum Binlog_query_event_handler {
+	Error,
+	Ignore,
+	Safe,
+	Keep
 };
-struct one_line {
-	char *ptr[255];
-	int col_cnt; // max 255
 
-	//bool operator< (const one_line &a)const
-	bool operator()(const char *l[255], const char *r[255]) const
-	{
-		for (int i = 0; i < col_cnt; i++) {
-			if (strcmp(l[i], r[i]) < 0)
-				return false;
-		}
-		return true;
-	}
+struct st_event_filter {
+	Binlog_query_event_handler query_event_handler;
+	std::vector<std::string> statement_match_errors;
+	std::vector<std::string> statement_match_ignores;
+};
+
+enum Binlog_row_field_attr {
+	DEFAULT = 0,
+	IS_HEX = 2,
+	IS_SIGNED = 4,
+	IS_UNSIGNED = 5
 };
 
 typedef std::map<int, char*> map_one_line;
-struct filter_def {
+struct st_rows_filter {
 	int cols_cnt;
 	int cols_pos[255];  // [2, 1, 3, 4]  @2,@1,@3,@4
 	int field_pos[255];
-	//int field_type[255];
 	std::map<int, int> map_ishex;  // column index to pos
+	std::map<int, Binlog_row_field_attr> map_field_attr;
 	std::map<char*, int> map_col1_pos;
 	// std::set<one_line> set_lines;
 	std::set< std::pair< std::map<int, char*>, int >> set_lines_map;
@@ -492,7 +478,9 @@ typedef struct st_print_event_info
    */
   bool skipped_event_in_transaction;
 
-  filter_def *filter_lines;
+  st_rows_filter *rows_filter;
+  st_event_filter *event_filter;
+  //Binlog_query_event_handler query_event_handler;
 
 } PRINT_EVENT_INFO;
 #endif
@@ -1492,6 +1480,7 @@ public:
 #endif /* HAVE_REPLICATION */
 #else
   void print_query_header(IO_CACHE* file, PRINT_EVENT_INFO* print_event_info);
+  void print_handler_query(IO_CACHE* file, PRINT_EVENT_INFO* print_event_info);
   void print(FILE* file, PRINT_EVENT_INFO* print_event_info);
   static bool rewrite_db_in_buffer(char **buf, ulong *event_len,
                                    const Format_description_log_event *fde);

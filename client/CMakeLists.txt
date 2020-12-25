@@ -90,7 +90,7 @@ TARGET_LINK_LIBRARIES(mysql_plugin perconaserverclient)
 MYSQL_ADD_EXECUTABLE(mysqlbinlog mysqlbinlog.cc)
 ADD_COMPILE_FLAGS(
   mysqlbinlog.cc
-  COMPILE_FLAGS "-I${CMAKE_SOURCE_DIR}/sql" "-I${BOOST_PATCHES_DIR}" "-DHAVE_REPLICATION" "-DDISABLE_PSI_MUTEX"
+  COMPILE_FLAGS "-I${CMAKE_SOURCE_DIR}/sql" "-I${BOOST_PATCHES_DIR} -I${BOOST_INCLUDE_DIR}" "-DHAVE_REPLICATION" "-DDISABLE_PSI_MUTEX"
 )
 TARGET_LINK_LIBRARIES(mysqlbinlog perconaserverclient binlogevents_static)
 
