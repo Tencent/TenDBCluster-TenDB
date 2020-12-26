@@ -3822,6 +3822,7 @@ void Log_event::print_base64(IO_CACHE* file,
 			  if (print_event_info->base64_output_mode != BASE64_OUTPUT_DECODE_ROWS && !more)
 				  // may close for table map event
 				  my_b_printf(file, "'%s\n", print_event_info->delimiter);
+			  delete ev;
 			  DBUG_VOID_RETURN;
 		  }
 		  delete ev;
