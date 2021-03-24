@@ -5776,6 +5776,11 @@ event_filter_func2(std::string q, PRINT_EVENT_INFO* print_event_info) {
 }
 my_bool
 event_filter_func(std::string q, std::vector<std::string> match_str) {
+	/*
+	if len(match_str) == 0 {
+		return false;
+	}
+	*/
 	std::vector<std::string>::iterator iter;
 	//std::vector<std::string> match_str = print_event_info->event_filter->statement_match_ignores;
 
@@ -5796,8 +5801,8 @@ void Query_log_event::print_handler_query(IO_CACHE* file,
 	switch (print_event_info->event_filter->query_event_handler)
 	{
 	case Binlog_query_event_handler::Error:
-		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores)) {	
-			//tmp_str.replace(tmp_str.find('\n'), tmp_str.size() - 1, "# ");
+		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores) || 
+			event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores_force)) {
 			boost::replace_all(tmp_str, "\n", "# ");
 			my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
 			break;
@@ -5806,19 +5811,30 @@ void Query_log_event::print_handler_query(IO_CACHE* file,
 			fprintf(stderr, "Exit when query event occurs: %s\n", tmp_str.c_str());
 			exit(1);
 		}
+		break;
 	case Binlog_query_event_handler::Ignore:
 		// ignore and print it to comment
-		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_errors)) {
+		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores_force)) {
+			boost::replace_all(tmp_str, "\n", "# ");
+			my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
+			break;
+		}
+		else if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_errors)) {
 			fprintf(stderr, "Exit when query event occurs: %s\n", tmp_str.c_str());
 			exit(1);
-		} else {
+		} else { // default ignore
 			//tmp_str.replace(tmp_str.find('\n'), tmp_str.size() - 1, "# ");
 			boost::replace_all(tmp_str, "\n", "# ");
 			my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
 		}
 		break;
 	case Binlog_query_event_handler::Keep:
-		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_errors)) {
+		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores_force)) {
+			boost::replace_all(tmp_str, "\n", "# ");
+			my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
+			break;
+		}
+		else if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_errors)) {
 			fprintf(stderr, "Exit when query event occurs: %s\n", tmp_str.c_str());
 			exit(1);
 		}
@@ -5828,7 +5844,12 @@ void Query_log_event::print_handler_query(IO_CACHE* file,
 		}
 		break;
 	case Binlog_query_event_handler::Safe: // @todo not implemented yet!!
-		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_errors)) {
+		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores_force)) {
+			boost::replace_all(tmp_str, "\n", "# ");
+			my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
+			break;
+		}
+		else if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_errors)) {
 			fprintf(stderr, "Exit when query event occurs: %s\n", tmp_str.c_str());
 			exit(1);
 		}
@@ -5837,7 +5858,7 @@ void Query_log_event::print_handler_query(IO_CACHE* file,
 			boost::replace_all(tmp_str, "\n", "# ");
 			my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
 		}
-		else {
+		else { // defualt error
 			fprintf(stderr, "Cannot handler this query event: %s\nYou may need --filter-statement-match-error "
 				"and --filter-statement-match-ignore\n", tmp_str.c_str());
 			exit(1);

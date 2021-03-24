@@ -322,6 +322,7 @@ static my_bool one_database=0, multi_databases=0, disable_log_bin= 0;
 static my_bool multi_tables = 0;
 /* Indicates whether the --flashback-databases --flashback-tables options used  */
 static my_bool flashback_multi_databases=0,flashback_multi_tables=0;
+static my_bool flashback_multi_databases_ignore = 0, flashback_multi_tables_ignore = 0;
 static my_bool opt_hexdump= 0;
 const char *base64_output_mode_names[]=
 {"NEVER", "AUTO", "UNSPEC", "DECODE-ROWS", NullS};
@@ -351,11 +352,14 @@ static std::set<std::string> filter_tables;
 /* Store --flashback-databases --flashback-tables value */
 static char *flashback_databases= 0, *flashback_tables=0;
 static std::set<std::string> flashback_filter_databases,flashback_filter_tables;
+static char *flashback_databases_ignore = 0, *flashback_tables_ignore = 0;
+static std::set<std::string> flashback_filter_databases_ignore, flashback_filter_tables_ignore;
 
 static char *opt_filter_rows = NULL;
 static char *opt_query_event_handler = NULL;
 static char *opt_filter_statement_match_error = NULL;
 static char *opt_filter_statement_match_ignore = NULL;
+static char *opt_filter_statement_match_ignore_force = NULL;
 static char *fields_enclosed = 0, *fields_terminated = 0, *lines_terminated = 0;
 
 // st_rows_filter *rows_filter = (st_rows_filter*)my_malloc(PSI_NOT_INSTRUMENTED, sizeof(st_rows_filter), MYF(MY_ZEROFILL | MY_FAE | MY_WME));
@@ -984,8 +988,12 @@ static bool flashback_shall_skip_database(const char *log_dbname)
     if (log_dbname == NULL){
         return false;
     }
-
+	if (flashback_multi_databases_ignore) {
+		// return true if skip
+		return flashback_filter_databases_ignore.count(log_dbname) > 0;
+	}
     if (flashback_multi_databases){
+		// return false if skip
         return flashback_filter_databases.count(log_dbname) == 0;
     }
     else
@@ -1006,7 +1014,9 @@ static bool flashback_shall_skip_table(const char *log_tblname)
     if (log_tblname == NULL){
         return false;
     }
-
+	if (flashback_multi_tables_ignore) {
+		return flashback_filter_tables_ignore.count(log_tblname) > 0;
+	}
     if (flashback_multi_tables){
         return flashback_filter_tables.count(log_tblname) == 0;
     }
@@ -1654,8 +1664,8 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
               goto end;
           }
       }else{
-          if(flashback_shall_skip_database(map->get_db_name()) ||
-          flashback_shall_skip_table(map->get_table_name()))
+		  if(flashback_shall_skip_database(map->get_db_name()) ||
+			  flashback_shall_skip_table(map->get_table_name()))
           {
               print_event_info->skipped_event_in_transaction= true;
               print_event_info->m_table_map_ignored.set_table(map->get_table_id(), map);
@@ -2030,6 +2040,14 @@ static struct my_option my_long_options[] =
                      "Give the tables names in a comma separated list.",
    &flashback_tables, &flashback_tables, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
+  {"flashback-databases-ignore", OPT_FLASHBACK_DATABASES_IGNORE, "List entries for ignoring these databases to flashback whole tables (local log only)."
+					 "Give the database names in a comma separated list.",
+   &flashback_databases_ignore, &flashback_databases_ignore, 0, GET_STR_ALLOC, REQUIRED_ARG,
+   0, 0, 0, 0, 0, 0},
+  {"flashback-tables-ignore", OPT_FLASHBACK_TABLES_IGNORE, "List entries for ignoring these tables to flashback. not work with --filter-rows (local log only)."
+					 "Give the tables names in a comma separated list.",
+   &flashback_tables_ignore, &flashback_tables_ignore, 0, GET_STR_ALLOC, REQUIRED_ARG,
+   0, 0, 0, 0, 0, 0},
   {"force-if-open", 'F', "Force if binlog was not closed properly.",
    &force_if_open_opt, &force_if_open_opt, 0, GET_BOOL, NO_ARG,
    1, 0, 0, 0, 0, 0},
@@ -2100,6 +2118,9 @@ static struct my_option my_long_options[] =
   { "filter-statement-match-ignore", OPT_STATEMENT_IGNORE, "Ignore the query event when this string is matched. Comma separated. Only work when query-event-handler=error|safe",
 	&opt_filter_statement_match_ignore, &opt_filter_statement_match_ignore, 0, GET_STR, REQUIRED_ARG,
 	0, 0, 0, 0, 0, 0 },
+   { "filter-statement-match-ignore-force", OPT_STATEMENT_IGNORE_FORCE, "Force ignore the query event when this string is matched, eventhough filter-statement-match-error is matched . Comma separated. Work when query-event-handler=keep|ignore|error|safe",
+&opt_filter_statement_match_ignore_force, &opt_filter_statement_match_ignore_force, 0, GET_STR, REQUIRED_ARG,
+0, 0, 0, 0, 0, 0 },
 
    { "filter-lines-terminated-by", OPT_LTB,
  "Lines in the filter file are terminated by the given string.",
@@ -2716,6 +2737,24 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
       }
       flashback_multi_tables=1;
       break;
+  case OPT_FLASHBACK_DATABASES_IGNORE:
+	  for (char *p = flashback_databases_ignore;; p = NULL) {
+		  char *q = strtok(p, ",");
+		  if (q == NULL)
+			  break;
+		  flashback_filter_databases_ignore.insert(q);
+	  }
+	  flashback_multi_databases_ignore = 1;
+	  break;
+  case OPT_FLASHBACK_TABLES_IGNORE:
+	  for (char *p = flashback_tables_ignore;; p = NULL) {
+		  char *q = strtok(p, ",");
+		  if (q == NULL)
+			  break;
+		  flashback_filter_tables_ignore.insert(q);
+	  }
+	  flashback_multi_tables_ignore = 1;
+	  break;
   case OPT_FILTER_TABLES:
 	  for (char *p = tables;; p = NULL) {
 		  char *q = strtok(p, ",");
@@ -2771,6 +2810,14 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
 	  event_filter->statement_match_ignores = filter_statement_ignores;
   }
 	  break;
+  case OPT_STATEMENT_IGNORE_FORCE:
+  {
+	  std::vector<std::string> filter_statement_ignores_force;
+	  boost::split(filter_statement_ignores_force, opt_filter_statement_match_ignore_force,
+		  boost::is_any_of(","), boost::token_compress_on);
+	  event_filter->statement_match_ignores_force = filter_statement_ignores_force;
+  }
+  break;
   case 'd':
     one_database = 1;
     break;
@@ -2908,8 +2955,12 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
 	  error("options --filter-rows must be used together with --tables/--flashback-tables.");
 	  exit(1);
   }
+  if (opt_filter_rows && (flashback_multi_tables_ignore || flashback_multi_databases_ignore)) {
+	  error("options --filter-rows can not be used together with --flashback-tables-ignore/--flashback-databases-ignore.");
+	  exit(1);
+  }
   if (opt_filter_rows && (filter_tables.size()>1 || flashback_filter_tables.size()>1 || flashback_filter_databases.size()>1 || filter_databases.size()>1)) {
-	  warning("options --filter-rows is applied to multi databases/tables, table shall have the same schema.");
+	  warning("/* options --filter-rows is applied to multi databases/tables, table shall have the same schema. */");
   }
   if (tty_password)
     pass= get_tty_password(NullS);
