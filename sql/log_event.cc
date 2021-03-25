@@ -2734,6 +2734,7 @@ log_event_print_value(IO_CACHE *file, const uchar *ptr,
 
 /**
   Parse a packed value of the given SQL type into std::string, for filter rows
+  Copied from print_verbose_one_row()
 
   @param[in] print_event_info  options to parse this value
   @param[in] ptr               Pointer to string
@@ -2741,10 +2742,10 @@ log_event_print_value(IO_CACHE *file, const uchar *ptr,
   @param[in] meta              Column meta information
   @param[out] typestr          SQL type string buffer (for verbose output)
   @param[out] typestr_length   Size of typestr
+  @param[in] field_attr		   options to filter this value
 
-  @retval   - number of bytes scanned from ptr.
+  @retval   - pair<number of bytes scanned from ptr, string type of the value>.
 */
-// static size_t
 std::pair<size_t, std::string>
 log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 	const uchar *ptr, int type, uint meta,
@@ -2782,7 +2783,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 	switch (type) {
 	case MYSQL_TYPE_LONG:
 	{
-		//my_snprintf(typestr, typestr_length, "INT");
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		char tmp[12]; // 4294967295 -2147483648 | MAX_INT32_STR_LENGTH + 1
@@ -2800,7 +2800,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 
 	case MYSQL_TYPE_TINY:
 	{
-		//my_snprintf(typestr, typestr_length, "TINYINT");
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		char tmp[5]; // -128 255
@@ -2816,7 +2815,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 
 	case MYSQL_TYPE_SHORT:
 	{
-		//my_snprintf(typestr, typestr_length, "SHORTINT");
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		char tmp[7]; // 65535 -32768
@@ -2833,7 +2831,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 
 	case MYSQL_TYPE_INT24:
 	{
-		//my_snprintf(typestr, typestr_length, "MEDIUMINT");
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		char tmp[9]; //16777215 -8388608
@@ -2850,7 +2847,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 
 	case MYSQL_TYPE_LONGLONG:
 	{
-		//my_snprintf(typestr, typestr_length, "LONGINT");
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		char tmp[64]; // -9223372036854775808 18446744073709551615
@@ -2868,7 +2864,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 	{
 		uint precision = meta >> 8;
 		uint decimals = meta & 0xFF;
-		// my_snprintf(typestr, typestr_length, "DECIMAL(%d,%d)", precision, decimals);
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		uint bin_size = my_decimal_get_binary_size(precision, decimals);
@@ -2878,20 +2873,17 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 		int len = DECIMAL_MAX_STR_LENGTH;
 		char buff[DECIMAL_MAX_STR_LENGTH + 1];
 		decimal2string(&dec, buff, &len, 0, 0, 0);
-		//my_b_printf(file, "%s", buff);
 		return std::make_pair(bin_size, std::string(buff));
 	}
 
 	case MYSQL_TYPE_FLOAT:
 	{
-		// my_snprintf(typestr, typestr_length, "FLOAT");
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		float fl;
 		float4get(&fl, ptr);
 		char tmp[320]; // MAX_FLOAT_STR_LENGTH + 1?
 		sprintf(tmp, "%-20g", (double)fl);
-		// my_b_printf(file, "%s", tmp); /* my_snprintf doesn't support %-20g */
 		return std::make_pair(4, std::string(tmp));
 	}
 
@@ -2904,7 +2896,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 		float8get(&dbl, ptr);
 		char tmp[320];
 		sprintf(tmp, "%-.20g", dbl); /* my_snprintf doesn't support %-20g */
-		//my_b_printf(file, "%s", tmp);
 		return std::make_pair(8, std::string(tmp));
 	}
 
@@ -2912,7 +2903,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 	{
 		/* Meta-data: bit_len, bytes_in_rec, 2 bytes */
 		uint nbits = ((meta >> 8) * 8) + (meta & 0xFF);
-		//my_snprintf(typestr, typestr_length, "BIT(%d)", nbits);
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		length = (nbits + 7) / 8;
@@ -2921,26 +2911,22 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 
 	case MYSQL_TYPE_TIMESTAMP:
 	{
-		//my_snprintf(typestr, typestr_length, "TIMESTAMP");
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		char tmp[12];
 		uint32 i32 = uint4korr(ptr);
 		int10_to_str(i32, tmp, 10);
-		//my_b_printf(file, "%d", i32);
 		return std::make_pair(4, std::string(tmp));
 	}
 
 	case MYSQL_TYPE_TIMESTAMP2:
 	{
-		//my_snprintf(typestr, typestr_length, "TIMESTAMP(%d)", meta);
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		char buf[MAX_DATE_STRING_REP_LENGTH];
 		struct timeval tm;
 		my_timestamp_from_binary(&tm, ptr, meta);
 		int buflen = my_timeval_to_str(&tm, buf, meta);
-		// my_b_write(file, buf, buflen);
 		val_buf = strndup(buf, buflen); // val_buf to string
 		val_str = std::string(val_buf);
 		free(val_buf);
@@ -2949,9 +2935,7 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 
 	case MYSQL_TYPE_DATETIME:
 	{
-		//my_snprintf(typestr, typestr_length, "DATETIME");
 		if (!ptr)
-			//return my_b_printf(file, "NULL");
 			return std::make_pair(4, null_str);
 		size_t d, t;
 		uint64 i64 = uint8korr(ptr); /* YYYYMMDDhhmmss */
@@ -2973,7 +2957,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 
 	case MYSQL_TYPE_DATETIME2:
 	{
-		//my_snprintf(typestr, typestr_length, "DATETIME(%d)", meta);
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		char buf[MAX_DATE_STRING_REP_LENGTH];
@@ -2981,7 +2964,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 		longlong packed = my_datetime_packed_from_binary(ptr, meta);
 		TIME_from_longlong_datetime_packed(&ltime, packed);
 		int buflen = my_datetime_to_str(&ltime, buf, meta);
-		// my_b_write_quoted(file, (uchar *)buf, buflen);
 		val_buf = strndup(buf, buflen);
 		val_str = std::string(val_buf);
 		free(val_buf);
@@ -2990,7 +2972,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 
 	case MYSQL_TYPE_TIME:
 	{
-		//my_snprintf(typestr, typestr_length, "TIME");
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		uint32 i32 = uint3korr(ptr);
@@ -3005,7 +2986,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 
 	case MYSQL_TYPE_TIME2:
 	{
-		//my_snprintf(typestr, typestr_length, "TIME(%d)", meta);
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		char buf[MAX_DATE_STRING_REP_LENGTH];
@@ -3021,7 +3001,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 
 	case MYSQL_TYPE_NEWDATE:
 	{
-		//my_snprintf(typestr, typestr_length, "DATE");
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		uint32 tmp = uint3korr(ptr);
@@ -3050,7 +3029,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 
 	case MYSQL_TYPE_YEAR:
 	{
-		//my_snprintf(typestr, typestr_length, "YEAR");
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		uint32 i32 = *ptr;
@@ -3062,34 +3040,28 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 	case MYSQL_TYPE_ENUM:
 		switch (meta & 0xFF) {
 		case 1: {
-			//my_snprintf(typestr, typestr_length, "ENUM(1 byte)");
 			if (!ptr)
 				return std::make_pair(4, null_str);
 			char tmp[5];
 			uint32 ui = (uint)(unsigned char)*ptr;
 			int10_to_str(ui, tmp, 10);
 			return std::make_pair(1, std::string(tmp));
-			// return std::make_pair(1, ToString((int)*ptr));
 		}
 		case 2:
 		{
-			//my_snprintf(typestr, typestr_length, "ENUM(2 bytes)");
 			if (!ptr)
 				return std::make_pair(4, null_str);
 			int32 i32 = uint2korr(ptr);
 			char tmp[7];
 			int10_to_str(i32, tmp, 10);
 			return std::make_pair(2, std::string(tmp));
-			//return std::make_pair(2, ToString(i32));
 		}
 		default:
-			// my_b_printf(file, "!! Unknown ENUM packlen=%d", meta & 0xFF);
 			return std::make_pair(0, "");
 		}
 		break;
 
 	case MYSQL_TYPE_SET:
-		//my_snprintf(typestr, typestr_length, "SET(%d bytes)", meta & 0xFF);
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		val_str = my_b_getbuf_bit(ptr, (meta & 0xFF) * 8);
@@ -3098,59 +3070,49 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 	case MYSQL_TYPE_BLOB:
 		switch (meta) {
 		case 1:
-			//my_snprintf(typestr, typestr_length, "TINYBLOB/TINYTEXT");
 			if (!ptr)
 				return std::make_pair(4, null_str);
 			length = *ptr;
 			val_str = my_b_getbuf_hex(ptr + 1, length, is_hex);
 			return std::make_pair(length + 1, val_str);
 		case 2:
-			//my_snprintf(typestr, typestr_length, "BLOB/TEXT");
 			if (!ptr)
 				return std::make_pair(4, null_str);
 			length = uint2korr(ptr);
 			val_str = my_b_getbuf_hex(ptr + 2, length, is_hex);
 			return std::make_pair(length + 2, val_str);
 		case 3:
-			//my_snprintf(typestr, typestr_length, "MEDIUMBLOB/MEDIUMTEXT");
 			if (!ptr)
 				return std::make_pair(4, null_str);
 			length = uint3korr(ptr);
 			val_str = my_b_getbuf_hex(ptr + 3, length, is_hex);
 			return std::make_pair(length + 3, val_str);
 		case 4:
-			//my_snprintf(typestr, typestr_length, "LONGBLOB/LONGTEXT");
 			if (!ptr)
 				return std::make_pair(4, null_str);
 			length = uint4korr(ptr);
 			val_str = my_b_getbuf_hex(ptr + 4, length, is_hex);
 			return std::make_pair(length + 4, val_str);
 		default:
-			// my_b_printf(file, "!! Unknown BLOB packlen=%d", length);
 			return std::make_pair(0, "");
 		}
 
 	case MYSQL_TYPE_VARCHAR:
 	case MYSQL_TYPE_VAR_STRING:
 		length = meta;
-		//my_snprintf(typestr, typestr_length, "VARSTRING(%d)", length);
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		return my_b_getstr_with_buf_length(ptr, length, is_hex);
 
 	case MYSQL_TYPE_STRING:
-		//my_snprintf(typestr, typestr_length, "STRING(%d)", length);
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		return my_b_getstr_with_buf_length(ptr, length, is_hex);
 
 	case MYSQL_TYPE_JSON:
-		//my_snprintf(typestr, typestr_length, "JSON");
 		if (!ptr)
 			return std::make_pair(4, null_str);
 		length = uint2korr(ptr);
-		// my_b_write_quoted(file, ptr + meta, length);
-		// val_buf = strndup((const char*)ptr + meta, length);
 		val_str = my_b_getbuf_hex(ptr + meta, length, is_hex);
 		return std::make_pair(length + meta, val_str);
 
@@ -3158,7 +3120,6 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 	{
 		char tmp[5];
 		my_snprintf(tmp, sizeof(tmp), "%04x", meta);
-		// my_b_printf(file,"!! Don't know how to handle column type=%d meta=%d (%s)", type, meta, tmp);
 	}
 	break;
 	}
@@ -3262,7 +3223,9 @@ Rows_log_event::print_verbose_one_row(IO_CACHE *file, table_def *td,
   return value - value0;
 }
 
-
+/**
+  Compare one row with rows_filter
+*/
 my_bool
 compare_map_value_char(std::map<int, std::string> map1, st_rows_filter *rows_filter) {
 	int col1_index = rows_filter->cols_pos[1];
@@ -3296,16 +3259,15 @@ compare_map_value_char(std::map<int, std::string> map1, st_rows_filter *rows_fil
 
 
 /**
-  Print a packed row into IO cache
+  Filter a packed row with options from print_event_info->rows_filter.
+  Copied from print_verbose_one_row()
 
-  @param[in] file              IO cache
   @param[in] td                Table definition
   @param[in] print_event_into  Print parameters
   @param[in] cols_bitmap       Column bitmaps.
   @param[in] value             Pointer to packed row
-  @param[in] prefix            Row's SQL clause ("SET", "WHERE", etc)
 
-  @retval   - number of bytes scanned.
+  @retval   - pair<number of bytes scanned, is this row matched>
 */
 std::pair<size_t, my_bool>
 Rows_log_event::filter_binlog_one_row(table_def *td,
@@ -3325,7 +3287,6 @@ Rows_log_event::filter_binlog_one_row(table_def *td,
 	 */
 	value += (bitmap_bits_set(cols_bitmap) + 7) / 8;
 	
-	//size_t i_bm = 0;
 	st_rows_filter *rows_filter = print_event_info->rows_filter;
 	std::map<int, std::string> cur_row_field_value;
 
@@ -3347,13 +3308,12 @@ Rows_log_event::filter_binlog_one_row(table_def *td,
 				return std::make_pair(0, false);
 			}
 		}
-		// int is_hex = rows_filter->map_ishex[i + 1];
+
 		std::pair<int, std::string> col_val = log_event_filter_value(print_event_info,
 			is_null ? NULL : value,
 			td->type(i), td->field_metadata(i),
 			typestr, sizeof(typestr), rows_filter->map_field_attr[i + 1]);
 		size = col_val.first;
-		// char *val_buf = col_val.second;
 
 		cur_row_field_value.insert({ i + 1, col_val.second });
 
@@ -3618,6 +3578,8 @@ end:
 /**
   filter binlog rows from event with @1=11 && @2="xx" in human readable string
   the rows_buff must be uncompressed outside before do this filter
+  Copied from print_verbose()
+
   @param[in] print_event_info   PRINT_EVENT_INFO
   @param[in] rows_buff          Packed event buff
 */
@@ -3629,15 +3591,8 @@ Rows_log_event::filter_rows_from_event(PRINT_EVENT_INFO *print_event_info,
 	table_def *td;
 
 	std::vector<LEX_STRING> rows_arr;
-	//uchar *swap_buff1, *swap_buff2;
 	uchar *rows_pos = rows_buff + m_rows_before_size;
-	// m_rows_buf = rows_buff;
-	
-	// uchar *rows_buff_filtered;
-	// rows_buff_filtered = (uchar *)my_malloc(key_memory_log_event, sizeof(rows_buff), MYF(0));
-	// memcpy(rows_buff_filtered, rows_buff, m_rows_before_size);
 
-	//const char *sql_command, *sql_clause1, *sql_clause2;
 	Log_event_type general_type_code = get_general_type_code();
 
 	if (!(map = print_event_info->m_table_map.get_table(m_table_id)) ||
@@ -3648,12 +3603,10 @@ Rows_log_event::filter_rows_from_event(PRINT_EVENT_INFO *print_event_info,
 	if (((general_type_code == binary_log::WRITE_ROWS_EVENT) &&
 		(m_rows_buf == m_rows_end)))
 		goto end;
-	// m_rows_end - m_rows_buf
+
 	for (uchar *value = m_rows_buf; value < m_rows_end; )
 	{
 		// process row one by one
-		// MY_BITMAP row_filter_cols_bitmaps; // mark col values matched or not
-
 		uchar *start_pos = value;
 		size_t length1 = 0;
 		std::pair<size_t, my_bool> ret_filter = filter_binlog_one_row(td, print_event_info, &m_cols, value, true);
@@ -3716,7 +3669,6 @@ Rows_log_event::filter_rows_from_event(PRINT_EVENT_INFO *print_event_info,
 			my_free(one_row->str);
 		}
 		// m_rows_end = rows_pos; // rows_pos may have only header (no row actually)
-		// set this event to NULL?
 		delete td;
 		uint32 new_size = rows_pos - rows_buff;
 

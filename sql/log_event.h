@@ -378,13 +378,10 @@ typedef std::map<int, char*> map_one_line;
 struct st_rows_filter {
 	int cols_cnt;
 	int cols_pos[255];  // [2, 1, 3, 4]  @2,@1,@3,@4
-	int field_pos[255];
 	std::map<int, int> map_ishex;  // column index to pos
 	std::map<int, Binlog_row_field_attr> map_field_attr;
-	std::map<char*, int> map_col1_pos;
-	// std::set<one_line> set_lines;
-	std::set< std::pair< std::map<int, char*>, int >> set_lines_map;
-	// std::vector< std::map<int, char*> > vec_lines;
+
+	// std::set< std::pair< std::map<int, char*>, int >> set_lines_map;
 	std::map< std::string, std::vector< std::map<int, std::string> > > map_lines_col; // {100: {@2:100, @1:aaa, @3:-2.0}}
 };
 /*
