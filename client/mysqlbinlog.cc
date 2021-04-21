@@ -354,6 +354,7 @@ static char *flashback_databases= 0, *flashback_tables=0;
 static std::set<std::string> flashback_filter_databases,flashback_filter_tables;
 static char *flashback_databases_ignore = 0, *flashback_tables_ignore = 0;
 static std::set<std::string> flashback_filter_databases_ignore, flashback_filter_tables_ignore;
+static my_bool conv_event_update2write;
 
 static char *opt_filter_rows = NULL;
 static char *opt_query_event_handler = NULL;
@@ -362,7 +363,6 @@ static char *opt_filter_statement_match_ignore = NULL;
 static char *opt_filter_statement_match_ignore_force = NULL;
 static char *fields_enclosed = 0, *fields_terminated = 0, *lines_terminated = 0;
 
-// st_rows_filter *rows_filter = (st_rows_filter*)my_malloc(PSI_NOT_INSTRUMENTED, sizeof(st_rows_filter), MYF(MY_ZEROFILL | MY_FAE | MY_WME));
 st_rows_filter rows_filter;
 st_event_filter *event_filter = (st_event_filter*)my_malloc(PSI_NOT_INSTRUMENTED, sizeof(st_event_filter), MYF(MY_ZEROFILL | MY_FAE | MY_WME));
 
@@ -1313,6 +1313,7 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
   /* Bypass flashback settings to event */
   ev->is_flashback= opt_flashback;
   ev->enable_filter_rows = opt_filter_rows? true:false;
+  ev->conv_event_update2write = conv_event_update2write;
 
   /* Only part of events output (for example,Query_log_event Xid_log_event Query_log_event Update_rows_log_event Write_rows_log_event
      Delete_rows_log_event) would be affected by --flashback */
@@ -1994,7 +1995,7 @@ static struct my_option my_long_options[] =
    &databases, &databases, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
   {"tables", OPT_FILTER_TABLES, "List entries for these tables (local log only)."
-					 "Give the tables names in a comma separated list.",
+   "Give the tables names in a comma separated list.",
    &tables, &tables, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
   {"rewrite-db", OPT_REWRITE_DB, "Rewrite the row event to point so that "
@@ -2033,21 +2034,25 @@ static struct my_option my_long_options[] =
    &opt_flashback, &opt_flashback, 0, GET_BOOL, NO_ARG, 0, 0, 0, 0,
    0, 0},
   {"flashback-databases", OPT_FLASHBACK_DATABASES, "List entries for these flashback databases (local log only)."
-                     "Give the database names in a comma separated list.",
+   "Give the database names in a comma separated list.",
    &flashback_databases, &flashback_databases, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
   {"flashback-tables", OPT_FLASHBACK_TABLES, "List entries for these flashback tables (local log only)."
-                     "Give the tables names in a comma separated list.",
+   "Give the tables names in a comma separated list.",
    &flashback_tables, &flashback_tables, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
   {"flashback-databases-ignore", OPT_FLASHBACK_DATABASES_IGNORE, "List entries for ignoring these databases to flashback whole tables (local log only)."
-					 "Give the database names in a comma separated list.",
+   "Give the database names in a comma separated list.",
    &flashback_databases_ignore, &flashback_databases_ignore, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
   {"flashback-tables-ignore", OPT_FLASHBACK_TABLES_IGNORE, "List entries for ignoring these tables to flashback. not work with --filter-rows (local log only)."
-					 "Give the tables names in a comma separated list.",
+   "Give the tables names in a comma separated list.",
    &flashback_tables_ignore, &flashback_tables_ignore, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
+  {"conv-event-update-to-write", OPT_CONV_EVENT_UPDATE, "Whether convert the update_event's after image to write_event."
+   "It's useful to work with imdepotent mode",
+   &conv_event_update2write, &conv_event_update2write, 0, GET_BOOL, NO_ARG, 0, 0, 0, 0,
+   0, 0},
   {"force-if-open", 'F', "Force if binlog was not closed properly.",
    &force_if_open_opt, &force_if_open_opt, 0, GET_BOOL, NO_ARG,
    1, 0, 0, 0, 0, 0},
@@ -2100,41 +2105,39 @@ static struct my_option my_long_options[] =
    "statements, output is to log files.",
    &raw_mode, &raw_mode, 0, GET_BOOL, NO_ARG, 0, 0, 0, 0,
    0, 0},
-
-  { "filter-rows", OPT_FILTER_ROWS, "Filter string or file to filter rows from event. (local log only)."
+  {"filter-rows", OPT_FILTER_ROWS, "Filter string or file to filter rows from event. (local log only)."
    "Format: '@1,@2 100,aaa'. Must work with --tables or --flashback-tables. "
    "You can use @2:hex format to tell mysqlbinlog its' varchar/varbinary/blob value is a hex. "
-	   "Also you can use @1:signed to mark it as a signed int/tinyint/smallint/mediumint/bigint",
+   "Also you can use @1:signed to mark it as a signed int/tinyint/smallint/mediumint/bigint",
    &opt_filter_rows, &opt_filter_rows, 0, GET_STR, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0 },
-  { "query-event-handler", OPT_QUERY_EVENT_HANDLER, "Decide how to handle the query events "
-	   "like statement or ddl.  Only error|keep|ignore|safe allowed. (error: exit when encountered any query event. keep or ignore all query event. "
-	  "safe: work with --filter-statement-match-error and --filter-statement-match-ignore)",
-	&opt_query_event_handler, &opt_query_event_handler, 0, GET_STR, REQUIRED_ARG,
-	0, 0, 0, 0, 0, 0 },
-  { "filter-statement-match-error", OPT_STATEMENT_ERROR, "Exit when this string is matched in query event. Comma separated. Only work when query-event-handler=keep|ignore|safe",
-	&opt_filter_statement_match_error, &opt_filter_statement_match_error, 0, GET_STR, REQUIRED_ARG,
-	0, 0, 0, 0, 0, 0 },
-  { "filter-statement-match-ignore", OPT_STATEMENT_IGNORE, "Ignore the query event when this string is matched. Comma separated. Only work when query-event-handler=error|safe",
-	&opt_filter_statement_match_ignore, &opt_filter_statement_match_ignore, 0, GET_STR, REQUIRED_ARG,
-	0, 0, 0, 0, 0, 0 },
-   { "filter-statement-match-ignore-force", OPT_STATEMENT_IGNORE_FORCE, "Force ignore the query event when this string is matched, eventhough filter-statement-match-error is matched . Comma separated. Work when query-event-handler=keep|ignore|error|safe",
-&opt_filter_statement_match_ignore_force, &opt_filter_statement_match_ignore_force, 0, GET_STR, REQUIRED_ARG,
-0, 0, 0, 0, 0, 0 },
-
-   { "filter-lines-terminated-by", OPT_LTB,
- "Lines in the filter file are terminated by the given string.",
- &lines_terminated, &lines_terminated, 0, GET_STR,
- REQUIRED_ARG, 0, 0, 0, 0, 0, 0 },
-   { "filter-fields-terminated-by", OPT_FTB,
-  "Fields in the filter file are terminated by the given string.",
-  &fields_terminated, &fields_terminated, 0,
-  GET_STR, REQUIRED_ARG, 0, 0, 0, 0, 0, 0 },
-  { "filter-fields-enclosed-by", OPT_ENC,
+  {"query-event-handler", OPT_QUERY_EVENT_HANDLER, "Decide how to handle the query events "
+   "like statement or ddl.  Only error|keep|ignore|safe allowed. (error: exit when encountered any query event. keep or ignore all query event. "
+   "safe: work with --filter-statement-match-error and --filter-statement-match-ignore)",
+   &opt_query_event_handler, &opt_query_event_handler, 0, GET_STR, REQUIRED_ARG,
+   0, 0, 0, 0, 0, 0 },
+  {"filter-statement-match-error", OPT_STATEMENT_ERROR, "Exit when this string is matched in query event. Comma separated. Only work when query-event-handler=keep|ignore|safe",
+   &opt_filter_statement_match_error, &opt_filter_statement_match_error, 0, GET_STR, REQUIRED_ARG,
+   0, 0, 0, 0, 0, 0 },
+  {"filter-statement-match-ignore", OPT_STATEMENT_IGNORE, "Ignore the query event when this string is matched. Comma separated. Only work when query-event-handler=error|safe",
+   &opt_filter_statement_match_ignore, &opt_filter_statement_match_ignore, 0, GET_STR, REQUIRED_ARG,
+   0, 0, 0, 0, 0, 0 },
+  {"filter-statement-match-ignore-force", OPT_STATEMENT_IGNORE_FORCE, 
+   "Force ignore the query event when this string is matched, eventhough filter-statement-match-error is matched . Comma separated. Work when query-event-handler=keep|ignore|error|safe",
+   &opt_filter_statement_match_ignore_force, &opt_filter_statement_match_ignore_force, 0, GET_STR, REQUIRED_ARG,
+   0, 0, 0, 0, 0, 0 },
+  {"filter-lines-terminated-by", OPT_LTB,
+   "Lines in the filter file are terminated by the given string.",
+   &lines_terminated, &lines_terminated, 0, GET_STR,
+   REQUIRED_ARG, 0, 0, 0, 0, 0, 0 },
+  {"filter-fields-terminated-by", OPT_FTB,
+   "Fields in the filter file are terminated by the given string.",
+   &fields_terminated, &fields_terminated, 0, GET_STR, REQUIRED_ARG, 
+   0, 0, 0, 0, 0, 0 },
+  {"filter-fields-enclosed-by", OPT_ENC,
    "Fields in the filter file are enclosed by the given character.",
    &fields_enclosed, &fields_enclosed, 0,
    GET_STR, REQUIRED_ARG, 0, 0, 0, 0, 0, 0 },
-
   {"result-file", 'r', "Direct output to a given file. With --raw this is a "
    "prefix for the file names.",
    &output_file, &output_file, 0, GET_STR, REQUIRED_ARG,
@@ -2474,7 +2477,7 @@ int
 parse_filter_line_header(std::string raw_line, st_rows_filter *rows_filter, std::string delim) {
 
 	std::vector<std::string> colstr = string_split_by(raw_line, delim);
-	int count_col = 0; // colstr->size()
+	int count_col = 0;
 
 	std::map<int, int> map_pos_type;
 	std::map<int, Binlog_row_field_attr> map_field_attr;
@@ -2483,35 +2486,6 @@ parse_filter_line_header(std::string raw_line, st_rows_filter *rows_filter, std:
 		count_col++;
 		std::string this_col_pos = *iter;
 		boost::trim_if(this_col_pos, boost::is_any_of("\'\"\ "));
-
-		/*
-		std::smatch mres;
-		std::regex pattern("@(\\d+)(:hex)?"); // @2:hex
-		//std::regex pattern("hex\(@(\\d+)\)"); // hex(@2)
-		// std::regex expression("(?!am )\\d");
-		std::vector<std::string> vec_col;
-		boost::split(vec_col, this_col_pos, boost::is_any_of("@:")); // @2:hex
-
-		if (std::regex_match(this_col_pos, mres, pattern)) {
-			int col_pos = atoi(mres.str(1).c_str());
-			rows_filter->cols_pos[count_col] = col_pos;
-			if (mres[2].matched) {
-				//rows_filter->bitmap_is_hex[count_col] = 1;
-				map_pos_type[col_pos] = 1;
-				// rows_filter->map_ishex[col_pos] = 1;
-			}
-			else {
-				//rows_filter->bitmap_is_hex[count_col] = 0;
-				map_pos_type[col_pos] = 0;
-			}
-			continue;
-
-		}
-		else {
-			error("Please give the right position format @2,@1 or @2:hex,@1");
-			exit(1);
-		}
-		*/
 
 		if (this_col_pos.find("@") == 0) {
 			this_col_pos = this_col_pos.substr(1, this_col_pos.size());
@@ -2575,10 +2549,7 @@ parse_filter_line_body(std::string raw_line, st_rows_filter *rows_filter, std::s
 		count_col++;
 		
 		std::string col_str = *it;
-		// col_str = my_trim(col_str, fields_enclosed);
 		boost::trim_if(col_str, boost::is_any_of(std::string(fields_enclosed)));
-		// boost::trim_if(col_str, is_any_of(field_enclosed)); // 'xx' \sxx\s
-		// const char *col_buff = col_str.c_str();
 		this_col_buf.insert(std::pair<int, std::string>(rows_filter->cols_pos[count_col] , col_str));
 
 		if (count_col == 1) {
@@ -2595,10 +2566,8 @@ parse_filter_line_body(std::string raw_line, st_rows_filter *rows_filter, std::s
 			mlcv.push_back(this_col_buf);
 			rows_filter->map_lines_col.erase(iter);
 			rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
-			// rows_filter->map_lines_col[first_colstr].push_back(this_col_buf);		
 		}
 		else {
-			// std::map<std::string, std::vector<std::map<int, char*>>> *map_lines_cc;
 			std::vector< std::map<int, std::string> > mlcv;
 			mlcv.push_back(this_col_buf);
 			rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
@@ -2612,20 +2581,17 @@ parse_filter_line_body(std::string raw_line, st_rows_filter *rows_filter, std::s
 	return count_col;
 }
 
-uint
-parse_filter_input(const char *ptr, st_rows_filter *rows_filter, char *field_term, char *line_term)
+void parse_filter_input(const char *ptr, st_rows_filter *rows_filter, char *field_term, char *line_term)
 {
 	std::string sfield_term(field_term);
 	std::string sline_term(line_term);
 
-	//char *ptr = (char *)script;
 	size_t length = strlen(ptr);
 	uint count_line = 0;
 	int count_col = 0;
 
 	std::vector<std::string> csvstr;
 	std::string strinput(ptr);
-	//csvstr = string_split_by(ptr, sline_term);
 	boost::split(csvstr, strinput, boost::is_any_of(sline_term), boost::token_compress_on);
 
 	std::vector<std::string>::iterator it;
@@ -2651,7 +2617,6 @@ parse_filter_input(const char *ptr, st_rows_filter *rows_filter, char *field_ter
 		fprintf(stderr, "%s: Wrong intput line number!\n", my_progname);
 		exit(1);
 	}
-	return count_line;
 }
 
 // parse opt_filter_rows to st_rows_filter
@@ -2669,8 +2634,6 @@ void parse_filter_rows() {
 	MY_STAT sbuf;  /* Stat information for the data file */
 	if (opt_filter_rows && my_stat(opt_filter_rows, &sbuf, MYF(0)))
 	{
-		// std::ifstream  csv_file("test.csv");
-
 		File data_file;
 		if (!MY_S_ISREG(sbuf.st_mode))
 		{
@@ -2691,7 +2654,7 @@ void parse_filter_rows() {
 		my_close(data_file, MYF(0));
 		if (opt_filter_rows)
 		{
-			(void)parse_filter_input(tmp_csvbuff, &rows_filter, field_term, line_term);
+			parse_filter_input(tmp_csvbuff, &rows_filter, field_term, line_term);
 		}
 		my_free(tmp_csvbuff);
 	}
@@ -2700,7 +2663,7 @@ void parse_filter_rows() {
 		if (!lines_terminated) {
 			line_term = " ";
 		}
-		(void)parse_filter_input(opt_filter_rows, &rows_filter, field_term, line_term); // no space allow in col_string
+		parse_filter_input(opt_filter_rows, &rows_filter, field_term, line_term); // no space allow in col_string
 	}
 }
 
@@ -2766,7 +2729,7 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
 	  break;
   case OPT_FILTER_ROWS:
   {
-	  // parse_filter_rows();
+	  // parse_filter_rows need some options be adjusted. we initialize it in  args_post_process()
   }
 	  break;
   case OPT_QUERY_EVENT_HANDLER:
@@ -2779,8 +2742,6 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
 	  }
 	  else if (strcmp(opt_query_event_handler, "safe") == 0) {
 		  event_filter->query_event_handler = Binlog_query_event_handler::Safe;
-		  //fprintf(stderr, "mysqlbinlog: [ERROR] --query-event-handler=safe not implement yet .\n");
-		  //exit(1);
 	  }
 	  else if (strcmp(opt_query_event_handler, "keep") == 0) {
 		  event_filter->query_event_handler = Binlog_query_event_handler::Keep;
@@ -2803,7 +2764,6 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
 	  break;
   case OPT_STATEMENT_IGNORE:
   {
-	  //opt_filter_statement_match_ignore = "flush,checksum,conn_log,db_infobase";
 	  std::vector<std::string> filter_statement_ignores;
 	  boost::split(filter_statement_ignores, opt_filter_statement_match_ignore,
 		  boost::is_any_of(","), boost::token_compress_on);
@@ -4051,8 +4011,6 @@ static int args_post_process(void)
 		  fields_enclosed = "\'";
 	  if (!fields_terminated)
 		  fields_terminated = ",";
-	  //if (!lines_terminated)
-	  //	  lines_terminated = "\n"; // may be convert to " "
 
 	  parse_filter_rows();
   }

@@ -843,6 +843,7 @@ public:
 #ifdef MYSQL_CLIENT
     my_bool is_flashback;
 	my_bool enable_filter_rows;
+	my_bool conv_event_update2write;
     String  output_buf; // Storing the event flashback output
 #endif
 
@@ -3025,6 +3026,7 @@ public:
   virtual void print(FILE *file, PRINT_EVENT_INFO *print_event_info)= 0;
   void change_to_flashback_event(PRINT_EVENT_INFO *print_event_info, uchar *rows_buff, Log_event_type ev_type);
   std::pair<uint, my_bool> filter_rows_from_event(PRINT_EVENT_INFO *print_event_info, uchar *rows_buff, Log_event_type ev_type);
+  std::pair<uint, my_bool> conv_update_to_write_event(PRINT_EVENT_INFO *print_event_info, uchar *rows_buff, Log_event_type ev_type, bool is_after);
 
   void print_verbose(IO_CACHE *file,
                      PRINT_EVENT_INFO *print_event_info);

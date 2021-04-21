@@ -3229,9 +3229,7 @@ Rows_log_event::print_verbose_one_row(IO_CACHE *file, table_def *td,
 my_bool
 compare_map_value_char(std::map<int, std::string> map1, st_rows_filter *rows_filter) {
 	int col1_index = rows_filter->cols_pos[1];
-	// std::vector<std::map<int, char*>> map_vec;
 	std::string first_colstr(map1[col1_index]);
-	// rows_filter->map_lines_col.find(first_colstr);
 	std::map< std::string, std::vector< std::map<int, std::string> > >::iterator map_iter;
 	map_iter = rows_filter->map_lines_col.find(first_colstr); // find the first column value
 
@@ -3330,6 +3328,105 @@ Rows_log_event::filter_binlog_one_row(table_def *td,
 	return std::make_pair(value - value0, matched);
 }
 
+/*
+  Convert a update_event to write_event with the after image
+  To avoid duplicate record, this table should have a unique key and the key canot be changed
+*/
+std::pair<uint, my_bool>
+Rows_log_event::conv_update_to_write_event(PRINT_EVENT_INFO *print_event_info,
+	uchar *rows_buff, Log_event_type ev_type, bool is_after)
+{
+	Table_map_log_event *map;
+	table_def *td;
+
+	std::vector<LEX_STRING> rows_arr;
+	uchar *rows_pos = rows_buff + m_rows_before_size;
+
+	Log_event_type general_type_code = get_general_type_code();
+
+	if (!(map = print_event_info->m_table_map.get_table(m_table_id)) ||
+		!(td = map->create_table_def()))
+		return std::make_pair(0, false);
+
+	if (ev_type == binary_log::UPDATE_ROWS_EVENT) {
+		rows_buff[EVENT_TYPE_OFFSET] = binary_log::WRITE_ROWS_EVENT;
+	}
+	else if (ev_type == binary_log::UPDATE_ROWS_EVENT_V1) {
+		rows_buff[EVENT_TYPE_OFFSET] = binary_log::WRITE_ROWS_EVENT_V1;
+	}
+	else
+		goto end;
+
+	if (m_rows_buf == m_rows_end)
+		goto end;
+
+	for (uchar *value = m_rows_buf; value < m_rows_end;)
+	{
+		// process row one by one
+		uchar *start_pos = value;
+		size_t length1 = 0;
+		if (!(length1 = print_verbose_one_row(NULL, td, print_event_info,
+			&m_cols, value,
+			(const uchar*) "", true)))
+		{
+			fprintf(stderr, "\nError row length: %zu\n", length1);
+			exit(1);
+		}
+		value += length1;
+		/* Print the second image (for UPDATE only) */
+
+		size_t length2 = 0;
+		if (!(length2 = print_verbose_one_row(NULL, td, print_event_info,
+			&m_cols, value,
+			(const uchar*) "", true)))
+		{
+			fprintf(stderr, "\nError row length: %zu\n", length2);
+			exit(1);
+		}
+		value += length2;
+
+		/* Copying one row into a buff, and pushing into the array */
+		LEX_STRING one_row;
+		if (is_after) {
+			one_row.length = length2;
+			one_row.str = (char *)my_malloc(key_memory_log_event, one_row.length, MYF(0));
+			memcpy(one_row.str, start_pos + length1, length2);
+		}
+		else {
+			one_row.length = length1;
+			one_row.str = (char *)my_malloc(key_memory_log_event, one_row.length, MYF(0));
+			memcpy(one_row.str, start_pos, length1);
+		}
+		
+		if (!one_row.str)
+		{
+			fprintf(stderr, "\nError: Out of memory. "
+				"Could not push flashback event into array.\n");
+			exit(1);
+		}
+		else {
+			rows_arr.push_back(one_row);
+		}
+	}
+	if (rows_arr.size() > 0) {
+		rows_pos -= (m_width + 7) / 8; // update_event has two null_bits len
+		for (uint i = 0; i < rows_arr.size(); i++)
+		{
+			LEX_STRING *one_row = &rows_arr[i];
+
+			memcpy(rows_pos, (uchar *)one_row->str, one_row->length);
+			rows_pos += one_row->length;
+			my_free(one_row->str);
+		}
+		delete td;
+		uint32 new_size = rows_pos - rows_buff;
+		return std::make_pair(new_size, true);
+	}
+end:
+	delete td;
+	return std::make_pair(0, false);
+}
+
 /**
   Exchange the SET part and WHERE part for the Update events.
   Revert the operations order for the Write and Delete events.
@@ -3342,7 +3439,6 @@ Rows_log_event::filter_binlog_one_row(table_def *td,
 void Rows_log_event::change_to_flashback_event(PRINT_EVENT_INFO *print_event_info,
         uchar *rows_buff, Log_event_type ev_type)
 {
-
     Table_map_log_event *map;
     table_def *td;
     //DYNAMIC_ARRAY rows_arr;
@@ -3357,8 +3453,6 @@ void Rows_log_event::change_to_flashback_event(PRINT_EVENT_INFO *print_event_inf
     /* If the write rows event contained no values for the AI */
     if (((get_general_type_code() == binary_log::WRITE_ROWS_EVENT) && (m_rows_buf==m_rows_end)))
         goto end;
-
-    //(void) my_init_dynamic_array(&rows_arr,key_memory_log_event, sizeof(LEX_STRING), 8, 8, MYF(0));
 
     for (uchar *value= m_rows_buf; value < m_rows_end; )
     {
@@ -3424,10 +3518,9 @@ void Rows_log_event::change_to_flashback_event(PRINT_EVENT_INFO *print_event_inf
     LEX_STRING one_row;
 
     one_row.length= length1 + length2;
-    one_row.str=    (char *) my_malloc(key_memory_log_event,one_row.length, MYF(0));
+    one_row.str= (char *) my_malloc(key_memory_log_event,one_row.length, MYF(0));
     memcpy(one_row.str, start_pos, one_row.length);
-    //if (one_row.str == NULL || push_dynamic(&rows_arr, (uchar *) &one_row))
-    if (one_row.str == NULL)
+    if (!one_row.str)
     {
         fprintf(stderr, "\nError: Out of memory. "
                         "Could not push flashback event into array.\n");
@@ -3638,7 +3731,7 @@ Rows_log_event::filter_rows_from_event(PRINT_EVENT_INFO *print_event_info,
 			one_row.length = length1 + length2;
 			one_row.str = (char *)my_malloc(key_memory_log_event, one_row.length, MYF(0));
 			memcpy(one_row.str, start_pos, one_row.length); // dst,src,size
-			if (one_row.str == NULL)
+			if (!one_row.str)
 			{
 				fprintf(stderr, "\nError: Out of memory. "
 					"Could not filter rows from event.\n");
@@ -3762,6 +3855,10 @@ void Log_event::print_base64(IO_CACHE* file,
 		  ev = new Update_rows_log_event((const char*)ptr, tmp_size,
 			  glob_description_event);
 		  filter_result = ev->filter_rows_from_event(print_event_info, ptr, ev_type);
+
+		  if (conv_event_update2write && !is_flashback) {
+			  filter_result = ev->conv_update_to_write_event(print_event_info, ptr, ev_type, true);
+		  }
 		  // change the row event body size
 		  size = (tmp_size < size) ? (filter_result.first + BINLOG_CHECKSUM_LEN) : filter_result.first;
 		  int4store(ptr + EVENT_LEN_OFFSET, size);
@@ -3781,8 +3878,30 @@ void Log_event::print_base64(IO_CACHE* file,
 	  }
   }
   else {
+	  Log_event_type ev_type = (enum Log_event_type) ptr[EVENT_TYPE_OFFSET];
+	  if (conv_event_update2write && !is_flashback 
+		  && (ev_type == binary_log::UPDATE_ROWS_EVENT || ev_type == binary_log::UPDATE_ROWS_EVENT_V1)) 
+	  {
+		uint tmp_size = size;
+		Rows_log_event *ev = NULL;
+		enum_binlog_checksum_alg checksum_alg = (ev_type != binary_log::FORMAT_DESCRIPTION_EVENT) ? common_footer->checksum_alg :
+			Log_event_footer::get_checksum_alg(temp_buf, (unsigned long)size);
+		if (checksum_alg != binary_log::BINLOG_CHECKSUM_ALG_UNDEF && checksum_alg != binary_log::BINLOG_CHECKSUM_ALG_OFF) {
+			tmp_size -= BINLOG_CHECKSUM_LEN; // checksum is displayed through the header
+		}
+
+		ev = new Update_rows_log_event((const char*)ptr, tmp_size,
+			glob_description_event);
+		filter_result = ev->conv_update_to_write_event(print_event_info, ptr, ev_type, true);
+
+		size = (tmp_size < size) ? (filter_result.first + BINLOG_CHECKSUM_LEN) : filter_result.first;
+		int4store(ptr + EVENT_LEN_OFFSET, size);
+		delete ev;
+	  }
+	  // set matched flag to true if not enable filter-rows
 	  filter_result.second = true;
   }
+
   // not enable_filter_rows or (enable and matched)
   if (is_flashback && filter_result.second)
   {
@@ -3824,6 +3943,13 @@ void Log_event::print_base64(IO_CACHE* file,
         ev= new Update_rows_log_event((const char*) ptr, tmp_size,
                                        glob_description_event);
 		ev->change_to_flashback_event(print_event_info, ptr, ev_type);
+
+		if (conv_event_update2write) {
+			filter_result = ev->conv_update_to_write_event(print_event_info, ptr, ev_type, true);
+			// change the row event body size
+			size = (tmp_size < size) ? (filter_result.first + BINLOG_CHECKSUM_LEN) : filter_result.first;
+			int4store(ptr + EVENT_LEN_OFFSET, size);
+		}
         break;
       default:
         break;
@@ -5714,19 +5840,6 @@ void Query_log_event::print_query_header(IO_CACHE* file,
 }
 
 my_bool
-event_filter_func2(std::string q, PRINT_EVENT_INFO* print_event_info) {
-	std::vector<std::string>::iterator iter;
-	std::vector<std::string> ignores = print_event_info->event_filter->statement_match_ignores;
-
-	for (iter = ignores.begin(); iter != ignores.end(); ++iter) {
-		size_t findPos = q.find(*iter);
-		if (findPos != std::string::npos) {
-			return true;
-		}
-	}
-	return false;
-}
-my_bool
 event_filter_func(std::string q, std::vector<std::string> match_str) {
 	/*
 	if len(match_str) == 0 {
@@ -5760,7 +5873,7 @@ void Query_log_event::print_handler_query(IO_CACHE* file,
 			break;
 		}
 		else { // ignore or print this event. we ignore it currently
-			fprintf(stderr, "Exit when query event occurs: %s\n", tmp_str.c_str());
+			fprintf(stderr, "Exit when	 query event occurs: %s\n", tmp_str.c_str());
 			exit(1);
 		}
 		break;
@@ -5810,7 +5923,7 @@ void Query_log_event::print_handler_query(IO_CACHE* file,
 			boost::replace_all(tmp_str, "\n", "# ");
 			my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
 		}
-		else { // defualt error
+		else { // default error
 			fprintf(stderr, "Cannot handler this query event: %s\nYou may need --filter-statement-match-error "
 				"and --filter-statement-match-ignore\n", tmp_str.c_str());
 			exit(1);
