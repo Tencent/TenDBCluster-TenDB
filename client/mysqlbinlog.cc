@@ -2410,73 +2410,11 @@ static my_time_t convert_str_to_timestamp(const char* str)
     my_system_gmt_sec(&l_time, &dummy_my_timezone, &dummy_in_dst_time_gap);
 }
 
-std::vector<std::string>
-string_split_by(char *raw, char delim) {
-	std::stringstream sstr(raw);
-	std::vector<std::string> res;
-	while (sstr.good()) {
-		std::string substr;
-		std::getline(sstr, substr, delim);
-		res.push_back(substr);
-	}
-	return res;
-}
-std::vector<std::string>
-string_split_by(std::string str, char delim) {
-	std::stringstream sstr(str);
-	std::vector<std::string> res;
-	while (sstr.good()) {
-		std::string substr;
-		std::getline(sstr, substr, delim);
-		res.push_back(substr);
-	}
-	return res;
-}
-std::vector<std::string>
-string_split_bychar(std::string str, std::string delim) {
-	char deli = delim.c_str()[0]; // only the first char
-	return string_split_by(str, deli);
-}
-
-std::vector<std::string>
-string_split_by(std::string str, std::string delim) {
-	std::vector<std::string> res;
-	if ("" == str) return  res;
-	std::string strs = str + delim;
-	size_t pos;
-	size_t size = strs.size();
-
-	for (int i = 0; i < size; ++i) {
-		pos = strs.find(delim, i);
-		if (pos < size) {
-			std::string s = strs.substr(i, pos - i);
-			res.push_back(s);
-			i = pos + delim.size() - 1;
-		}
-	}
-	return res;
-}
-std::string& my_ltrim(std::string& str, const std::string& chars = "\t\n\v\f\r ")
-{
-	str.erase(0, str.find_first_not_of(chars));
-	return str;
-}
-
-std::string& my_rtrim(std::string& str, const std::string& chars = "\t\n\v\f\r ")
-{
-	str.erase(str.find_last_not_of(chars) + 1);
-	return str;
-}
-
-std::string& my_trim(std::string& str, const std::string& chars = "\t\n\v\f\r ")
-{
-	return my_ltrim(my_rtrim(str, chars), chars);
-}
-
 int
 parse_filter_line_header(std::string raw_line, st_rows_filter *rows_filter, std::string delim) {
 
-	std::vector<std::string> colstr = string_split_by(raw_line, delim);
+	std::vector<std::string> colstr;
+	boost::split(colstr, raw_line, boost::is_any_of(delim));
 	int count_col = 0;
 
 	std::map<int, int> map_pos_type;
@@ -2544,7 +2482,9 @@ parse_filter_line_body(std::string raw_line, st_rows_filter *rows_filter, std::s
 	std::map<int, std::string> this_col_buf; // {@2:100, @1:bbb, @3:-2.0}
 	std::string first_colstr;
 	std::vector<std::string>::iterator it;
-	std::vector<std::string> colstr = string_split_by(raw_line, delim);
+	std::vector<std::string> colstr;
+	boost::split(colstr, raw_line, boost::is_any_of(delim));
+
 	for(it= colstr.begin(); it!= colstr.end();++it) {
 		count_col++;
 		

@@ -2283,8 +2283,6 @@ my_b_write_quoted_with_length(IO_CACHE *file, const uchar *ptr, uint length)
   }
 }
 
-//std::pair < uint, std::string >
-//char *
 std::string
 my_b_getbuf_hex(const uchar *ptr, uint length, my_bool is_hex)
 {
@@ -2292,14 +2290,17 @@ my_b_getbuf_hex(const uchar *ptr, uint length, my_bool is_hex)
 	if (is_hex) {
 		char * val_buf = (char *)my_malloc(key_memory_log_event,
 			2 * length + 1 + 2, MYF(MY_WME)); // 2 hex digits / byte
+		if (!val_buf) {
+			fprintf(stderr, "\nError: Out of memory. "
+				"Could not allocate memory for hex value.\n");
+			exit(1);
+		}
 		str_to_hex(val_buf, (const char*)ptr, length);
 		val_str = std::string(val_buf);
 		my_free(val_buf);
 	}
 	else {
-		char * val_buf = strndup((const char *)ptr, length);
-		val_str = std::string(val_buf);
-		free(val_buf);
+		val_str = std::string((const char *)ptr, length);
 	}
 	return val_str;
 }
@@ -2321,7 +2322,6 @@ my_b_getstr_with_buf_length(const uchar *ptr, uint length, my_bool is_hex)
 	}
 }
 
-// static char*
 std::string
 my_b_getbuf_bit(const uchar *ptr, uint nbits)
 {
@@ -2335,7 +2335,6 @@ my_b_getbuf_bit(const uchar *ptr, uint nbits)
 	std::string var_str = std::string(buff);
 	my_free(buff);
 	return var_str;
-	// return buff;
 }
 
 /**
@@ -2734,7 +2733,7 @@ log_event_print_value(IO_CACHE *file, const uchar *ptr,
 
 /**
   Parse a packed value of the given SQL type into std::string, for filter rows
-  Copied from print_verbose_one_row()
+  Copied from log_event_print_value()
 
   @param[in] print_event_info  options to parse this value
   @param[in] ptr               Pointer to string
@@ -2753,8 +2752,8 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 {
 	std::pair<size_t, char*> retval;
 	std::string null_str = "NULL";
-	my_bool is_hex = (field_attr == Binlog_row_field_attr::IS_HEX) ? true : false;
-	my_bool is_signed = (field_attr == Binlog_row_field_attr::IS_SIGNED) ? true : false;
+	my_bool is_hex = (field_attr == Binlog_row_field_attr::IS_HEX);
+	my_bool is_signed = (field_attr == Binlog_row_field_attr::IS_SIGNED);
 	// is_hex and is_signed cannot be set at same time
 	// if int flag un-signed is not given. treat it as unsigned
 	uint32 length = 0;
@@ -2927,9 +2926,7 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 		struct timeval tm;
 		my_timestamp_from_binary(&tm, ptr, meta);
 		int buflen = my_timeval_to_str(&tm, buf, meta);
-		val_buf = strndup(buf, buflen); // val_buf to string
-		val_str = std::string(val_buf);
-		free(val_buf);
+		val_str = std::string(buf, buflen); // val_buf to string
 		return std::make_pair(my_timestamp_binary_length(meta), val_str);
 	}
 
@@ -2964,9 +2961,7 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 		longlong packed = my_datetime_packed_from_binary(ptr, meta);
 		TIME_from_longlong_datetime_packed(&ltime, packed);
 		int buflen = my_datetime_to_str(&ltime, buf, meta);
-		val_buf = strndup(buf, buflen);
-		val_str = std::string(val_buf);
-		free(val_buf);
+		val_str = std::string(buf, buflen);
 		return std::make_pair(my_datetime_binary_length(meta), val_str);
 	}
 
@@ -2993,9 +2988,7 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 		longlong packed = my_time_packed_from_binary(ptr, meta);
 		TIME_from_longlong_time_packed(&ltime, packed);
 		int buflen = my_time_to_str(&ltime, buf, meta);
-		val_buf = strndup(buf, buflen);
-		val_str = std::string(val_buf);
-		free(val_buf);
+		val_str = std::string(buf, buflen);
 		return std::make_pair(my_time_binary_length(meta), val_str);
 	}
 
@@ -5908,7 +5901,7 @@ void Query_log_event::print_handler_query(IO_CACHE* file,
 				my_b_printf(file, "\n%s\n", print_event_info->delimiter);
 		}
 		break;
-	case Binlog_query_event_handler::Safe: // @todo not implemented yet!!
+	case Binlog_query_event_handler::Safe:
 		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores_force)) {
 			boost::replace_all(tmp_str, "\n", "# ");
 			my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
@@ -9305,7 +9298,7 @@ void User_var_log_event::print(FILE* file, PRINT_EVENT_INFO* print_event_info)
       CHARSET_INFO *cs;
 
       hex_str= (char *)my_malloc(key_memory_log_event,
-                                 2*val_len+1+2,MYF(MY_WME)); // 2 hex digits / byte
+                                 2*val_len+1+2,MYF(MY_WME)); // 2 hex chars / byte and trailing 0
       if (!hex_str)
         return;
       str_to_hex(hex_str, val, val_len);
