@@ -353,6 +353,37 @@ enum enum_base64_output_mode {
   BASE64_OUTPUT_MODE_COUNT
 };
 
+enum Binlog_query_event_handler {
+	Error,
+	Ignore,
+	Safe,
+	Keep
+};
+
+struct st_event_filter {
+	Binlog_query_event_handler query_event_handler;
+	std::vector<std::string> statement_match_errors;
+	std::vector<std::string> statement_match_ignores;
+	std::vector<std::string> statement_match_ignores_force;
+};
+
+enum Binlog_row_field_attr {
+	DEFAULT = 0,
+	IS_HEX = 2,
+	IS_SIGNED = 4,
+	IS_UNSIGNED = 5
+};
+
+typedef std::map<int, char*> map_one_line;
+struct st_rows_filter {
+	int cols_cnt;
+	int cols_pos[255];  // [2, 1, 3, 4]  @2,@1,@3,@4
+	std::map<int, int> map_ishex;  // column index to pos
+	std::map<int, Binlog_row_field_attr> map_field_attr;
+
+	// std::set< std::pair< std::map<int, char*>, int >> set_lines_map;
+	std::map< std::string, std::vector< std::map<int, std::string> > > map_lines_col; // {100: {@2:100, @1:aaa, @3:-2.0}}
+};
 /*
   A structure for mysqlbinlog to know how to print events
 
@@ -444,6 +475,10 @@ typedef struct st_print_event_info
      False, otherwise.
    */
   bool skipped_event_in_transaction;
+
+  st_rows_filter *rows_filter;
+  st_event_filter *event_filter;
+  //Binlog_query_event_handler query_event_handler;
 
 } PRINT_EVENT_INFO;
 #endif
@@ -807,6 +842,8 @@ public:
 #endif // ifdef MYSQL_SERVER ... else
 #ifdef MYSQL_CLIENT
     my_bool is_flashback;
+	my_bool enable_filter_rows;
+	my_bool conv_event_update2write;
     String  output_buf; // Storing the event flashback output
 #endif
 
@@ -1442,6 +1479,7 @@ public:
 #endif /* HAVE_REPLICATION */
 #else
   void print_query_header(IO_CACHE* file, PRINT_EVENT_INFO* print_event_info);
+  void print_handler_query(IO_CACHE* file, PRINT_EVENT_INFO* print_event_info);
   void print(FILE* file, PRINT_EVENT_INFO* print_event_info);
   static bool rewrite_db_in_buffer(char **buf, ulong *event_len,
                                    const Format_description_log_event *fde);
@@ -2987,6 +3025,9 @@ public:
   /* not for direct call, each derived has its own ::print() */
   virtual void print(FILE *file, PRINT_EVENT_INFO *print_event_info)= 0;
   void change_to_flashback_event(PRINT_EVENT_INFO *print_event_info, uchar *rows_buff, Log_event_type ev_type);
+  std::pair<uint, my_bool> filter_rows_from_event(PRINT_EVENT_INFO *print_event_info, uchar *rows_buff, Log_event_type ev_type);
+  std::pair<uint, my_bool> conv_update_to_write_event(PRINT_EVENT_INFO *print_event_info, uchar *rows_buff, Log_event_type ev_type, bool is_after);
+
   void print_verbose(IO_CACHE *file,
                      PRINT_EVENT_INFO *print_event_info);
   size_t print_verbose_one_row(IO_CACHE *file, table_def *td,
@@ -2994,6 +3035,9 @@ public:
                                MY_BITMAP *cols_bitmap,
                                const uchar *ptr, const uchar *prefix,
                                const my_bool no_fill_output=0);
+  std::pair<size_t, my_bool> filter_binlog_one_row(table_def *td, PRINT_EVENT_INFO *print_event_info,
+	  MY_BITMAP *cols_bitmap,
+	  const uchar *ptr, const my_bool no_fill_output = 0);
 #endif
 
 #ifdef MYSQL_SERVER
