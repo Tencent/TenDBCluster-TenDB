@@ -354,10 +354,10 @@ enum enum_base64_output_mode {
 };
 
 enum Binlog_query_event_handler {
-	Error,
-	Ignore,
-	Safe,
-	Keep
+	QUERY_EVENT_ERROR,
+	QUERY_EVENT_IGNORE,
+	QUERY_EVENT_SAFE,
+	QUERY_EVENT_KEEP
 };
 
 struct st_event_filter {
@@ -368,10 +368,10 @@ struct st_event_filter {
 };
 
 enum Binlog_row_field_attr {
-	DEFAULT = 0,
-	IS_HEX = 2,
-	IS_SIGNED = 4,
-	IS_UNSIGNED = 5
+	FIELD_ATTR_DEFAULT = 0,
+	FIELD_IS_HEX = 2,
+	FIELD_IS_SIGNED = 4,
+	FIELD_IS_UNSIGNED = 5
 };
 
 typedef std::map<int, char*> map_one_line;
