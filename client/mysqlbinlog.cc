@@ -2436,17 +2436,17 @@ parse_filter_line_header(std::string raw_line, st_rows_filter *rows_filter, std:
 				if (col_suffix == "hex") {
 					rows_filter->cols_pos[count_col] = col_pos;
 					map_pos_type[col_pos] = 1;
-					map_field_attr[col_pos] = Binlog_row_field_attr::IS_HEX;
+					map_field_attr[col_pos] = FIELD_IS_HEX;
 				}
 				else if (col_suffix == "signed") {
 					rows_filter->cols_pos[count_col] = col_pos;
 					map_pos_type[col_pos] = 0;
-					map_field_attr[col_pos] = Binlog_row_field_attr::IS_SIGNED;
+					map_field_attr[col_pos] = FIELD_IS_SIGNED;
 				}
 				else if (col_suffix == "unsigned") {
 					rows_filter->cols_pos[count_col] = col_pos;
 					map_pos_type[col_pos] = 0;
-					map_field_attr[col_pos] = Binlog_row_field_attr::IS_UNSIGNED;
+					map_field_attr[col_pos] = FIELD_IS_UNSIGNED;
 				}
 				else
 				{
@@ -2459,7 +2459,7 @@ parse_filter_line_header(std::string raw_line, st_rows_filter *rows_filter, std:
 				// cols_pos=[0, 2, 1, 13] //[@1,@2,@3] column N start from 1. not use 0
 				rows_filter->cols_pos[count_col] = col_pos; 
 				map_pos_type[col_pos] = 0;
-				map_field_attr[col_pos] = Binlog_row_field_attr::DEFAULT;
+				map_field_attr[col_pos] = FIELD_ATTR_DEFAULT;
 			}
 		}
 		else {
@@ -2675,16 +2675,16 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
   case OPT_QUERY_EVENT_HANDLER:
   {
 	  if (strcmp(opt_query_event_handler, "error") == 0) {
-		  event_filter->query_event_handler = Binlog_query_event_handler::Error;
+		  event_filter->query_event_handler = QUERY_EVENT_ERROR;
 	  }
 	  else if (strcmp(opt_query_event_handler, "ignore") == 0) {
-		  event_filter->query_event_handler = Binlog_query_event_handler::Ignore;
+		  event_filter->query_event_handler = QUERY_EVENT_IGNORE;
 	  }
 	  else if (strcmp(opt_query_event_handler, "safe") == 0) {
-		  event_filter->query_event_handler = Binlog_query_event_handler::Safe;
+		  event_filter->query_event_handler = QUERY_EVENT_SAFE;
 	  }
 	  else if (strcmp(opt_query_event_handler, "keep") == 0) {
-		  event_filter->query_event_handler = Binlog_query_event_handler::Keep;
+		  event_filter->query_event_handler = QUERY_EVENT_KEEP;
 	  }
 	  else {
 		  fprintf(stderr, "mysqlbinlog: [ERROR] --query-event-handler only allowed values error|ignore|safe|keep .\n");
@@ -3959,7 +3959,7 @@ static int args_post_process(void)
 		"--filter-fields-enclosed-by is ignored when not set --filter-rows.");
   }
   if (!opt_query_event_handler) {
-	  event_filter->query_event_handler = Binlog_query_event_handler::Keep;
+	  event_filter->query_event_handler = QUERY_EVENT_KEEP;
   }
 
   global_sid_lock->rdlock();
