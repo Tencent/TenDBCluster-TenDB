@@ -2752,8 +2752,8 @@ log_event_filter_value(PRINT_EVENT_INFO *print_event_info,
 {
 	std::pair<size_t, char*> retval;
 	std::string null_str = "NULL";
-	my_bool is_hex = (field_attr == Binlog_row_field_attr::IS_HEX);
-	my_bool is_signed = (field_attr == Binlog_row_field_attr::IS_SIGNED);
+	my_bool is_hex = (field_attr == FIELD_IS_HEX);
+	my_bool is_signed = (field_attr == FIELD_IS_SIGNED);
 	// is_hex and is_signed cannot be set at same time
 	// if int flag un-signed is not given. treat it as unsigned
 	uint32 length = 0;
@@ -3335,8 +3335,6 @@ Rows_log_event::conv_update_to_write_event(PRINT_EVENT_INFO *print_event_info,
 	std::vector<LEX_STRING> rows_arr;
 	uchar *rows_pos = rows_buff + m_rows_before_size;
 
-	Log_event_type general_type_code = get_general_type_code();
-
 	if (!(map = print_event_info->m_table_map.get_table(m_table_id)) ||
 		!(td = map->create_table_def()))
 		return std::make_pair(0, false);
@@ -3661,109 +3659,109 @@ end:
   delete td;
 }
 
-/**
-  filter binlog rows from event with @1=11 && @2="xx" in human readable string
-  the rows_buff must be uncompressed outside before do this filter
-  Copied from print_verbose()
+	/**
+	  filter binlog rows from event with @1=11 && @2="xx" in human readable string
+	  the rows_buff must be uncompressed outside before do this filter
+	  Copied from print_verbose()
 
-  @param[in] print_event_info   PRINT_EVENT_INFO
-  @param[in] rows_buff          Packed event buff
-*/
-std::pair<uint, my_bool> 
-Rows_log_event::filter_rows_from_event(PRINT_EVENT_INFO *print_event_info,
-	uchar *rows_buff, Log_event_type ev_type)
-{
-	Table_map_log_event *map;
-	table_def *td;
-
-	std::vector<LEX_STRING> rows_arr;
-	uchar *rows_pos = rows_buff + m_rows_before_size;
-
-	Log_event_type general_type_code = get_general_type_code();
-
-	if (!(map = print_event_info->m_table_map.get_table(m_table_id)) ||
-		!(td = map->create_table_def()))
-		return std::make_pair(0, false);
-
-	/* If the write rows event contained no values for the AI */
-	if (((general_type_code == binary_log::WRITE_ROWS_EVENT) &&
-		(m_rows_buf == m_rows_end)))
-		goto end;
-
-	for (uchar *value = m_rows_buf; value < m_rows_end; )
+	  @param[in] print_event_info   PRINT_EVENT_INFO
+	  @param[in] rows_buff          Packed event buff
+	*/
+	std::pair<uint, my_bool> 
+	Rows_log_event::filter_rows_from_event(PRINT_EVENT_INFO *print_event_info,
+		uchar *rows_buff, Log_event_type ev_type)
 	{
-		// process row one by one
-		uchar *start_pos = value;
-		size_t length1 = 0;
-		std::pair<size_t, my_bool> ret_filter = filter_binlog_one_row(td, print_event_info, &m_cols, value, true);
+		Table_map_log_event *map;
+		table_def *td;
 
-		if (!(length1 = ret_filter.first))
+		std::vector<LEX_STRING> rows_arr;
+		uchar *rows_pos = rows_buff + m_rows_before_size;
+
+		Log_event_type general_type_code = get_general_type_code();
+
+		if (!(map = print_event_info->m_table_map.get_table(m_table_id)) ||
+			!(td = map->create_table_def()))
+			return std::make_pair(0, false);
+
+		/* If the write rows event contained no values for the AI */
+		if (((general_type_code == binary_log::WRITE_ROWS_EVENT) &&
+			(m_rows_buf == m_rows_end)))
 			goto end;
-		value += length1;
-		/* Print the second image (for UPDATE only) */
 
-		size_t length2 = 0;
-		if (ev_type == binary_log::UPDATE_ROWS_EVENT ||
-			ev_type == binary_log::UPDATE_ROWS_EVENT_V1)
+		for (uchar *value = m_rows_buf; value < m_rows_end; )
 		{
-			// we just need the length2
-			if (!(length2 = print_verbose_one_row(NULL, td, print_event_info,
-				&m_cols, value,
-				(const uchar*) "", true)))
+			// process row one by one
+			uchar *start_pos = value;
+			size_t length1 = 0;
+			std::pair<size_t, my_bool> ret_filter = filter_binlog_one_row(td, print_event_info, &m_cols, value, true);
+
+			if (!(length1 = ret_filter.first))
+				goto end;
+			value += length1;
+			/* Print the second image (for UPDATE only) */
+
+			size_t length2 = 0;
+			if (ev_type == binary_log::UPDATE_ROWS_EVENT ||
+				ev_type == binary_log::UPDATE_ROWS_EVENT_V1)
 			{
-				fprintf(stderr, "\nError row length: %zu\n", length2);
-				exit(1);
+				// we just need the length2
+				if (!(length2 = print_verbose_one_row(NULL, td, print_event_info,
+					&m_cols, value,
+					(const uchar*) "", true)))
+				{
+					fprintf(stderr, "\nError row length: %zu\n", length2);
+					exit(1);
+				}
+				value += length2;
 			}
-			value += length2;
-		}
 
-		if (ret_filter.second) { // matched
-			/* Copying one row into a buff, and pushing into the array */
-			LEX_STRING one_row;
+			if (ret_filter.second) { // matched
+				/* Copying one row into a buff, and pushing into the array */
+				LEX_STRING one_row;
 
-			one_row.length = length1 + length2;
-			one_row.str = (char *)my_malloc(key_memory_log_event, one_row.length, MYF(0));
-			memcpy(one_row.str, start_pos, one_row.length); // dst,src,size
-			if (!one_row.str)
-			{
-				fprintf(stderr, "\nError: Out of memory. "
-					"Could not filter rows from event.\n");
-				exit(1);
+				one_row.length = length1 + length2;
+				one_row.str = (char *)my_malloc(key_memory_log_event, one_row.length, MYF(0));
+				memcpy(one_row.str, start_pos, one_row.length); // dst,src,size
+				if (!one_row.str)
+				{
+					fprintf(stderr, "\nError: Out of memory. "
+						"Could not filter rows from event.\n");
+					exit(1);
+				}
+				else {
+					rows_arr.push_back(one_row);
+				}
 			}
 			else {
-				rows_arr.push_back(one_row);
+				// DEBUG: not matched
 			}
 		}
-		else {
-			// DEBUG: not matched
-		}
-	}
-	// this event has no rows matched
-	if (rows_arr.size() > 0) {
-		/* Copying matched rows back into event */
-		for (uint i = 0; i < rows_arr.size(); i++)
-		{
-			LEX_STRING *one_row = &rows_arr[i];
-			/*
-			if (i + 1 == rows_arr.size()) {
-				set_flags(Rows_log_event::STMT_END_F);
-				update_flags();
+		// this event has no rows matched
+		if (rows_arr.size() > 0) {
+			/* Copying matched rows back into event */
+			for (uint i = 0; i < rows_arr.size(); i++)
+			{
+				LEX_STRING *one_row = &rows_arr[i];
+				/*
+				if (i + 1 == rows_arr.size()) {
+					set_flags(Rows_log_event::STMT_END_F);
+					update_flags();
+				}
+				*/
+				memcpy(rows_pos, (uchar *)one_row->str, one_row->length);
+				rows_pos += one_row->length;
+				my_free(one_row->str);
 			}
-			*/
-			memcpy(rows_pos, (uchar *)one_row->str, one_row->length);
-			rows_pos += one_row->length;
-			my_free(one_row->str);
-		}
-		// m_rows_end = rows_pos; // rows_pos may have only header (no row actually)
-		delete td;
-		uint32 new_size = rows_pos - rows_buff;
+			// m_rows_end = rows_pos; // rows_pos may have only header (no row actually)
+			delete td;
+			uint32 new_size = rows_pos - rows_buff;
 
-		return std::make_pair(new_size, true);
+			return std::make_pair(new_size, true);
+		}
+	end:
+		delete td;
+		return std::make_pair(0, false);
 	}
-end:
-	delete td;
-	return std::make_pair(0, false);
-}
 
 #ifdef MYSQL_CLIENT
 void free_table_map_log_event(Table_map_log_event *event)
@@ -4050,7 +4048,6 @@ void Log_event::print_base64(IO_CACHE* file,
 		  {
 			  // print verbose or comment to footer_cache. Rows_log_event.m_rows_buf is set
 			  ev->print_verbose(&print_event_info->footer_cache, print_event_info);
-			  // flag_binlog_filter_matched = true;
 		  }
 		  delete ev;
 	  }
@@ -5858,7 +5855,7 @@ void Query_log_event::print_handler_query(IO_CACHE* file,
 
 	switch (print_event_info->event_filter->query_event_handler)
 	{
-	case Binlog_query_event_handler::Error:
+	case QUERY_EVENT_ERROR:
 		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores) || 
 			event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores_force)) {
 			boost::replace_all(tmp_str, "\n", "# ");
@@ -5870,7 +5867,7 @@ void Query_log_event::print_handler_query(IO_CACHE* file,
 			exit(1);
 		}
 		break;
-	case Binlog_query_event_handler::Ignore:
+	case QUERY_EVENT_IGNORE:
 		// ignore and print it to comment
 		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores_force)) {
 			boost::replace_all(tmp_str, "\n", "# ");
@@ -5886,7 +5883,7 @@ void Query_log_event::print_handler_query(IO_CACHE* file,
 			my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
 		}
 		break;
-	case Binlog_query_event_handler::Keep:
+	case QUERY_EVENT_KEEP:
 		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores_force)) {
 			boost::replace_all(tmp_str, "\n", "# ");
 			my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
@@ -5901,7 +5898,7 @@ void Query_log_event::print_handler_query(IO_CACHE* file,
 				my_b_printf(file, "\n%s\n", print_event_info->delimiter);
 		}
 		break;
-	case Binlog_query_event_handler::Safe:
+	case QUERY_EVENT_SAFE:
 		if (event_filter_func(tmp_str, print_event_info->event_filter->statement_match_ignores_force)) {
 			boost::replace_all(tmp_str, "\n", "# ");
 			my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
