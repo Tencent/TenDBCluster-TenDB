@@ -275,7 +275,7 @@ bool rewrite_db_filter(char **buf, ulong *event_len,
 */
 #define mysqld_charset &my_charset_latin1
 
-#define CLIENT_CAPABILITIES	(CLIENT_LONG_PASSWORD | CLIENT_LONG_FLAG | CLIENT_LOCAL_FILES)
+#define CLIENT_CAPABILITIES    (CLIENT_LONG_PASSWORD | CLIENT_LONG_FLAG | CLIENT_LOCAL_FILES)
 
 char server_version[SERVER_VERSION_LENGTH];
 ulong filter_server_id = 0;
@@ -500,10 +500,10 @@ class Load_log_processor
       /* If we have to try more than 1000 times, something is seriously wrong */
       for (uint version= 0; version<1000; version++)
       {
-	sprintf(file_name_end,"-%x",version);
-	if ((res= my_create(filename,0,
-			    O_CREAT|O_EXCL|O_BINARY|O_WRONLY,MYF(0)))!=-1)
-	  return res;
+    sprintf(file_name_end,"-%x",version);
+    if ((res= my_create(filename,0,
+                O_CREAT|O_EXCL|O_BINARY|O_WRONLY,MYF(0)))!=-1)
+      return res;
       }
       char errbuf[MYSYS_STRERROR_SIZE];
       error("create_unique_file: "
@@ -521,12 +521,12 @@ public:
   void init_by_dir_name(const char *dir)
     {
       target_dir_name_len= (convert_dirname(target_dir_name, dir, NullS) -
-			    target_dir_name);
+                target_dir_name);
     }
   void init_by_cur_dir()
     {
       if (my_getwd(target_dir_name,sizeof(target_dir_name),MYF(MY_WME)))
-	exit(1);
+    exit(1);
       target_dir_name_len= strlen(target_dir_name);
     }
   void destroy()
@@ -631,7 +631,7 @@ static my_bool opt_compress=0;
   @return File handle >= 0 on success, -1 on error.
 */
 File Load_log_processor::prepare_new_file_for_old_format(Load_log_event *le,
-							 char *filename)
+                             char *filename)
 {
   size_t len;
   char *tail;
@@ -693,9 +693,9 @@ Exit_status Load_log_processor::load_old_format_file(NET* net,
         return ERROR_STOP;
       }
       /*
-	we just need to send something, as the server will read but
-	not examine the packet - this is because mysql_load() sends 
-	an OK when it is done
+    we just need to send something, as the server will read but
+    not examine the packet - this is because mysql_load() sends 
+    an OK when it is done
       */
       break;
     }
@@ -711,7 +711,7 @@ Exit_status Load_log_processor::load_old_format_file(NET* net,
       return ERROR_STOP;
     }
     if (my_write(file, (uchar*) net->read_pos, 
-		 (uint) packet_len, MYF(MY_WME|MY_NABP)))
+         (uint) packet_len, MYF(MY_WME|MY_NABP)))
       return ERROR_STOP;
   }
   
@@ -873,7 +873,7 @@ Exit_status Load_log_processor::process(Append_block_log_event *ae)
     File file;
     Exit_status retval= OK_CONTINUE;
     if (((file= my_open(fname,
-			O_APPEND|O_BINARY|O_WRONLY,MYF(MY_WME))) < 0))
+            O_APPEND|O_BINARY|O_WRONLY,MYF(MY_WME))) < 0))
     {
       error("Failed opening file %s", fname);
       DBUG_RETURN(ERROR_STOP);
@@ -964,15 +964,15 @@ static bool shall_skip_database(const char *log_dbname)
 */
 static bool shall_skip_table(const char *log_tblname)
 {
-	if (log_tblname == NULL) {
-		return false;
-	}
+    if (log_tblname == NULL) {
+        return false;
+    }
 
-	if (multi_tables) {
-		return filter_tables.count(log_tblname) == 0;
-	}
-	else
-		return false;
+    if (multi_tables) {
+        return filter_tables.count(log_tblname) == 0;
+    }
+    else
+        return false;
 }
 /**
   Indicates whether the given database should be filtered out,
@@ -988,12 +988,12 @@ static bool flashback_shall_skip_database(const char *log_dbname)
     if (log_dbname == NULL){
         return false;
     }
-	if (flashback_multi_databases_ignore) {
-		// return true if skip
-		return flashback_filter_databases_ignore.count(log_dbname) > 0;
-	}
+    if (flashback_multi_databases_ignore) {
+        // return true if skip
+        return flashback_filter_databases_ignore.count(log_dbname) > 0;
+    }
     if (flashback_multi_databases){
-		// return false if skip
+        // return false if skip
         return flashback_filter_databases.count(log_dbname) == 0;
     }
     else
@@ -1014,9 +1014,9 @@ static bool flashback_shall_skip_table(const char *log_tblname)
     if (log_tblname == NULL){
         return false;
     }
-	if (flashback_multi_tables_ignore) {
-		return flashback_filter_tables_ignore.count(log_tblname) > 0;
-	}
+    if (flashback_multi_tables_ignore) {
+        return flashback_filter_tables_ignore.count(log_tblname) > 0;
+    }
     if (flashback_multi_tables){
         return flashback_filter_tables.count(log_tblname) == 0;
     }
@@ -1459,7 +1459,7 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
       buff_ev->push_back(buff_event);
       break;
     }
-    	
+        
     case binary_log::RAND_EVENT:
     {
       destroy_evt= FALSE;
@@ -1494,11 +1494,11 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
         goto end;                // Next event
       }
       /*
-	We print the event, but with a leading '#': this is just to inform 
-	the user of the original command; the command we want to execute 
-	will be a derivation of this original command (we will change the 
-	filename and use LOCAL), prepared in the 'case EXEC_LOAD_EVENT' 
-	below.
+    We print the event, but with a leading '#': this is just to inform 
+    the user of the original command; the command we want to execute 
+    will be a derivation of this original command (we will change the 
+    filename and use LOCAL), prepared in the 'case EXEC_LOAD_EVENT' 
+    below.
       */
       {
       ce->print(result_file, print_event_info, TRUE);
@@ -1541,9 +1541,9 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
       Execute_load_log_event *exv= (Execute_load_log_event*)ev;
       Create_file_log_event *ce= load_processor.grab_event(exv->file_id);
       /*
-	if ce is 0, it probably means that we have not seen the Create_file
-	event (a bad binlog, or most probably --start-position is after the
-	Create_file event). Print a warning comment.
+    if ce is 0, it probably means that we have not seen the Create_file
+    event (a bad binlog, or most probably --start-position is after the
+    Create_file event). Print a warning comment.
       */
       if (ce)
       {
@@ -1552,9 +1552,9 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
           my_open() in Load_log_processor::append().
         */
         convert_path_to_forward_slashes((char*) ce->fname);
-	ce->print(result_file, print_event_info, TRUE);
-	my_free((void*)ce->fname);
-	delete ce;
+    ce->print(result_file, print_event_info, TRUE);
+    my_free((void*)ce->fname);
+    delete ce;
         if (head->error == -1)
           goto err;
       }
@@ -1649,7 +1649,7 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
       }
 
       if (fname)
-	my_free(fname);
+    my_free(fname);
       break;
     }
     case binary_log::TABLE_MAP_EVENT:
@@ -1657,7 +1657,7 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
       Table_map_log_event *map= ((Table_map_log_event *)ev);
       if(!opt_flashback){
           if (shall_skip_database(map->get_db_name()) ||
-			  shall_skip_table(map->get_table_name()))
+              shall_skip_table(map->get_table_name()))
           {
               print_event_info->skipped_event_in_transaction= true;
               print_event_info->m_table_map_ignored.set_table(map->get_table_id(), map);
@@ -1665,8 +1665,8 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
               goto end;
           }
       }else{
-		  if(flashback_shall_skip_database(map->get_db_name()) ||
-			  flashback_shall_skip_table(map->get_table_name()))
+          if(flashback_shall_skip_database(map->get_db_name()) ||
+              flashback_shall_skip_table(map->get_table_name()))
           {
               print_event_info->skipped_event_in_transaction= true;
               print_event_info->m_table_map_ignored.set_table(map->get_table_id(), map);
@@ -1692,9 +1692,9 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
     case binary_log::WRITE_ROWS_EVENT_V1:
     case binary_log::UPDATE_ROWS_EVENT_V1:
     case binary_log::DELETE_ROWS_EVENT_V1:
-	case binary_log::WRITE_ROWS_COMPRESSED_EVENT_V1:
-	case binary_log::DELETE_ROWS_COMPRESSED_EVENT_V1:
-	case binary_log::UPDATE_ROWS_COMPRESSED_EVENT_V1:
+    case binary_log::WRITE_ROWS_COMPRESSED_EVENT_V1:
+    case binary_log::DELETE_ROWS_COMPRESSED_EVENT_V1:
+    case binary_log::UPDATE_ROWS_COMPRESSED_EVENT_V1:
     case binary_log::PRE_GA_WRITE_ROWS_EVENT:
     case binary_log::PRE_GA_DELETE_ROWS_EVENT:
     case binary_log::PRE_GA_UPDATE_ROWS_EVENT:
@@ -1710,9 +1710,9 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
           ev_type == binary_log::WRITE_ROWS_EVENT_V1 ||
           ev_type == binary_log::DELETE_ROWS_EVENT_V1 ||
           ev_type == binary_log::UPDATE_ROWS_EVENT_V1 ||
-		  ev_type == binary_log::WRITE_ROWS_COMPRESSED_EVENT_V1 ||
-		  ev_type == binary_log::DELETE_ROWS_COMPRESSED_EVENT_V1 ||
-		  ev_type == binary_log::UPDATE_ROWS_COMPRESSED_EVENT_V1)
+          ev_type == binary_log::WRITE_ROWS_COMPRESSED_EVENT_V1 ||
+          ev_type == binary_log::DELETE_ROWS_COMPRESSED_EVENT_V1 ||
+          ev_type == binary_log::UPDATE_ROWS_COMPRESSED_EVENT_V1)
       {
         affected_by_flashback=true;
         Rows_log_event *new_ev= (Rows_log_event*) ev;
@@ -2264,8 +2264,7 @@ static struct my_option my_long_options[] =
    "Identifiers were provided.",
    &opt_exclude_gtids_str, &opt_exclude_gtids_str, 0,
    GET_STR_ALLOC, REQUIRED_ARG, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}
-};
+  {0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}};
 
 
 /**
@@ -2413,203 +2412,202 @@ static my_time_t convert_str_to_timestamp(const char* str)
 int
 parse_filter_line_header(std::string raw_line, st_rows_filter *rows_filter, std::string delim) {
 
-	std::vector<std::string> colstr;
-	boost::split(colstr, raw_line, boost::is_any_of(delim));
-	int count_col = 0;
+    std::vector<std::string> colstr;
+    boost::split(colstr, raw_line, boost::is_any_of(delim));
+    int count_col = 0;
 
-	std::map<int, int> map_pos_type;
-	std::map<int, Binlog_row_field_attr> map_field_attr;
-	std::vector<std::string>::iterator iter;
-	for (iter = colstr.begin(); iter != colstr.end(); ++iter) {
-		count_col++;
-		std::string this_col_pos = *iter;
-		boost::trim_if(this_col_pos, boost::is_any_of("\'\"\ "));
+    std::map<int, int> map_pos_type;
+    std::map<int, Binlog_row_field_attr> map_field_attr;
+    std::vector<std::string>::iterator iter;
+    for (iter = colstr.begin(); iter != colstr.end(); ++iter) {
+        count_col++;
+        std::string this_col_pos = *iter;
+        boost::trim_if(this_col_pos, boost::is_any_of("\'\"\ "));
 
-		if (this_col_pos.find("@") == 0) {
-			this_col_pos = this_col_pos.substr(1, this_col_pos.size());
-			int hexpos = this_col_pos.find(":");
-			if (hexpos != std::string::npos) {
-				std::string col_suffix = this_col_pos.substr(hexpos + 1, this_col_pos.size());
-				this_col_pos = this_col_pos.substr(0, hexpos);
-				int col_pos = atoi(this_col_pos.c_str());
-				
-				if (col_suffix == "hex") {
-					rows_filter->cols_pos[count_col] = col_pos;
-					map_pos_type[col_pos] = 1;
-					map_field_attr[col_pos] = FIELD_IS_HEX;
-				}
-				else if (col_suffix == "signed") {
-					rows_filter->cols_pos[count_col] = col_pos;
-					map_pos_type[col_pos] = 0;
-					map_field_attr[col_pos] = FIELD_IS_SIGNED;
-				}
-				else if (col_suffix == "unsigned") {
-					rows_filter->cols_pos[count_col] = col_pos;
-					map_pos_type[col_pos] = 0;
-					map_field_attr[col_pos] = FIELD_IS_UNSIGNED;
-				}
-				else
-				{
-					error("Please give the right position format @2,@1,@3 or @2:hex or @2:signed");
-					exit(1);
-				}
-			}
-			else {
-				int col_pos = atoi(this_col_pos.c_str());
-				// cols_pos=[0, 2, 1, 13] //[@1,@2,@3] column N start from 1. not use 0
-				rows_filter->cols_pos[count_col] = col_pos; 
-				map_pos_type[col_pos] = 0;
-				map_field_attr[col_pos] = FIELD_ATTR_DEFAULT;
-			}
-		}
-		else {
-			error("Please give the right position format @2,@1,@3");
-			exit(1);
-		}
-	}
-	rows_filter->map_ishex = map_pos_type;
-	rows_filter->map_field_attr = map_field_attr;
-	rows_filter->cols_cnt = count_col;
-	return count_col;
+        if (this_col_pos.find("@") == 0) {
+            this_col_pos = this_col_pos.substr(1, this_col_pos.size());
+            size_t hexpos = this_col_pos.find(":");
+            if (hexpos != std::string::npos) {
+                std::string col_suffix = this_col_pos.substr(hexpos + 1, this_col_pos.size());
+                this_col_pos = this_col_pos.substr(0, hexpos);
+                int col_pos = atoi(this_col_pos.c_str());
+                
+                if (col_suffix == "hex") {
+                    rows_filter->cols_pos[count_col] = col_pos;
+                    map_pos_type[col_pos] = 1;
+                    map_field_attr[col_pos] = FIELD_IS_HEX;
+                }
+                else if (col_suffix == "signed") {
+                    rows_filter->cols_pos[count_col] = col_pos;
+                    map_pos_type[col_pos] = 0;
+                    map_field_attr[col_pos] = FIELD_IS_SIGNED;
+                }
+                else if (col_suffix == "unsigned") {
+                    rows_filter->cols_pos[count_col] = col_pos;
+                    map_pos_type[col_pos] = 0;
+                    map_field_attr[col_pos] = FIELD_IS_UNSIGNED;
+                }
+                else
+                {
+                    error("Please give the right position format @2,@1,@3 or @2:hex or @2:signed or @2:unsigned");
+                    exit(1);
+                }
+            }
+            else {
+                int col_pos = atoi(this_col_pos.c_str());
+                // cols_pos=[0, 2, 1, 13] //[@1,@2,@3] column N start from 1. not use 0
+                rows_filter->cols_pos[count_col] = col_pos; 
+                map_pos_type[col_pos] = 0;
+                map_field_attr[col_pos] = FIELD_ATTR_DEFAULT;
+            }
+        }
+        else {
+            error("Please give the right position format @2,@1,@3");
+            exit(1);
+        }
+    }
+    rows_filter->map_ishex = map_pos_type;
+    rows_filter->map_field_attr = map_field_attr;
+    rows_filter->cols_cnt = count_col;
+    return count_col;
 }
 
 int
 parse_filter_line_body(std::string raw_line, st_rows_filter *rows_filter, std::string delim) {
 
-	int count_col = 0;
-	// we save the first column as index(map)
-	
-	std::map<int, std::string> this_col_buf; // {@2:100, @1:bbb, @3:-2.0}
-	std::string first_colstr;
-	std::vector<std::string>::iterator it;
-	std::vector<std::string> colstr;
-	boost::split(colstr, raw_line, boost::is_any_of(delim));
+    int count_col = 0;
+    // we save the first column as index(map)
+    
+    std::map<int, std::string> this_col_buf; // {@2:100, @1:bbb, @3:-2.0}
+    std::string first_colstr;
+    std::vector<std::string>::iterator it;
+    std::vector<std::string> colstr;
+    boost::split(colstr, raw_line, boost::is_any_of(delim));
 
-	for(it= colstr.begin(); it!= colstr.end();++it) {
-		count_col++;
-		
-		std::string col_str = *it;
-		boost::trim_if(col_str, boost::is_any_of(std::string(fields_enclosed)));
-		this_col_buf.insert(std::pair<int, std::string>(rows_filter->cols_pos[count_col] , col_str));
+    for(it= colstr.begin(); it!= colstr.end();++it) {
+        count_col++;
+        
+        std::string col_str = *it;
+        boost::trim_if(col_str, boost::is_any_of(std::string(fields_enclosed)));
+        this_col_buf.insert(std::pair<int, std::string>(rows_filter->cols_pos[count_col] , col_str));
 
-		if (count_col == 1) {
-			first_colstr = col_str;
-		}
-	}
-	if (count_col == rows_filter->cols_cnt) {
-		std::map < std::string, std::vector < std::map<int, std::string > > > ::iterator iter;
+        if (count_col == 1) {
+            first_colstr = col_str;
+        }
+    }
+    if (count_col == rows_filter->cols_cnt) {
+        std::map < std::string, std::vector < std::map<int, std::string > > > ::iterator iter;
 
-		iter = rows_filter->map_lines_col.find(first_colstr);
-		if (iter != rows_filter->map_lines_col.end())
-		{
-			std::vector< std::map<int, std::string> > mlcv = iter->second;
-			mlcv.push_back(this_col_buf);
-			rows_filter->map_lines_col.erase(iter);
-			rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
-		}
-		else {
-			std::vector< std::map<int, std::string> > mlcv;
-			mlcv.push_back(this_col_buf);
-			rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
+        iter = rows_filter->map_lines_col.find(first_colstr);
+        if (iter != rows_filter->map_lines_col.end())
+        {
+            std::vector< std::map<int, std::string> > mlcv = iter->second;
+            mlcv.push_back(this_col_buf);
+            rows_filter->map_lines_col.erase(iter);
+            rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
+        }
+        else {
+            std::vector< std::map<int, std::string> > mlcv;
+            mlcv.push_back(this_col_buf);
+            rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
 
-		}
-	}
-	else {
-		error("wrong csv input for filter rows");
-		exit(1);
-	}
-	return count_col;
+        }
+    }
+    else {
+        error("wrong csv input for filter rows");
+        exit(1);
+    }
+    return count_col;
 }
 
 void parse_filter_input(const char *ptr, st_rows_filter *rows_filter, char *field_term, char *line_term)
 {
-	std::string sfield_term(field_term);
-	std::string sline_term(line_term);
+    std::string sfield_term(field_term);
+    std::string sline_term(line_term);
 
-	size_t length = strlen(ptr);
-	uint count_line = 0;
-	int count_col = 0;
+    uint count_line = 0;
+    int count_col = 0;
 
-	std::vector<std::string> csvstr;
-	std::string strinput(ptr);
-	boost::split(csvstr, strinput, boost::is_any_of(sline_term), boost::token_compress_on);
+    std::vector<std::string> csvstr;
+    std::string strinput(ptr);
+    boost::split(csvstr, strinput, boost::is_any_of(sline_term), boost::token_compress_on);
 
-	std::vector<std::string>::iterator it;
-	for (it = csvstr.begin(); it != csvstr.end(); ++it) {
-		count_line++;
+    std::vector<std::string>::iterator it;
+    for (it = csvstr.begin(); it != csvstr.end(); ++it) {
+        count_line++;
 
-		if (count_line == 1) { // @2,@1,@3
-			count_col = parse_filter_line_header(*it, rows_filter, sfield_term);
-		}
-		else if (*it != "") {
-			if (count_col != parse_filter_line_body(*it, rows_filter, sfield_term)) {
-				fprintf(stderr, "%s: Wrong intput line body column number!\n", my_progname);
-				exit(1);
-			}
-		}
-		else {
-			count_line--;
-			continue;
-		}
-	}
+        if (count_line == 1) { // @2,@1,@3
+            count_col = parse_filter_line_header(*it, rows_filter, sfield_term);
+        }
+        else if (*it != "") {
+            if (count_col != parse_filter_line_body(*it, rows_filter, sfield_term)) {
+                fprintf(stderr, "%s: Wrong intput line body column number!\n", my_progname);
+                exit(1);
+            }
+        }
+        else {
+            count_line--;
+            continue;
+        }
+    }
 
-	if (count_line < 2) {
-		fprintf(stderr, "%s: Wrong intput line number!\n", my_progname);
-		exit(1);
-	}
+    if (count_line < 2) {
+        fprintf(stderr, "%s: Wrong intput line number!\n", my_progname);
+        exit(1);
+    }
 }
 
 // parse opt_filter_rows to st_rows_filter
 void parse_filter_rows() {
-	char *tmp_csvbuff;
-	char *field_term = fields_terminated;
-	char *line_term = lines_terminated; //\r\n
-	if (!lines_terminated) {
-		line_term = "\n";
-	}
-	else {
-		line_term = lines_terminated;
-	}
+    char *tmp_csvbuff;
+    char *field_term = fields_terminated;
+    char *line_term = lines_terminated; //\r\n
+    if (!lines_terminated) {
+        line_term = "\n";
+    }
+    else {
+        line_term = lines_terminated;
+    }
 
-	MY_STAT sbuf;  /* Stat information for the data file */
-	if (opt_filter_rows && my_stat(opt_filter_rows, &sbuf, MYF(0)))
-	{
-		File data_file;
-		if (!MY_S_ISREG(sbuf.st_mode))
-		{
-			fprintf(stderr, "%s: Filter rows supplied file was not a regular file\n",
-				my_progname);
-			exit(1);
-		}
-		if ((data_file = my_open(opt_filter_rows, O_RDONLY, MYF(0))) == -1)
-		{
-			fprintf(stderr, "%s: Could not open filter rows file\n", my_progname);
-			exit(1);
-		}
-		tmp_csvbuff = (char *)my_malloc(PSI_NOT_INSTRUMENTED,
-			(size_t)sbuf.st_size + 1,
-			MYF(MY_ZEROFILL | MY_FAE | MY_WME));
-		my_read(data_file, (uchar*)tmp_csvbuff, (size_t)sbuf.st_size, MYF(0));
-		tmp_csvbuff[sbuf.st_size] = '\0';
-		my_close(data_file, MYF(0));
-		if (opt_filter_rows)
-		{
-			parse_filter_input(tmp_csvbuff, &rows_filter, field_term, line_term);
-		}
-		my_free(tmp_csvbuff);
-	}
-	else if (opt_filter_rows)
-	{
-		if (!lines_terminated) {
-			line_term = " ";
-		}
-		parse_filter_input(opt_filter_rows, &rows_filter, field_term, line_term); // no space allow in col_string
-	}
+    MY_STAT sbuf;  /* Stat information for the data file */
+    if (opt_filter_rows && my_stat(opt_filter_rows, &sbuf, MYF(0)))
+    {
+        File data_file;
+        if (!MY_S_ISREG(sbuf.st_mode))
+        {
+            fprintf(stderr, "%s: Filter rows supplied file was not a regular file\n",
+                my_progname);
+            exit(1);
+        }
+        if ((data_file = my_open(opt_filter_rows, O_RDONLY, MYF(0))) == -1)
+        {
+            fprintf(stderr, "%s: Could not open filter rows file\n", my_progname);
+            exit(1);
+        }
+        tmp_csvbuff = (char *)my_malloc(PSI_NOT_INSTRUMENTED,
+            (size_t)sbuf.st_size + 1,
+            MYF(MY_ZEROFILL | MY_FAE | MY_WME));
+        my_read(data_file, (uchar*)tmp_csvbuff, (size_t)sbuf.st_size, MYF(0));
+        tmp_csvbuff[sbuf.st_size] = '\0';
+        my_close(data_file, MYF(0));
+        if (opt_filter_rows)
+        {
+            parse_filter_input(tmp_csvbuff, &rows_filter, field_term, line_term);
+        }
+        my_free(tmp_csvbuff);
+    }
+    else if (opt_filter_rows)
+    {
+        if (!lines_terminated) {
+            line_term = " ";
+        }
+        parse_filter_input(opt_filter_rows, &rows_filter, field_term, line_term); // no space allow in col_string
+    }
 }
 
 extern "C" my_bool
 get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
-	       char *argument)
+           char *argument)
 {
   bool tty_password=0;
   switch (optid) {
@@ -2641,81 +2639,81 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
       flashback_multi_tables=1;
       break;
   case OPT_FLASHBACK_DATABASES_IGNORE:
-	  for (char *p = flashback_databases_ignore;; p = NULL) {
-		  char *q = strtok(p, ",");
-		  if (q == NULL)
-			  break;
-		  flashback_filter_databases_ignore.insert(q);
-	  }
-	  flashback_multi_databases_ignore = 1;
-	  break;
+      for (char *p = flashback_databases_ignore;; p = NULL) {
+          char *q = strtok(p, ",");
+          if (q == NULL)
+              break;
+          flashback_filter_databases_ignore.insert(q);
+      }
+      flashback_multi_databases_ignore = 1;
+      break;
   case OPT_FLASHBACK_TABLES_IGNORE:
-	  for (char *p = flashback_tables_ignore;; p = NULL) {
-		  char *q = strtok(p, ",");
-		  if (q == NULL)
-			  break;
-		  flashback_filter_tables_ignore.insert(q);
-	  }
-	  flashback_multi_tables_ignore = 1;
-	  break;
+      for (char *p = flashback_tables_ignore;; p = NULL) {
+          char *q = strtok(p, ",");
+          if (q == NULL)
+              break;
+          flashback_filter_tables_ignore.insert(q);
+      }
+      flashback_multi_tables_ignore = 1;
+      break;
   case OPT_FILTER_TABLES:
-	  for (char *p = tables;; p = NULL) {
-		  char *q = strtok(p, ",");
-		  if (q == NULL)
-			  break;
-		  filter_tables.insert(q);
-	  }
-	  multi_tables = 1;
-	  break;
+      for (char *p = tables;; p = NULL) {
+          char *q = strtok(p, ",");
+          if (q == NULL)
+              break;
+          filter_tables.insert(q);
+      }
+      multi_tables = 1;
+      break;
   case OPT_FILTER_ROWS:
   {
-	  // parse_filter_rows need some options be adjusted. we initialize it in  args_post_process()
+      // parse_filter_rows need some options be adjusted. we initialize it in  args_post_process()
   }
-	  break;
+      break;
   case OPT_QUERY_EVENT_HANDLER:
   {
-	  if (strcmp(opt_query_event_handler, "error") == 0) {
-		  event_filter->query_event_handler = QUERY_EVENT_ERROR;
-	  }
-	  else if (strcmp(opt_query_event_handler, "ignore") == 0) {
-		  event_filter->query_event_handler = QUERY_EVENT_IGNORE;
-	  }
-	  else if (strcmp(opt_query_event_handler, "safe") == 0) {
-		  event_filter->query_event_handler = QUERY_EVENT_SAFE;
-	  }
-	  else if (strcmp(opt_query_event_handler, "keep") == 0) {
-		  event_filter->query_event_handler = QUERY_EVENT_KEEP;
-	  }
-	  else {
-		  fprintf(stderr, "mysqlbinlog: [ERROR] --query-event-handler only allowed values error|ignore|safe|keep .\n");
-		  exit(1);
-	  }
+      if (strcmp(opt_query_event_handler, "error") == 0) {
+          event_filter->query_event_handler = QUERY_EVENT_ERROR;
+      }
+      else if (strcmp(opt_query_event_handler, "ignore") == 0) {
+          event_filter->query_event_handler = QUERY_EVENT_IGNORE;
+      }
+      else if (strcmp(opt_query_event_handler, "safe") == 0) {
+          event_filter->query_event_handler = QUERY_EVENT_SAFE;
+      }
+      else if (strcmp(opt_query_event_handler, "keep") == 0) {
+          event_filter->query_event_handler = QUERY_EVENT_KEEP;
+      }
+      else {
+          fprintf(stderr, "mysqlbinlog: [ERROR] --query-event-handler only allowed values error|ignore|safe|keep .\n");
+          exit(1);
+      }
   }
   break;
   case OPT_STATEMENT_ERROR:
   {
-	  //opt_filter_statement_match_error = "LOAD DATA";
-	  // add table to this error_match
-	  std::vector<std::string> filter_statement_errors;
-	  boost::split(filter_statement_errors, opt_filter_statement_match_error,
-		  boost::is_any_of(","), boost::token_compress_on);
-	  event_filter->statement_match_errors = filter_statement_errors;
+      //opt_filter_statement_match_error = "LOAD DATA";
+      // add table to this error_match
+      std::vector<std::string> filter_statement_errors;
+      boost::split(filter_statement_errors, opt_filter_statement_match_error,
+          boost::is_any_of(","), boost::token_compress_on);
+      event_filter->statement_match_errors = filter_statement_errors;
   }
-	  break;
+      break;
   case OPT_STATEMENT_IGNORE:
   {
-	  std::vector<std::string> filter_statement_ignores;
-	  boost::split(filter_statement_ignores, opt_filter_statement_match_ignore,
-		  boost::is_any_of(","), boost::token_compress_on);
-	  event_filter->statement_match_ignores = filter_statement_ignores;
+      std::vector<std::string> filter_statement_ignores;
+      boost::split(filter_statement_ignores, opt_filter_statement_match_ignore,
+          boost::is_any_of(","), boost::token_compress_on);
+      event_filter->statement_match_ignores = filter_statement_ignores;
   }
-	  break;
+      break;
   case OPT_STATEMENT_IGNORE_FORCE:
   {
-	  std::vector<std::string> filter_statement_ignores_force;
-	  boost::split(filter_statement_ignores_force, opt_filter_statement_match_ignore_force,
-		  boost::is_any_of(","), boost::token_compress_on);
-	  event_filter->statement_match_ignores_force = filter_statement_ignores_force;
+      std::vector<std::string> filter_statement_ignores_force;
+      boost::split(filter_statement_ignores_force, opt_filter_statement_match_ignore_force,
+          boost::is_any_of(","), boost::token_compress_on);
+      event_filter->statement_match_ignores_force = filter_statement_ignores_force;
   }
   break;
   case 'd':
@@ -2767,9 +2765,9 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
       char *start=argument;
       pass= my_strdup(PSI_NOT_INSTRUMENTED,
                       argument,MYF(MY_FAE));
-      while (*argument) *argument++= 'x';		/* Destroy argument */
+      while (*argument) *argument++= 'x';        /* Destroy argument */
       if (*start)
-        start[1]=0;				/* Cut length of argument */
+        start[1]=0;                /* Cut length of argument */
     }
     else
       tty_password=1;
@@ -2830,37 +2828,38 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
     error("options -d/--database and -L/--databases cannot be used together");
     exit(1);
   }
-  if(one_database && opt_flashback){
-      error("options -d/-database and -B/--flashback cannot be used together.\nMaybe --flashback and --flashback-databases be better choice.");
-      exit(1);
-  }
-  if(multi_databases && opt_flashback){
-      error("options -L/-databases and -B/--flashback cannot be used together.\nMaybe --flashback and --flashback-databases be better choice.");
+  if((one_database || multi_databases) && opt_flashback){
+      error("options -d/--database/-L/-databases and -B/--flashback cannot be used together. "
+          "Maybe --flashback and --flashback-databases be better choice.");
       exit(1);
   }
   if (multi_tables && opt_flashback) {
-	  // we allow --tables without --databases/--database(-L/-d)
-	  error("options --tables cannot be used together with -B/--flashback.\nMaybe --flashback and --flashback-tables be better choice");
-	  exit(1);
-  }
-  if(flashback_multi_databases && !opt_flashback){
-      error("options --flashback-databases must be used together with -B/--flashback.");
+      // we allow --tables without --databases/--database(-L/-d)
+      error("options --tables cannot be used together with -B/--flashback. "
+          "Maybe --flashback and --flashback-tables be better choice");
       exit(1);
   }
-  if(flashback_multi_tables && !opt_flashback){
-      error("options --flashback-tables must be used together with -B/--flashback.");
+  if((flashback_multi_databases || flashback_multi_databases_ignore) && !opt_flashback){
+      error("options --flashback-databases/--flashback-databases-ignore "
+          "must be used together with -B/--flashback.");
+      exit(1);
+  }
+  if((flashback_multi_tables || flashback_multi_tables_ignore) && !opt_flashback){
+      error("options --flashback-tables/--flashback-tables-ignore "
+          "must be used together with -B/--flashback.");
       exit(1);
   }
   if (opt_filter_rows && !(flashback_multi_tables || multi_tables)) {
-	  error("options --filter-rows must be used together with --tables/--flashback-tables.");
-	  exit(1);
+      error("options --filter-rows must be used together with --tables/--flashback-tables.");
+      exit(1);
   }
   if (opt_filter_rows && (flashback_multi_tables_ignore || flashback_multi_databases_ignore)) {
-	  error("options --filter-rows can not be used together with --flashback-tables-ignore/--flashback-databases-ignore.");
-	  exit(1);
+      error("options --filter-rows can not be used together with "
+          "--flashback-tables-ignore/--flashback-databases-ignore.");
+      exit(1);
   }
   if (opt_filter_rows && (filter_tables.size()>1 || flashback_filter_tables.size()>1 || flashback_filter_databases.size()>1 || filter_databases.size()>1)) {
-	  warning("/* options --filter-rows is applied to multi databases/tables, table shall have the same schema. */");
+      warning("/* options --filter-rows is applied to multi databases/tables, table shall have the same schema. */");
   }
   if (tty_password)
     pass= get_tty_password(NullS);
@@ -3335,7 +3334,7 @@ static Exit_status dump_remote_log_entries(PRINT_EVENT_INFO *print_event_info,
     if (len < 8 && net->read_pos[0] == 254)
       break; // end of data
     DBUG_PRINT("info",( "len: %lu  net->read_pos[5]: %d\n",
-			len, net->read_pos[5]));
+            len, net->read_pos[5]));
     /*
       In raw mode We only need the full event details if it is a 
       ROTATE_EVENT or FORMAT_DESCRIPTION_EVENT
@@ -3780,7 +3779,7 @@ static Exit_status dump_local_log_entries(PRINT_EVENT_INFO *print_event_info,
     if ((fd = my_open(logname, O_RDONLY | O_BINARY, MYF(MY_WME))) < 0)
       return ERROR_STOP;
     if (init_io_cache(file, fd, 0, READ_CACHE, start_position_mot, 0,
-		      MYF(MY_WME | MY_NABP)))
+              MYF(MY_WME | MY_NABP)))
     {
       my_close(fd, MYF(MY_WME));
       return ERROR_STOP;
@@ -3807,7 +3806,7 @@ static Exit_status dump_local_log_entries(PRINT_EVENT_INFO *print_event_info,
     }
 #endif 
     if (init_io_cache(file, my_fileno(stdin), 0, READ_CACHE, (my_off_t) 0,
-		      0, MYF(MY_WME | MY_NABP | MY_DONT_CHECK_FILESIZE)))
+              0, MYF(MY_WME | MY_NABP | MY_DONT_CHECK_FILESIZE)))
     {
       error("Failed to init IO cache.");
       return ERROR_STOP;
@@ -3947,19 +3946,34 @@ static int args_post_process(void)
   }
 
   if (opt_filter_rows) {
-	  if (!fields_enclosed)
-		  fields_enclosed = "\'";
-	  if (!fields_terminated)
-		  fields_terminated = ",";
+      if (!fields_enclosed)
+          fields_enclosed = "\'";
+      if (!fields_terminated)
+          fields_terminated = ",";
 
-	  parse_filter_rows();
+      parse_filter_rows();
   }
   else if (fields_enclosed || fields_terminated || lines_terminated) {
-	warning("The options --filter-lines-terminated-by --filter-fields-terminated-by"
-		"--filter-fields-enclosed-by is ignored when not set --filter-rows.");
+    warning("The options --filter-lines-terminated-by --filter-fields-terminated-by"
+        "--filter-fields-enclosed-by is ignored when not set --filter-rows.");
   }
   if (!opt_query_event_handler) {
-	  event_filter->query_event_handler = QUERY_EVENT_KEEP;
+      event_filter->query_event_handler = QUERY_EVENT_KEEP;
+  }
+  else if (event_filter->query_event_handler == QUERY_EVENT_SAFE &&
+      opt_filter_statement_match_error == NULL &&
+      (flashback_tables || tables)) {
+      // default opt_filter_statement_match_error is flashback_tables/tables
+      if (opt_flashback && flashback_tables) {
+          opt_filter_statement_match_error = flashback_tables;
+      }
+      else if (!opt_flashback && tables) {
+          opt_filter_statement_match_error = tables;
+      }
+      std::vector<std::string> filter_statement_errors;
+      boost::split(filter_statement_errors, opt_filter_statement_match_error,
+          boost::is_any_of(","), boost::token_compress_on);
+      event_filter->statement_match_errors = filter_statement_errors;
   }
 
   global_sid_lock->rdlock();
