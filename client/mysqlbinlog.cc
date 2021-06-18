@@ -3958,7 +3958,12 @@ static int args_post_process(void)
         "--filter-fields-enclosed-by is ignored when not set --filter-rows.");
   }
   if (!opt_query_event_handler) {
-      event_filter->query_event_handler = QUERY_EVENT_KEEP;
+      if (opt_flashback) {
+          event_filter->query_event_handler = QUERY_EVENT_SAFE;
+      }
+      else {
+          event_filter->query_event_handler = QUERY_EVENT_KEEP;
+      }
   }
   else if (event_filter->query_event_handler == QUERY_EVENT_SAFE &&
       opt_filter_statement_match_error == NULL &&
