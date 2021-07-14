@@ -354,36 +354,34 @@ enum enum_base64_output_mode {
 };
 
 enum Binlog_query_event_handler {
-	QUERY_EVENT_ERROR,
-	QUERY_EVENT_IGNORE,
-	QUERY_EVENT_SAFE,
-	QUERY_EVENT_KEEP
+    QUERY_EVENT_ERROR,
+    QUERY_EVENT_IGNORE,
+    QUERY_EVENT_SAFE,
+    QUERY_EVENT_KEEP
 };
 
 struct st_event_filter {
-	Binlog_query_event_handler query_event_handler;
-	std::vector<std::string> statement_match_errors;
-	std::vector<std::string> statement_match_ignores;
-	std::vector<std::string> statement_match_ignores_force;
+    Binlog_query_event_handler query_event_handler;
+    std::vector<std::string> statement_match_errors;
+    std::vector<std::string> statement_match_ignores;
+    std::vector<std::string> statement_match_ignores_force;
 };
 
 enum Binlog_row_field_attr {
-	FIELD_ATTR_DEFAULT = 0,
-	FIELD_IS_HEX = 2,
-	FIELD_IS_SIGNED = 4,
-	FIELD_IS_UNSIGNED = 5
+    FIELD_ATTR_DEFAULT = 0,
+    FIELD_IS_HEX = 2,
+    FIELD_IS_SIGNED = 4,
+    FIELD_IS_UNSIGNED = 5
 };
 
-typedef std::map<int, char*> map_one_line;
+typedef std::map<int, char *> map_one_line;
 struct st_rows_filter {
-	int cols_cnt;
-	int cols_pos[255];  // [2, 1, 3, 4]  @2,@1,@3,@4
-	std::map<int, int> map_ishex;  // column index to pos
-	std::map<int, Binlog_row_field_attr> map_field_attr;
-
-	// std::set< std::pair< std::map<int, char*>, int >> set_lines_map;
-	std::map< std::string, std::vector< std::map<int, std::string> > > map_lines_col; // {100: {@2:100, @1:aaa, @3:-2.0}}
+    int cols_pos[255];             // [2, 1, 3, 4]  @2,@1,@3,@4
+    std::map<int, Binlog_row_field_attr> map_field_attr;
+    std::map< std::string, std::vector< std::map<int, std::string> > > map_lines_col;  // {100: {@2:100, @1:aaa, @3:-2.0}}
 };
+
+
 /*
   A structure for mysqlbinlog to know how to print events
 
@@ -3036,8 +3034,7 @@ public:
                                const uchar *ptr, const uchar *prefix,
                                const my_bool no_fill_output=0);
   std::pair<size_t, my_bool> filter_binlog_one_row(table_def *td, PRINT_EVENT_INFO *print_event_info,
-	  MY_BITMAP *cols_bitmap,
-	  const uchar *ptr, const my_bool no_fill_output = 0);
+	  MY_BITMAP *cols_bitmap, const uchar *ptr);
 #endif
 
 #ifdef MYSQL_SERVER

@@ -10,7 +10,6 @@ DROP TABLE IF EXISTS t2;
 # We need a fixed timestamp to avoid varying results.
 #
 SET timestamp=1000000000;
-set global log_bin_compress = OFF;
 CREATE TABLE t1 (
 c01 bigint unsigned primary key,
 c02 tinyint,
@@ -49,7 +48,7 @@ t1	CREATE TABLE `t1` (
   `c15` blob,
   `c16` json DEFAULT NULL,
   PRIMARY KEY (`c01`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 # Delete all existing binary logs.
 #
 RESET MASTER;
@@ -76,7 +75,7 @@ update t1 set c11='2021-06-16 23:59:59' where c01 != 1;
 # checksum #101
 checksum table t1;
 Table	Checksum
-test.t1	1185182040
+test.t1	3112733990
 select * from t1;
 c01	c02	c03	c04	c05	c06	c07	c08	c09	c10	c11	c12	c13	c14	c15	c16
 1	1	1	1	1	1	a	aa	aaa	2021-06-17 00:00:01	2021-06-16 01:01:01.101	1	1.000	aaaaaaaaaa	aaaaaaaaaa	["a"]
@@ -98,13 +97,11 @@ COMMIT;
 # Test delete from t1 and log_bin_compress
 #
 DELETE FROM t1 where c01 = 1;
-set global log_bin_compress = ON;
 DELETE FROM t1 where c01 in (3, 4);
-set global log_bin_compress = OFF;
 # checksum #102
 checksum table t1;
 Table	Checksum
-test.t1	2310621471
+test.t1	343040241
 select * from t1;
 c01	c02	c03	c04	c05	c06	c07	c08	c09	c10	c11	c12	c13	c14	c15	c16
 5	5	5	5	5	5	e	d d	ee	2021-06-17 00:00:02	2021-06-16 23:59:59.000	5	5.000	eeeeeeeeee	eeeeeeeeee	["e"]
@@ -126,10 +123,10 @@ COMMIT;
 # checksum #103
 checksum table t1;
 Table	Checksum
-test.t1	3046509624
+test.t1	2687951963
 select * from t1;
 c01	c02	c03	c04	c05	c06	c07	c08	c09	c10	c11	c12	c13	c14	c15	c16
-5	5	5	5	5	5	e	d d	ee	2021-06-17 00:00:02	2001-09-09 04:46:40.000	50.1	50.100	eeeeeeeeee	x中文x	["j", "s", "o", "n"]
+5	5	5	5	5	5	e	d d	ee	2021-06-17 00:00:02	2001-09-09 09:46:40.000	50.1	50.100	eeeeeeeeee	x中文x	["j", "s", "o", "n"]
 6	6	6	6	6	1	f	ff	xxx	2021-06-16 23:59:59	2021-06-16 23:59:59.000	6	6.000			{}
 700	7	700	700	700	700	g	g,"g	xxx	2021-06-16 23:59:59	2021-06-16 23:59:59.000	7	7.000			{}
 800	8	800	800	800	800	h	h,"h	yyy	2021-06-14 23:59:59	2021-06-14 23:59:59.000	8	8.000			NULL
@@ -151,23 +148,13 @@ FLUSH LOGS;
 # < CASE 1 >
 # binlog rows filter and print it
 #
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
 ROLLBACK/*!*/;
 # [empty]
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 BEGIN
 /*!*/;
 ### INSERT INTO `test`.`t1`
@@ -182,7 +169,7 @@ BEGIN
 ###   @8='aa'
 ###   @9='aaa'
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877201.000
+###   @11=1623859201.000
 ###   @12=1                   
 ###   @13=1.000
 ###   @14='aaaaaaaaaa'
@@ -190,31 +177,26 @@ BEGIN
 ###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01a'
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
@@ -230,7 +212,7 @@ BEGIN
 ###   @8='aa'
 ###   @9='aaa'
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877201.000
+###   @11=1623859201.000
 ###   @12=1                   
 ###   @13=1.000
 ###   @14='aaaaaaaaaa'
@@ -247,7 +229,7 @@ BEGIN
 ###   @8='aa'
 ###   @9='aaa'
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877199.101
+###   @11=1623859199.101
 ###   @12=1                   
 ###   @13=1.000
 ###   @14='aaaaaaaaaa'
@@ -255,7 +237,6 @@ BEGIN
 ###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01a'
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
@@ -271,7 +252,7 @@ BEGIN
 ###   @8='aa'
 ###   @9='aaa'
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877199.101
+###   @11=1623859199.101
 ###   @12=1                   
 ###   @13=1.000
 ###   @14='aaaaaaaaaa'
@@ -288,7 +269,7 @@ BEGIN
 ###   @8='aa'
 ###   @9='aaa'
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623794461.101
+###   @11=1623776461.101
 ###   @12=1                   
 ###   @13=1.000
 ###   @14='aaaaaaaaaa'
@@ -296,38 +277,24 @@ BEGIN
 ###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01a'
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
-/*!50607 SET @@SESSION.GTID_NEXT= 'AUTOMATIC'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
 ROLLBACK/*!*/;
 # [empty]
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
@@ -343,7 +310,7 @@ BEGIN
 ###   @8='bb'
 ###   @9=NULL
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877201.000
+###   @11=1623859201.000
 ###   @12=200.1               
 ###   @13=200.000
 ###   @14='bbbbbbbbbb'
@@ -351,37 +318,31 @@ BEGIN
 ###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01b'
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
@@ -397,7 +358,7 @@ BEGIN
 ###   @8='bb'
 ###   @9=NULL
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877201.000
+###   @11=1623859201.000
 ###   @12=200.1               
 ###   @13=200.000
 ###   @14='bbbbbbbbbb'
@@ -414,46 +375,32 @@ BEGIN
 ###   @8='bb'
 ###   @9=NULL
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=200.1               
 ###   @13=200.000
 ###   @14='bbbbbbbbbb'
 ###   @15='bbbbbbbbbbbbbbbbbbbb'
 ###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01b'
 COMMIT/*!*/;
-/*!50607 SET @@SESSION.GTID_NEXT= 'AUTOMATIC'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
 ROLLBACK/*!*/;
 # [empty]
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
@@ -469,7 +416,7 @@ BEGIN
 ###   @8='xxx'
 ###   @9='ccc'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877202.101
+###   @11=1623859202.101
 ###   @12=3                   
 ###   @13=3.000
 ###   @14='cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
@@ -477,31 +424,26 @@ BEGIN
 ###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01c'
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
@@ -517,7 +459,7 @@ BEGIN
 ###   @8='xxx'
 ###   @9='ccc'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877202.101
+###   @11=1623859202.101
 ###   @12=3                   
 ###   @13=3.000
 ###   @14='cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
@@ -534,125 +476,90 @@ BEGIN
 ###   @8='xxx'
 ###   @9='ccc'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=3                   
 ###   @13=3.000
 ###   @14='cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
 ###   @15='cccccccccc'
 ###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01c'
 COMMIT/*!*/;
-/*!50607 SET @@SESSION.GTID_NEXT= 'AUTOMATIC'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
 ROLLBACK/*!*/;
 # [empty]
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
-/*!50607 SET @@SESSION.GTID_NEXT= 'AUTOMATIC'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
 ROLLBACK/*!*/;
 # [empty]
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
@@ -668,7 +575,7 @@ BEGIN
 ###   @8='d d'
 ###   @9='ee'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877202.000
+###   @11=1623859202.000
 ###   @12=5                   
 ###   @13=5.000
 ###   @14='eeeeeeeeee'
@@ -676,19 +583,16 @@ BEGIN
 ###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01e'
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
 COMMIT/*!*/;
 /*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
-SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 BEGIN
 /*!*/;
@@ -704,7 +608,7 @@ BEGIN
 ###   @8='d d'
 ###   @9='ee'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877202.000
+###   @11=1623859202.000
 ###   @12=5                   
 ###   @13=5.000
 ###   @14='eeeeeeeeee'
@@ -721,51 +625,27 @@ BEGIN
 ###   @8='d d'
 ###   @9='ee'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=5                   
 ###   @13=5.000
 ###   @14='eeeeeeeeee'
 ###   @15='eeeeeeeeee'
 ###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01e'
 COMMIT/*!*/;
-/*!50607 SET @@SESSION.GTID_NEXT= 'AUTOMATIC'*/ /* added by mysqlbinlog */ /*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
 #
 # flashback rows filter and print it
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
 ROLLBACK/*!*/;
-BINLOG '
-AMqaOw8BAAAAiQAAAI0AAAAAAAQANS43LjIwLXRteXNxbC0zLjMtbG9nAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAypo7EzgNAAgAEgAEBAQEEgAAcQAEGggAAAAICAgCAAAACgoKKioAAAAA
-AAAAAAAAAAAAAAANCAgICgoKAQu7AB4=
-'/*!*/;
-/*!50616 SET @@SESSION.GTID_NEXT='AUTOMATIC'*//*!*/;
 # [empty]
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAJMUAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vsviV+D
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAALISAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuIsst0
-AMqaOx8BAAAA5gAAAJgTAAAAAN8AAAAAAAEAAgAQ/////wAAAQAAAAAAAAABAQABAAABAAAAAQAA
-AAAAAAABYQJhYQNhYWGZqeIAAWDJIx0D8gAAgD+AAAABAAAKAGFhYWFhYWFhYWEKAGFhYWFhYWFh
-YWEKAAAAAgEACQAMBwABYQAAAQAAAAAAAAABAQABAAABAAAAAQAAAAAAAAABYQJhYQNhYWGZqeIA
-AWDKZk8D8gAAgD+AAAABAAAKAGFhYWFhYWFhYWEKAGFhYWFhYWFhYWEKAAAAAgEACQAMBwABYRIO
-oHs=
-'/*!*/;
 ### UPDATE `test`.`t1`
 ### WHERE
 ###   @1=1
@@ -778,7 +658,7 @@ oHs=
 ###   @8='aa'
 ###   @9='aaa'
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623794461.101
+###   @11=1623776461.101
 ###   @12=1                   
 ###   @13=1.000
 ###   @14='aaaaaaaaaa'
@@ -795,7 +675,7 @@ oHs=
 ###   @8='aa'
 ###   @9='aaa'
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877199.101
+###   @11=1623859199.101
 ###   @12=1                   
 ###   @13=1.000
 ###   @14='aaaaaaaaaa'
@@ -805,16 +685,6 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAANEQAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vsAa1By
-AMqaOx8BAAAA5gAAALcRAAAAAN8AAAAAAAEAAgAQ/////wAAAQAAAAAAAAABAQABAAABAAAAAQAA
-AAAAAAABYQJhYQNhYWGZqeIAAWDKZk8D8gAAgD+AAAABAAAKAGFhYWFhYWFhYWEKAGFhYWFhYWFh
-YWEKAAAAAgEACQAMBwABYQAAAQAAAAAAAAABAQABAAABAAAAAQAAAAAAAAABYQJhYQNhYWGZqeIA
-AWDKZlEAAAAAgD+AAAABAAAKAGFhYWFhYWFhYWEKAGFhYWFhYWFhYWEKAAAAAgEACQAMBwABYQUg
-uqg=
-'/*!*/;
 ### UPDATE `test`.`t1`
 ### WHERE
 ###   @1=1
@@ -827,7 +697,7 @@ uqg=
 ###   @8='aa'
 ###   @9='aaa'
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877199.101
+###   @11=1623859199.101
 ###   @12=1                   
 ###   @13=1.000
 ###   @14='aaaaaaaaaa'
@@ -844,7 +714,7 @@ uqg=
 ###   @8='aa'
 ###   @9='aaa'
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877201.000
+###   @11=1623859201.000
 ###   @12=1                   
 ###   @13=1.000
 ###   @14='aaaaaaaaaa'
@@ -854,50 +724,22 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAFIPAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuanpJ+
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAANINAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vtgU5JD
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIwEAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vt7G1qx
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAAcDAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vubK7kS
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIgBAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuCuDY7
-AMqaOyABAAAAhAAAAAwCAAAAAN8AAAAAAAEAAgAQ//8AAAEAAAAAAAAAAQEAAQAAAQAAAAEAAAAA
-AAAAAWECYWEDYWFhmaniAAFgymZRAAAAAIA/gAAAAQAACgBhYWFhYWFhYWFhCgBhYWFhYWFhYWFh
-CgAAAAIBAAkADAcAAWGoW5Fp
-'/*!*/;
 ### DELETE FROM `test`.`t1`
 ### WHERE
 ###   @1=1
@@ -910,51 +752,25 @@ CgAAAAIBAAkADAcAAWGoW5Fp
 ###   @8='aa'
 ###   @9='aaa'
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877201.000
+###   @11=1623859201.000
 ###   @12=1                   
 ###   @13=1.000
 ###   @14='aaaaaaaaaa'
 ###   @15='aaaaaaaaaa'
 ###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01a'
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 COMMIT
 /*!*/;
 COMMIT /* added by mysqlbinlog *//*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
 ROLLBACK/*!*/;
-BINLOG '
-AMqaOw8BAAAAiQAAAI0AAAAAAAQANS43LjIwLXRteXNxbC0zLjMtbG9nAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAypo7EzgNAAgAEgAEBAQEEgAAcQAEGggAAAAICAgCAAAACgoKKioAAAAA
-AAAAAAAAAAAAAAANCAgICgoKAQu7AB4=
-'/*!*/;
-/*!50616 SET @@SESSION.GTID_NEXT='AUTOMATIC'*//*!*/;
 # [empty]
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAJMUAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vsviV+D
-AMqaOx8BAAAA8gAAAFUnAAAAAN8AAAAAAAEAAgAQ/////wABAgAAAAAAAAACAgACAAACAAAAAQAA
-AAAAAAABYgJiYpmp4gABYMpmTwAAmhlIQ4AAAMgAAAoAYmJiYmJiYmJiYhQAYmJiYmJiYmJiYmJi
-YmJiYmJiYmIKAAAAAgEACQAMBwABYgABAgAAAAAAAAACAgACAAACAAAAAQAAAAAAAAABYgJiYpmp
-4gABYMpmUQAAmhlIQ4AAAMgAAAoAYmJiYmJiYmJiYhQAYmJiYmJiYmJiYmJiYmJiYmJiYmIKAAAA
-AgEACQAMBwABYjaumaQ=
-'/*!*/;
 ### UPDATE `test`.`t1`
 ### WHERE
 ###   @1=2
@@ -967,7 +783,7 @@ AgEACQAMBwABYjaumaQ=
 ###   @8='bb'
 ###   @9=NULL
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=200.1               
 ###   @13=200.000
 ###   @14='bbbbbbbbbb'
@@ -984,7 +800,7 @@ AgEACQAMBwABYjaumaQ=
 ###   @8='bb'
 ###   @9=NULL
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877201.000
+###   @11=1623859201.000
 ###   @12=200.1               
 ###   @13=200.000
 ###   @14='bbbbbbbbbb'
@@ -994,59 +810,26 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAALISAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuIsst0
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAANEQAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vsAa1By
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAFIPAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuanpJ+
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAANINAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vtgU5JD
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIwEAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vt7G1qx
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAAcDAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vubK7kS
-AMqaOyABAAAAigAAAJEDAAAAAN8AAAAAAAEAAgAQ//8AAQIAAAAAAAAAAgIAAgAAAgAAAAEAAAAA
-AAAAAWICYmKZqeIAAWDKZlEAAJoZSEOAAADIAAAKAGJiYmJiYmJiYmIUAGJiYmJiYmJiYmJiYmJi
-YmJiYmJiCgAAAAIBAAkADAcAAWI6iYUe
-'/*!*/;
 ### DELETE FROM `test`.`t1`
 ### WHERE
 ###   @1=2
@@ -1059,7 +842,7 @@ YmJiYmJiCgAAAAIBAAkADAcAAWI6iYUe
 ###   @8='bb'
 ###   @9=NULL
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623877201.000
+###   @11=1623859201.000
 ###   @12=200.1               
 ###   @13=200.000
 ###   @14='bbbbbbbbbb'
@@ -1069,119 +852,19 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIgBAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuCuDY7
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 COMMIT
 /*!*/;
 COMMIT /* added by mysqlbinlog *//*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
 ROLLBACK/*!*/;
-BINLOG '
-AMqaOw8BAAAAiQAAAI0AAAAAAAQANS43LjIwLXRteXNxbC0zLjMtbG9nAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAypo7EzgNAAgAEgAEBAQEEgAAcQAEGggAAAAICAgCAAAACgoKKioAAAAA
-AAAAAAAAAAAAAAANCAgICgoKAQu7AB4=
-'/*!*/;
-/*!50616 SET @@SESSION.GTID_NEXT='AUTOMATIC'*//*!*/;
 # [empty]
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAJMUAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vsviV+D
-AMqaOx8BAAAAdBAAAFUnAAAAAN8AAAAAAAEAAgAQ/////wAAAwAAAAAAAAADAwD///8DAAAAAQAA
-AAAAAAABYwN4eHgDY2NjmaniAAJgymZPAAAAAEBAgAAAAwAA0AdjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYwoAY2NjY2NjY2NjYwoA
-AAACAQAJAAwHAAFjAAADAAAAAAAAAAMDAP///wMAAAABAAAAAAAAAAFjA3h4eANjY2OZqeIAAmDK
-ZlID8gAAQECAAAADAADQB2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjCgBjY2NjY2NjY2NjCgAAAAIBAAkADAcAAWPuvCEt
-'/*!*/;
 ### UPDATE `test`.`t1`
 ### WHERE
 ###   @1=3
@@ -1194,7 +877,7 @@ Y2NjY2NjY2NjY2NjY2NjY2NjY2NjCgBjY2NjY2NjY2NjCgAAAAIBAAkADAcAAWPuvCEt
 ###   @8='xxx'
 ###   @9='ccc'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=3                   
 ###   @13=3.000
 ###   @14='cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
@@ -1211,7 +894,7 @@ Y2NjY2NjY2NjY2NjY2NjY2NjY2NjCgBjY2NjY2NjY2NjCgAAAAIBAAkADAcAAWPuvCEt
 ###   @8='xxx'
 ###   @9='ccc'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877202.101
+###   @11=1623859202.101
 ###   @12=3                   
 ###   @13=3.000
 ###   @14='cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
@@ -1221,85 +904,22 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAALISAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuIsst0
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAANEQAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vsAa1By
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAFIPAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuanpJ+
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAANINAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vtgU5JD
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIwEAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vt7G1qx
-AMqaOyABAAAASwgAANcMAAAAAN8AAAAAAAEAAgAQ//8AAAMAAAAAAAAAAwMA////AwAAAAEAAAAA
-AAAAAWMDeHh4A2NjY5mp4gACYMpmUgPyAABAQIAAAAMAANAHY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MKAGNjY2NjY2NjY2MKAAAA
-AgEACQAMBwABY9AqU/A=
-'/*!*/;
 ### DELETE FROM `test`.`t1`
 ### WHERE
 ###   @1=3
@@ -1312,7 +932,7 @@ AgEACQAMBwABY9AqU/A=
 ###   @8='xxx'
 ###   @9='ccc'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877202.101
+###   @11=1623859202.101
 ###   @12=3                   
 ###   @13=3.000
 ###   @14='cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
@@ -1322,59 +942,23 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAAcDAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vubK7kS
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIgBAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuCuDY7
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 COMMIT
 /*!*/;
 COMMIT /* added by mysqlbinlog *//*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
 ROLLBACK/*!*/;
-BINLOG '
-AMqaOw8BAAAAiQAAAI0AAAAAAAQANS43LjIwLXRteXNxbC0zLjMtbG9nAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAypo7EzgNAAgAEgAEBAQEEgAAcQAEGggAAAAICAgCAAAACgoKKioAAAAA
-AAAAAAAAAAAAAAANCAgICgoKAQu7AB4=
-'/*!*/;
-/*!50616 SET @@SESSION.GTID_NEXT='AUTOMATIC'*//*!*/;
 # [empty]
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAJMUAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vsviV+D
-AMqaOx8BAAAA6AAAAFUnAAAAAN8AAAAAAAEAAgAQ/////wAABAAAAAAAAAAE/P8EAAAEAAAABAAA
-AAAAAAABZANkIGQDeHh4manhfvtgymZPAAAAAIBAgAAABAAACgBkZGRkZGRkZGRkCgBkZGRkZGRk
-ZGRkCgAAAAIBAAkADAcAAWQAAAQAAAAAAAAABPz/BAAABAAAAAQAAAAAAAAAAWQDZCBkA3h4eJmp
-4X77YMpmUgPyAACAQIAAAAQAAAoAZGRkZGRkZGRkZAoAZGRkZGRkZGRkZAoAAAACAQAJAAwHAAFk
-udp3FA==
-'/*!*/;
 ### UPDATE `test`.`t1`
 ### WHERE
 ###   @1=4
@@ -1387,7 +971,7 @@ udp3FA==
 ###   @8='d d'
 ###   @9='xxx'
 ###   @10='2021-06-16 23:59:59'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=4                   
 ###   @13=4.000
 ###   @14='dddddddddd'
@@ -1404,7 +988,7 @@ udp3FA==
 ###   @8='d d'
 ###   @9='xxx'
 ###   @10='2021-06-16 23:59:59'
-###   @11=1623877202.101
+###   @11=1623859202.101
 ###   @12=4                   
 ###   @13=4.000
 ###   @14='dddddddddd'
@@ -1414,41 +998,18 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAALISAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuIsst0
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAANEQAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vsAa1By
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAFIPAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuanpJ+
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAANINAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vtgU5JD
-AMqaOyABAAAAhQAAAFcOAAAAAN8AAAAAAAEAAgAQ//8AAAQAAAAAAAAABPz/BAAABAAAAAQAAAAA
-AAAAAWQDZCBkA3h4eJmp4X77YMpmUgPyAACAQIAAAAQAAAoAZGRkZGRkZGRkZAoAZGRkZGRkZGRk
-ZAoAAAACAQAJAAwHAAFkVSOYpQ==
-'/*!*/;
 ### DELETE FROM `test`.`t1`
 ### WHERE
 ###   @1=4
@@ -1461,7 +1022,7 @@ ZAoAAAACAQAJAAwHAAFkVSOYpQ==
 ###   @8='d d'
 ###   @9='xxx'
 ###   @10='2021-06-16 23:59:59'
-###   @11=1623877202.101
+###   @11=1623859202.101
 ###   @12=4                   
 ###   @13=4.000
 ###   @14='dddddddddd'
@@ -1471,68 +1032,27 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIwEAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vt7G1qx
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAAcDAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vubK7kS
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIgBAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuCuDY7
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 COMMIT
 /*!*/;
 COMMIT /* added by mysqlbinlog *//*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
 ROLLBACK/*!*/;
-BINLOG '
-AMqaOw8BAAAAiQAAAI0AAAAAAAQANS43LjIwLXRteXNxbC0zLjMtbG9nAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAypo7EzgNAAgAEgAEBAQEEgAAcQAEGggAAAAICAgCAAAACgoKKioAAAAA
-AAAAAAAAAAAAAAANCAgICgoKAQu7AB4=
-'/*!*/;
-/*!50616 SET @@SESSION.GTID_NEXT='AUTOMATIC'*//*!*/;
 # [empty]
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAJMUAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vsviV+D
-AMqaOx8BAAAA5gAAAFUnAAAAAN8AAAAAAAEAAgAQ/////wAABQAAAAAAAAAFBQAFAAAFAAAABQAA
-AAAAAAABZQNkIGQCZWWZqeIAAmDKZk8AAAAAoECAAAAFAAAKAGVlZWVlZWVlZWUKAGVlZWVlZWVl
-ZWUKAAAAAgEACQAMBwABZQAABQAAAAAAAAAFBQAFAAAFAAAABQAAAAAAAAABZQNkIGQCZWWZqeIA
-AmDKZlIAAAAAoECAAAAFAAAKAGVlZWVlZWVlZWUKAGVlZWVlZWVlZWUKAAAAAgEACQAMBwABZX2q
-24g=
-'/*!*/;
 ### UPDATE `test`.`t1`
 ### WHERE
 ###   @1=5
@@ -1545,7 +1065,7 @@ AmDKZlIAAAAAoECAAAAFAAAKAGVlZWVlZWVlZWUKAGVlZWVlZWVlZWUKAAAAAgEACQAMBwABZX2q
 ###   @8='d d'
 ###   @9='ee'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=5                   
 ###   @13=5.000
 ###   @14='eeeeeeeeee'
@@ -1562,7 +1082,7 @@ AmDKZlIAAAAAoECAAAAFAAAKAGVlZWVlZWVlZWUKAGVlZWVlZWVlZWUKAAAAAgEACQAMBwABZX2q
 ###   @8='d d'
 ###   @9='ee'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877202.000
+###   @11=1623859202.000
 ###   @12=5                   
 ###   @13=5.000
 ###   @14='eeeeeeeeee'
@@ -1572,32 +1092,14 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAALISAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuIsst0
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAANEQAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vsAa1By
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAFIPAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuanpJ+
-AMqaOyABAAAAhAAAANYPAAAAAN8AAAAAAAEAAgAQ//8AAAUAAAAAAAAABQUABQAABQAAAAUAAAAA
-AAAAAWUDZCBkAmVlmaniAAJgymZSAAAAAKBAgAAABQAACgBlZWVlZWVlZWVlCgBlZWVlZWVlZWVl
-CgAAAAIBAAkADAcAAWWiX/UK
-'/*!*/;
 ### DELETE FROM `test`.`t1`
 ### WHERE
 ###   @1=5
@@ -1610,7 +1112,7 @@ CgAAAAIBAAkADAcAAWWiX/UK
 ###   @8='d d'
 ###   @9='ee'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877202.000
+###   @11=1623859202.000
 ###   @12=5                   
 ###   @13=5.000
 ###   @14='eeeeeeeeee'
@@ -1620,78 +1122,34 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAANINAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vtgU5JD
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIwEAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vt7G1qx
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAAcDAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vubK7kS
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIgBAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuCuDY7
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 COMMIT
 /*!*/;
 COMMIT /* added by mysqlbinlog *//*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
 #
 # < CASE 2 >
 # Test --filter-lines-terminated-by and --filter-fields-enclosed-by
 #
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
-BINLOG '
-AMqaOw8BAAAAiQAAAI0AAAAAAAQANS43LjIwLXRteXNxbC0zLjMtbG9nAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAEzgNAAgAEgAEBAQEEgAAcQAEGggAAAAICAgCAAAACgoKKioAAAAA
-AAAAAAAAAAAAAAANCAgICgoKARztGNE=
-'/*!*/;
-/*!50616 SET @@SESSION.GTID_NEXT='AUTOMATIC'*//*!*/;
 # [empty]
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAALsFAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vt91C8f
-AMqaOx4BAAAAhQAAAGQGAAAAAN8AAAAAAAEAAgAQ//8AAAQAAAAAAAAABPz/BAAABAAAAAQAAAAA
-AAAAAWQDZCBkA3h4eJmp4X77YMpmTwAAAACAQIAAAAQAAAoAZGRkZGRkZGRkZAoAZGRkZGRkZGRk
-ZAoAAAACAQAJAAwHAAFk/sQvwA==
-'/*!*/;
 ### INSERT INTO `test`.`t1`
 ### SET
 ###   @1=4
@@ -1704,7 +1162,7 @@ ZAoAAAACAQAJAAwHAAFk/sQvwA==
 ###   @8='d d'
 ###   @9='xxx'
 ###   @10='2021-06-16 23:59:59'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=4                   
 ###   @13=4.000
 ###   @14='dddddddddd'
@@ -1714,29 +1172,10 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAEQEAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuLsI6A
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAMcCAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vtUJGwA
-'/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIgBAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuCuDY7
-AMqaOyABAAAAtAAAAHwCAAAAAN8AAAAAAAEAAgAQ//8AALwCAAAAAAAAB7wCvAIAvAIAALwCAAAA
-AAAAAWcEZywiZwN4eHiZqeF++2DKZk8AAAAA4ECAAAAHAAAAAAAABQAAAAAAAAQAAAAGAAAAAAAA
-AAYGAAYAAAYAAAABAAAAAAAAAAFmAmZmA3h4eJmp4X77YMpmTwAAAADAQIAAAAYAAAAAAAAFAAAA
-AAAABAD9Fu67
-'/*!*/;
 ### DELETE FROM `test`.`t1`
 ### WHERE
 ###   @1=700
@@ -1749,7 +1188,7 @@ AAAABAD9Fu67
 ###   @8='g,"g'
 ###   @9='xxx'
 ###   @10='2021-06-16 23:59:59'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=7                   
 ###   @13=7.000
 ###   @14=''
@@ -1767,83 +1206,24 @@ AAAABAD9Fu67
 ###   @8='ff'
 ###   @9='xxx'
 ###   @10='2021-06-16 23:59:59'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=6                   
 ###   @13=6.000
 ###   @14=''
 ###   @15=''
 ###   @16='\x00\x00\x00\x04\x00'
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 COMMIT
 /*!*/;
 COMMIT /* added by mysqlbinlog *//*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
-BINLOG '
-AMqaOw8BAAAAiQAAAI0AAAAAAAQANS43LjIwLXRteXNxbC0zLjMtbG9nAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAEzgNAAgAEgAEBAQEEgAAcQAEGggAAAAICAgCAAAACgoKKioAAAAA
-AAAAAAAAAAAAAAANCAgICgoKARztGNE=
-'/*!*/;
-/*!50616 SET @@SESSION.GTID_NEXT='AUTOMATIC'*//*!*/;
 # [empty]
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAALsFAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vt91C8f
-AMqaOx4BAAAASwgAAGQGAAAAAN8AAAAAAAEAAgAQ//8AAAMAAAAAAAAAAwMA////AwAAAAEAAAAA
-AAAAAWMDeHh4A2NjY5mp4gACYMpmTwAAAABAQIAAAAMAANAHY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj
-Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MKAGNjY2NjY2NjY2MKAAAA
-AgEACQAMBwABYyb4oFA=
-'/*!*/;
 ### INSERT INTO `test`.`t1`
 ### SET
 ###   @1=3
@@ -1856,7 +1236,7 @@ AgEACQAMBwABYyb4oFA=
 ###   @8='xxx'
 ###   @9='ccc'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=3                   
 ###   @13=3.000
 ###   @14='cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
@@ -1866,14 +1246,6 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAEQEAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuLsI6A
-AMqaOx4BAAAAhAAAAMgEAAAAAN8AAAAAAAEAAgAQ//8AAAEAAAAAAAAAAQEAAQAAAQAAAAEAAAAA
-AAAAAWECYWEDYWFhmaniAAFgySMdA/IAAIA/gAAAAQAACgBhYWFhYWFhYWFhCgBhYWFhYWFhYWFh
-CgAAAAIBAAkADAcAAWHhLnEi
-'/*!*/;
 ### INSERT INTO `test`.`t1`
 ### SET
 ###   @1=1
@@ -1886,7 +1258,7 @@ CgAAAAIBAAkADAcAAWHhLnEi
 ###   @8='aa'
 ###   @9='aaa'
 ###   @10='2021-06-17 00:00:01'
-###   @11=1623794461.101
+###   @11=1623776461.101
 ###   @12=1                   
 ###   @13=1.000
 ###   @14='aaaaaaaaaa'
@@ -1896,39 +1268,6 @@ SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAMcCAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vtUJGwA
-AMqaOx4BAAAAigAAAFEDAAAAAN8AAAAAAAEAAgAQ//8AAQIAAAAAAAAAAgIAAgAAAgAAAAEAAAAA
-AAAAAWICYmKZqeIAAWDKZk8AAJoZSEOAAADIAAAKAGJiYmJiYmJiYmIUAGJiYmJiYmJiYmJiYmJi
-YmJiYmJiCgAAAAIBAAkADAcAAWK4/hAj
-'/*!*/;
-### INSERT INTO `test`.`t1`
-### SET
-###   @1=2
-###   @2=2
-###   @3=2
-###   @4=2
-###   @5=2
-###   @6=1
-###   @7='b'
-###   @8='bb'
-###   @9=NULL
-###   @10='2021-06-17 00:00:01'
-###   @11=1623877199.000
-###   @12=200.1               
-###   @13=200.000
-###   @14='bbbbbbbbbb'
-###   @15='bbbbbbbbbbbbbbbbbbbb'
-###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01b'
-
-BINLOG '
-AMqaOxMBAAAASwAAAIgBAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuCuDY7
-AMqaOyABAAAAZAAAAHwCAAAAAN8AAAAAAAEAAgAQ//8AgCADAAAAAAAACCADIAMAIAMAACADAAAA
-AAAAAWgEaCwiaAN5eXmZqd1++2DHw08AAAAAAEGAAAAIAAAAAAAAnqAoGg==
-'/*!*/;
 ### DELETE FROM `test`.`t1`
 ### WHERE
 ###   @1=800
@@ -1941,113 +1280,70 @@ AAAAAWgEaCwiaAN5eXmZqd1++2DHw08AAAAAAEGAAAAIAAAAAAAAnqAoGg==
 ###   @8='h,"h'
 ###   @9='yyy'
 ###   @10='2021-06-14 23:59:59'
-###   @11=1623704399.000
+###   @11=1623686399.000
 ###   @12=8                   
 ###   @13=8.000
 ###   @14=''
 ###   @15=''
 ###   @16=NULL
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 COMMIT
 /*!*/;
 COMMIT /* added by mysqlbinlog *//*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
 #
 # Test transaction and log_bin_compress and float
 #
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
 DELIMITER /*!*/;
-BINLOG '
-AMqaOw8BAAAAiQAAAI0AAAAAAAQANS43LjIwLXRteXNxbC0zLjMtbG9nAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAEzgNAAgAEgAEBAQEEgAAcQAEGggAAAAICAgCAAAACgoKKioAAAAA
-AAAAAAAAAAAAAAANCAgICgoKARztGNE=
-'/*!*/;
-/*!50616 SET @@SESSION.GTID_NEXT='AUTOMATIC'*//*!*/;
 # [empty]
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAALsFAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vt91C8f
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAEQEAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuLsI6A
-'/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 COMMIT
 /*!*/;
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAMcCAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vtUJGwA
-'/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAIgBAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuCuDY7
-'/*!*/;
+### INSERT INTO `test`.`t1`
+### SET
+###   @1=2
+###   @2=2
+###   @3=2
+###   @4=2
+###   @5=2
+###   @6=1
+###   @7='b'
+###   @8='bb'
+###   @9=NULL
+###   @10='2021-06-17 00:00:01'
+###   @11=1623859199.000
+###   @12=200.1               
+###   @13=200.000
+###   @14='bbbbbbbbbb'
+###   @15='bbbbbbbbbbbbbbbbbbbb'
+###   @16='\x02\x01\x00\x09\x00\x0c\x07\x00\x01b'
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.time_zone='SYSTEM'/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 COMMIT
 /*!*/;
 COMMIT /* added by mysqlbinlog *//*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
 #
 # < CASE 3 >
 # Test t1 ignoring t2 DDL and Test --conv-event-update-to-write
 #
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
-/*!50700 SET @@SESSION.RBR_EXEC_MODE=IDEMPOTENT*/;
 
 DELIMITER /*!*/;
-BINLOG '
-AMqaOw8BAAAAiQAAAI0AAAAAAAQANS43LjIwLXRteXNxbC0zLjMtbG9nAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAEzgNAAgAEgAEBAQEEgAAcQAEGggAAAAICAgCAAAACgoKKioAAAAA
-AAAAAAAAAAAAAAANCAgICgoKARztGNE=
-'/*!*/;
-/*!50616 SET @@SESSION.GTID_NEXT='AUTOMATIC'*//*!*/;
 # [empty]
 BEGIN/*!*/;
-
-BINLOG '
-AMqaOxMBAAAASwAAAHECAAAAAN8AAAAAAAEABHRlc3QAAnQxABAIAQIJAwj+Dw8SEQT2/Pz1Dv4K
-FAAUAAADBAoDAgIE/vuXXyHw
-AMqaOx4BAAAAhAAAAGQDAAAAAN8AAAAAAAEAAgAQ//8AAAUAAAAAAAAABQUABQAABQAAAAUAAAAA
-AAAAAWUDZCBkAmVlmaniAAJgymZPAAAAAKBAgAAABQAACgBlZWVlZWVlZWVlCgBlZWVlZWVlZWVl
-CgAAAAIBAAkADAcAAWXnimkC
-'/*!*/;
 ### INSERT INTO `test`.`t1`
 ### SET
 ###   @1=5
@@ -2060,7 +1356,7 @@ CgAAAAIBAAkADAcAAWXnimkC
 ###   @8='d d'
 ###   @9='ee'
 ###   @10='2021-06-17 00:00:02'
-###   @11=1623877199.000
+###   @11=1623859199.000
 ###   @12=5                   
 ###   @13=5.000
 ###   @14='eeeeeeeeee'
@@ -2071,22 +1367,13 @@ COMMIT
 /*!*/;
 use `test`/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
-SET @@session.pseudo_thread_id=4/*!*/;
-SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
-SET @@session.sql_mode=1436549152/*!*/;
-SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
 /*!\C latin1 *//*!*/;
-SET @@session.character_set_client=8,@@session.collation_connection=8,@@session.collation_server=8/*!*/;
-SET @@session.lc_time_names=0/*!*/;
-SET @@session.collation_database=DEFAULT/*!*/;
 # ignore query_log_event
 # CREATE TABLE t2 (# c01 bigint unsigned primary key,# c02 varchar(20)# ) ENGINE=InnoDB charset=utf8mb4 
 COMMIT /* added by mysqlbinlog *//*!*/;
 DELIMITER ;
 # End of log file
 /*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
-/*!50700 SET @@SESSION.RBR_EXEC_MODE=STRICT*/;
 #
 # < CASE 4 >
 # Test t1 has DDL(add auto_increment)
@@ -2102,10 +1389,10 @@ DELIMITER ;
 # checksum #103
 checksum table t1;
 Table	Checksum
-test.t1	3046509624
+test.t1	2687951963
 select * from t1;
 c01	c02	c03	c04	c05	c06	c07	c08	c09	c10	c11	c12	c13	c14	c15	c16
-5	5	5	5	5	5	e	d d	ee	2021-06-17 00:00:02	2001-09-09 04:46:40.000	50.1	50.100	eeeeeeeeee	x中文x	["j", "s", "o", "n"]
+5	5	5	5	5	5	e	d d	ee	2021-06-17 00:00:02	2001-09-09 09:46:40.000	50.1	50.100	eeeeeeeeee	x中文x	["j", "s", "o", "n"]
 6	6	6	6	6	1	f	ff	xxx	2021-06-16 23:59:59	2021-06-16 23:59:59.000	6	6.000			{}
 700	7	700	700	700	700	g	g,"g	xxx	2021-06-16 23:59:59	2021-06-16 23:59:59.000	7	7.000			{}
 800	8	800	800	800	800	h	h,"h	yyy	2021-06-14 23:59:59	2021-06-14 23:59:59.000	8	8.000			NULL
@@ -2120,7 +1407,7 @@ c01	c02
 # checksum #102
 checksum table t1;
 Table	Checksum
-test.t1	2310621471
+test.t1	343040241
 select * from t1;
 c01	c02	c03	c04	c05	c06	c07	c08	c09	c10	c11	c12	c13	c14	c15	c16
 5	5	5	5	5	5	e	d d	ee	2021-06-17 00:00:02	2021-06-16 23:59:59.000	5	5.000	eeeeeeeeee	eeeeeeeeee	["e"]
@@ -2134,7 +1421,7 @@ c01	c02	c03	c04	c05	c06	c07	c08	c09	c10	c11	c12	c13	c14	c15	c16
 # checksum #101
 checksum table t1;
 Table	Checksum
-test.t1	1185182040
+test.t1	3112733990
 select * from t1;
 c01	c02	c03	c04	c05	c06	c07	c08	c09	c10	c11	c12	c13	c14	c15	c16
 1	1	1	1	1	1	a	aa	aaa	2021-06-17 00:00:01	2021-06-16 01:01:01.101	1	1.000	aaaaaaaaaa	aaaaaaaaaa	["a"]
@@ -2152,6 +1439,271 @@ Table	Checksum
 test.t1	0
 select * from t1;
 c01	c02	c03	c04	c05	c06	c07	c08	c09	c10	c11	c12	c13	c14	c15	c16
+# < CASE 5 > Test data type
+# Delete all existing binary logs.
+#
+CREATE TABLE t3 (
+c01 bigint unsigned primary key,
+c02 tinyint,
+c03 smallint,
+c04 mediumint unsigned,
+c05 int,
+c06 bigint,
+c07 char(10),
+c08 varchar(20),
+c09 binary(10),
+c10 varbinary(20),
+c11 date,
+c12 time,
+c13 datetime,
+c14 timestamp(3),
+c15 year,
+c16 float,
+c17 double,
+c18 decimal(10,3),
+c19 TINYTEXT,
+c20 MEDIUMTEXT,
+c21 TEXT,
+c22 LONGTEXT,
+c23 TINYBLOB,
+C24 MEDIUMBLOB,
+c25 BLOB,
+c26 LONGBLOB,
+c27 ENUM('Low', 'Medium', 'High') NOT NULL,
+c28 BIT(8),
+c29 JSON
+) ENGINE=InnoDB;
+RESET MASTER;
+insert into t3 values(0,0,0,0,0,0, '', '', 'a', 'aa', '2021-06-28', '11:11:11', '2021-06-28 11:11:11', '2021-06-28 11:11:11', '2021','0.0','100.0','100.000', 'aaaa', 'aaaaa', 'aaaaaa', 'aaaaaaa', 'aaaa', 'aaaaa', 'aaaaaa', 'aaaaaaa',1,b'00000000','{}');
+insert into t3 values(9223372036854775807,127,-32768,8388607,2147483647,-9223372036854775808, 'b', 'bb', 'b', 'bb', '2021-06-28', '11:11:11', '2021-06-28 11:11:11', '2021-06-28 11:11:11', '2069','0.11','100.01','100.001', 'bbbb', 'bbbbb', 'bbbbbb', 'bbbbbbb', '', '', '', '',1,b'00000010','{}');
+FLUSH LOGS;
+# test datatype min
+/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
+DELIMITER /*!*/;
+ROLLBACK/*!*/;
+# [empty]
+BEGIN/*!*/;
+SET TIMESTAMP=1000000000/*!*/;
+COMMIT
+/*!*/;
+BEGIN/*!*/;
+### DELETE FROM `test`.`t3`
+### WHERE
+###   @1=0
+###   @2=0
+###   @3=0
+###   @4=0
+###   @5=0
+###   @6=0
+###   @7=''
+###   @8=''
+###   @9='a'
+###   @10='aa'
+###   @11='2021:06:28'
+###   @12='11:11:11'
+###   @13='2021-06-28 11:11:11'
+###   @14=1624849871.000
+###   @15=2021
+###   @16=0                   
+###   @17=100
+###   @18=100.000
+###   @19='aaaa'
+###   @20='aaaaa'
+###   @21='aaaaaa'
+###   @22='aaaaaaa'
+###   @23='aaaa'
+###   @24='aaaaa'
+###   @25='aaaaaa'
+###   @26='aaaaaaa'
+###   @27=1
+###   @28=b'00000000'
+###   @29='\x00\x00\x00\x04\x00'
+SET TIMESTAMP=1000000000/*!*/;
+/*!\C latin1 *//*!*/;
+COMMIT
+/*!*/;
+COMMIT /* added by mysqlbinlog *//*!*/;
+DELIMITER ;
+# End of log file
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
+# test datatype max
+/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
+DELIMITER /*!*/;
+ROLLBACK/*!*/;
+# [empty]
+BEGIN/*!*/;
+### DELETE FROM `test`.`t3`
+### WHERE
+###   @1=9223372036854775807
+###   @2=127
+###   @3=-32768 (32768)
+###   @4=8388607
+###   @5=2147483647
+###   @6=-9223372036854775808 (9223372036854775808)
+###   @7='b'
+###   @8='bb'
+###   @9='b'
+###   @10='bb'
+###   @11='2021:06:28'
+###   @12='11:11:11'
+###   @13='2021-06-28 11:11:11'
+###   @14=1624849871.000
+###   @15=2069
+###   @16=0.11                
+###   @17=100.01000000000000512
+###   @18=100.001
+###   @19='bbbb'
+###   @20='bbbbb'
+###   @21='bbbbbb'
+###   @22='bbbbbbb'
+###   @23=''
+###   @24=''
+###   @25=''
+###   @26=''
+###   @27=1
+###   @28=b'00000010'
+###   @29='\x00\x00\x00\x04\x00'
+SET TIMESTAMP=1000000000/*!*/;
+COMMIT
+/*!*/;
+BEGIN/*!*/;
+SET TIMESTAMP=1000000000/*!*/;
+/*!\C latin1 *//*!*/;
+COMMIT
+/*!*/;
+COMMIT /* added by mysqlbinlog *//*!*/;
+DELIMITER ;
+# End of log file
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
+# test datatype misc1
+/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
+DELIMITER /*!*/;
+ROLLBACK/*!*/;
+# [empty]
+BEGIN/*!*/;
+### DELETE FROM `test`.`t3`
+### WHERE
+###   @1=9223372036854775807
+###   @2=127
+###   @3=-32768 (32768)
+###   @4=8388607
+###   @5=2147483647
+###   @6=-9223372036854775808 (9223372036854775808)
+###   @7='b'
+###   @8='bb'
+###   @9='b'
+###   @10='bb'
+###   @11='2021:06:28'
+###   @12='11:11:11'
+###   @13='2021-06-28 11:11:11'
+###   @14=1624849871.000
+###   @15=2069
+###   @16=0.11                
+###   @17=100.01000000000000512
+###   @18=100.001
+###   @19='bbbb'
+###   @20='bbbbb'
+###   @21='bbbbbb'
+###   @22='bbbbbbb'
+###   @23=''
+###   @24=''
+###   @25=''
+###   @26=''
+###   @27=1
+###   @28=b'00000010'
+###   @29='\x00\x00\x00\x04\x00'
+SET TIMESTAMP=1000000000/*!*/;
+COMMIT
+/*!*/;
+BEGIN/*!*/;
+### DELETE FROM `test`.`t3`
+### WHERE
+###   @1=0
+###   @2=0
+###   @3=0
+###   @4=0
+###   @5=0
+###   @6=0
+###   @7=''
+###   @8=''
+###   @9='a'
+###   @10='aa'
+###   @11='2021:06:28'
+###   @12='11:11:11'
+###   @13='2021-06-28 11:11:11'
+###   @14=1624849871.000
+###   @15=2021
+###   @16=0                   
+###   @17=100
+###   @18=100.000
+###   @19='aaaa'
+###   @20='aaaaa'
+###   @21='aaaaaa'
+###   @22='aaaaaaa'
+###   @23='aaaa'
+###   @24='aaaaa'
+###   @25='aaaaaa'
+###   @26='aaaaaaa'
+###   @27=1
+###   @28=b'00000000'
+###   @29='\x00\x00\x00\x04\x00'
+SET TIMESTAMP=1000000000/*!*/;
+/*!\C latin1 *//*!*/;
+COMMIT
+/*!*/;
+COMMIT /* added by mysqlbinlog *//*!*/;
+DELIMITER ;
+# End of log file
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
+# test datatype misc2
+/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
+DELIMITER /*!*/;
+ROLLBACK/*!*/;
+# [empty]
+BEGIN/*!*/;
+SET TIMESTAMP=1000000000/*!*/;
+COMMIT
+/*!*/;
+BEGIN/*!*/;
+### DELETE FROM `test`.`t3`
+### WHERE
+###   @1=0
+###   @2=0
+###   @3=0
+###   @4=0
+###   @5=0
+###   @6=0
+###   @7=''
+###   @8=''
+###   @9='a'
+###   @10='aa'
+###   @11='2021:06:28'
+###   @12='11:11:11'
+###   @13='2021-06-28 11:11:11'
+###   @14=1624849871.000
+###   @15=2021
+###   @16=0                   
+###   @17=100
+###   @18=100.000
+###   @19='aaaa'
+###   @20='aaaaa'
+###   @21='aaaaaa'
+###   @22='aaaaaaa'
+###   @23='aaaa'
+###   @24='aaaaa'
+###   @25='aaaaaa'
+###   @26='aaaaaaa'
+###   @27=1
+###   @28=b'00000000'
+###   @29='\x00\x00\x00\x04\x00'
+SET TIMESTAMP=1000000000/*!*/;
+/*!\C latin1 *//*!*/;
+COMMIT
+/*!*/;
+COMMIT /* added by mysqlbinlog *//*!*/;
+DELIMITER ;
+# End of log file
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
 DROP TABLE t1;
 DROP TABLE t2;
-SET GLOBAL log_bin_compress = OFF;
+DROP TABLE t3;

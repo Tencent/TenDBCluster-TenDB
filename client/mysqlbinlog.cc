@@ -2409,55 +2409,59 @@ static my_time_t convert_str_to_timestamp(const char* str)
     my_system_gmt_sec(&l_time, &dummy_my_timezone, &dummy_in_dst_time_gap);
 }
 
-int
-parse_filter_line_header(std::string raw_line, st_rows_filter *rows_filter, std::string delim) {
-
+int parse_filter_line_header(std::string raw_line, st_rows_filter *rows_filter,
+    std::string delim) {
     std::vector<std::string> colstr;
     boost::split(colstr, raw_line, boost::is_any_of(delim));
     int count_col = 0;
 
-    std::map<int, int> map_pos_type;
     std::map<int, Binlog_row_field_attr> map_field_attr;
     std::vector<std::string>::iterator iter;
     for (iter = colstr.begin(); iter != colstr.end(); ++iter) {
         count_col++;
         std::string this_col_pos = *iter;
-        boost::trim_if(this_col_pos, boost::is_any_of("\'\"\ "));
+        boost::trim_if(this_col_pos, boost::is_any_of(" '\""));
 
         if (this_col_pos.find("@") == 0) {
             this_col_pos = this_col_pos.substr(1, this_col_pos.size());
             size_t hexpos = this_col_pos.find(":");
             if (hexpos != std::string::npos) {
-                std::string col_suffix = this_col_pos.substr(hexpos + 1, this_col_pos.size());
+                std::string col_suffix =
+                    this_col_pos.substr(hexpos + 1, this_col_pos.size());
                 this_col_pos = this_col_pos.substr(0, hexpos);
                 int col_pos = atoi(this_col_pos.c_str());
-                
+                if (col_pos == 0) {
+                    error("Column position must be a integer and not 0");
+                    exit(1);
+                }
+
                 if (col_suffix == "hex") {
                     rows_filter->cols_pos[count_col] = col_pos;
-                    map_pos_type[col_pos] = 1;
                     map_field_attr[col_pos] = FIELD_IS_HEX;
                 }
                 else if (col_suffix == "signed") {
                     rows_filter->cols_pos[count_col] = col_pos;
-                    map_pos_type[col_pos] = 0;
                     map_field_attr[col_pos] = FIELD_IS_SIGNED;
                 }
                 else if (col_suffix == "unsigned") {
                     rows_filter->cols_pos[count_col] = col_pos;
-                    map_pos_type[col_pos] = 0;
                     map_field_attr[col_pos] = FIELD_IS_UNSIGNED;
                 }
-                else
-                {
-                    error("Please give the right position format @2,@1,@3 or @2:hex or @2:signed or @2:unsigned");
+                else {
+                    error(
+                        "Please give the right position format @2,@1,@3 or @2:hex or "
+                        "@2:signed");
                     exit(1);
                 }
             }
             else {
                 int col_pos = atoi(this_col_pos.c_str());
-                // cols_pos=[0, 2, 1, 13] //[@1,@2,@3] column N start from 1. not use 0
-                rows_filter->cols_pos[count_col] = col_pos; 
-                map_pos_type[col_pos] = 0;
+                if (col_pos == 0) {
+                    error("Column position must be a integer and not 0");
+                    exit(1);
+                }
+                // cols_pos=[3, 2, 1] //[@1,@2,@3] column N start from 1. not use 0
+                rows_filter->cols_pos[count_col] = col_pos;
                 map_field_attr[col_pos] = FIELD_ATTR_DEFAULT;
             }
         }
@@ -2466,62 +2470,52 @@ parse_filter_line_header(std::string raw_line, st_rows_filter *rows_filter, std:
             exit(1);
         }
     }
-    rows_filter->map_ishex = map_pos_type;
     rows_filter->map_field_attr = map_field_attr;
-    rows_filter->cols_cnt = count_col;
     return count_col;
 }
 
-int
-parse_filter_line_body(std::string raw_line, st_rows_filter *rows_filter, std::string delim) {
-
+int parse_filter_line_body(std::string raw_line, st_rows_filter *rows_filter,
+    std::string delim) {
     int count_col = 0;
     // we save the first column as index(map)
-    
-    std::map<int, std::string> this_col_buf; // {@2:100, @1:bbb, @3:-2.0}
+
+    std::map<int, std::string> this_col_buf;  // {@2:100, @1:bbb, @3:-2.0}
     std::string first_colstr;
     std::vector<std::string>::iterator it;
     std::vector<std::string> colstr;
     boost::split(colstr, raw_line, boost::is_any_of(delim));
 
-    for(it= colstr.begin(); it!= colstr.end();++it) {
+    for (it = colstr.begin(); it != colstr.end(); ++it) {
         count_col++;
-        
+
         std::string col_str = *it;
         boost::trim_if(col_str, boost::is_any_of(std::string(fields_enclosed)));
-        this_col_buf.insert(std::pair<int, std::string>(rows_filter->cols_pos[count_col] , col_str));
+        this_col_buf.insert(
+            std::pair<int, std::string>(rows_filter->cols_pos[count_col], col_str));
 
         if (count_col == 1) {
             first_colstr = col_str;
         }
     }
-    if (count_col == rows_filter->cols_cnt) {
-        std::map < std::string, std::vector < std::map<int, std::string > > > ::iterator iter;
-
-        iter = rows_filter->map_lines_col.find(first_colstr);
-        if (iter != rows_filter->map_lines_col.end())
-        {
-            std::vector< std::map<int, std::string> > mlcv = iter->second;
-            mlcv.push_back(this_col_buf);
-            rows_filter->map_lines_col.erase(iter);
-            rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
-        }
-        else {
-            std::vector< std::map<int, std::string> > mlcv;
-            mlcv.push_back(this_col_buf);
-            rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
-
-        }
+    std::map < std::string, std::vector < std::map<int, std::string > > > ::iterator iter;
+    iter = rows_filter->map_lines_col.find(first_colstr);
+    if (iter != rows_filter->map_lines_col.end()) {
+        std::vector< std::map<int, std::string> > mlcv = iter->second;
+        mlcv.push_back(this_col_buf);
+        rows_filter->map_lines_col.erase(iter);
+        rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
     }
     else {
-        error("wrong csv input for filter rows");
-        exit(1);
+        std::vector< std::map<int, std::string> > mlcv;
+        mlcv.push_back(this_col_buf);
+        rows_filter->map_lines_col.insert(std::make_pair(first_colstr, mlcv));
     }
+
     return count_col;
 }
 
-void parse_filter_input(const char *ptr, st_rows_filter *rows_filter, char *field_term, char *line_term)
-{
+void parse_filter_input(const char *ptr, st_rows_filter *rows_filter,
+    const char *field_term, const char *line_term) {
     std::string sfield_term(field_term);
     std::string sline_term(line_term);
 
@@ -2530,18 +2524,20 @@ void parse_filter_input(const char *ptr, st_rows_filter *rows_filter, char *fiel
 
     std::vector<std::string> csvstr;
     std::string strinput(ptr);
-    boost::split(csvstr, strinput, boost::is_any_of(sline_term), boost::token_compress_on);
+    boost::split(csvstr, strinput, boost::is_any_of(sline_term),
+        boost::token_compress_on);
 
     std::vector<std::string>::iterator it;
     for (it = csvstr.begin(); it != csvstr.end(); ++it) {
         count_line++;
 
-        if (count_line == 1) { // @2,@1,@3
+        if (count_line == 1) {  // @2,@1,@3
             count_col = parse_filter_line_header(*it, rows_filter, sfield_term);
         }
         else if (*it != "") {
             if (count_col != parse_filter_line_body(*it, rows_filter, sfield_term)) {
-                fprintf(stderr, "%s: Wrong intput line body column number!\n", my_progname);
+                fprintf(stderr, "%s: Wrong intput line body column number!\n",
+                    my_progname);
                 exit(1);
             }
         }
@@ -2561,47 +2557,43 @@ void parse_filter_input(const char *ptr, st_rows_filter *rows_filter, char *fiel
 void parse_filter_rows() {
     char *tmp_csvbuff;
     char *field_term = fields_terminated;
-    char *line_term = lines_terminated; //\r\n
+    char *line_term = lines_terminated;  //\r\n
     if (!lines_terminated) {
-        line_term = "\n";
+        line_term = const_cast<char *>("\n");
     }
     else {
         line_term = lines_terminated;
     }
 
-    MY_STAT sbuf;  /* Stat information for the data file */
-    if (opt_filter_rows && my_stat(opt_filter_rows, &sbuf, MYF(0)))
-    {
+    MY_STAT sbuf; /* Stat information for the data file */
+    if (opt_filter_rows && my_stat(opt_filter_rows, &sbuf, MYF(0))) {
         File data_file;
-        if (!MY_S_ISREG(sbuf.st_mode))
-        {
+        if (!MY_S_ISREG(sbuf.st_mode)) {
             fprintf(stderr, "%s: Filter rows supplied file was not a regular file\n",
                 my_progname);
             exit(1);
         }
-        if ((data_file = my_open(opt_filter_rows, O_RDONLY, MYF(0))) == -1)
-        {
+        if ((data_file = my_open(opt_filter_rows, O_RDONLY, MYF(0))) == -1) {
             fprintf(stderr, "%s: Could not open filter rows file\n", my_progname);
             exit(1);
         }
-        tmp_csvbuff = (char *)my_malloc(PSI_NOT_INSTRUMENTED,
-            (size_t)sbuf.st_size + 1,
-            MYF(MY_ZEROFILL | MY_FAE | MY_WME));
-        my_read(data_file, (uchar*)tmp_csvbuff, (size_t)sbuf.st_size, MYF(0));
+        tmp_csvbuff =
+            (char *)my_malloc(PSI_NOT_INSTRUMENTED, (size_t)sbuf.st_size + 1,
+                MYF(MY_ZEROFILL | MY_FAE | MY_WME));
+        my_read(data_file, (uchar *)tmp_csvbuff, (size_t)sbuf.st_size, MYF(0));
         tmp_csvbuff[sbuf.st_size] = '\0';
         my_close(data_file, MYF(0));
-        if (opt_filter_rows)
-        {
+        if (opt_filter_rows) {
             parse_filter_input(tmp_csvbuff, &rows_filter, field_term, line_term);
         }
         my_free(tmp_csvbuff);
     }
-    else if (opt_filter_rows)
-    {
+    else if (opt_filter_rows) {
         if (!lines_terminated) {
-            line_term = " ";
+            line_term = const_cast<char *>(" ");
         }
-        parse_filter_input(opt_filter_rows, &rows_filter, field_term, line_term); // no space allow in col_string
+        parse_filter_input(opt_filter_rows, &rows_filter, field_term,
+            line_term);  // no space allow in col_string
     }
 }
 
@@ -2858,9 +2850,8 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
           "--flashback-tables-ignore/--flashback-databases-ignore.");
       exit(1);
   }
-  if (opt_filter_rows && (filter_tables.size()>1 || flashback_filter_tables.size()>1 || flashback_filter_databases.size()>1 || filter_databases.size()>1)) {
-      warning("/* options --filter-rows is applied to multi databases/tables, table shall have the same schema. */");
-  }
+  // options --filter-rows is applied to multi databases/tables, table shall have the same schema
+
   if (tty_password)
     pass= get_tty_password(NullS);
 
