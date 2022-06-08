@@ -126,7 +126,7 @@ select * from t4;
 # alter table t4 add column c6 datetime not null default current_timestamp();
 # select * from t4;
 
-# add bolb column 
+# add blob column 
 eval create table bug53592(a int) engine=innodb ROW_FORMAT=$row_format;
 insert into bug53592 values(1);
 alter table bug53592 add column b text charset utf8;
