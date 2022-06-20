@@ -22520,8 +22520,10 @@ innobase_get_computed_value(
                                templ->mysql_col_len);
                 } else {
 
-			/* check if data needs uncompression */
-			if (templ->type == DATA_BLOB && dict_col_is_compressed(&prebuilt->table->cols[col_no]))
+			/* check if data needs uncompression
+         Use index->table here, for purge thread, prebuilt->table maybe null
+       */
+			if (templ->type == DATA_BLOB && dict_col_is_compressed(&index->table->cols[col_no]))
 			{
 				if (prebuilt->blob_heap == NULL) {
 					prebuilt->blob_heap = mem_heap_create(

@@ -1,3 +1,4 @@
+--source include/have_debug.inc
 #### suite/json_compressed/t/json_compressed_vcol_index.test         #
 # Tests indexs on blob/json compressed virtual column                #
 #                                                                    #
@@ -26,6 +27,9 @@
 --echo 1st, test on BLOB Columns:
 --echo Test Situtation a(BLOB)
 --echo VIRTUAL GENERATED
+--echo PURGE THREAD->row_vers_build_clust_v_col 
+SET GLOBAL DEBUG='+d,ib_purge_virtual_index_callback';
+SHOW VARIABLES LIKE 'DEBUG';
 CREATE TABLE t1(
     bcol BLOB COMPRESSED, 
     vcol VARCHAR(20) GENERATED ALWAYS AS (left(bcol, 10)), 
@@ -48,6 +52,7 @@ SELECT * FROM t1 WHERE scol = "abcdeabcde";
 SELECT * FROM t1 WHERE scol = "xzyaaabbbc";
 SELECT * FROM t1 WHERE scol not in ("abcabcabca");
 SELECT * FROM t1 WHERE scol LIKE "a%";
+UPDATE t1 set bcol=repeat("abcd", 200) where bcol=repeat("abc", 200);
 DROP TABLE t1;
 --echo Test Situation b(BLOB)
 --echo VIRTUAL GENERATED
@@ -66,6 +71,7 @@ SELECT * FROM t1 WHERE vcol LIKE "%m%";
 SELECT * FROM t1 WHERE vcol = "mmmmmmmmmm";
 SELECT * FROM t1 WHERE vcol in (repeat('m', 10), 'abcdeabcde');
 SELECT * FROM t1;
+UPDATE t1 set bcol=repeat("abcd", 200) where bcol=repeat("abc", 200);
 DROP TABLE t1;
 --echo STORED GENERATED 
 CREATE TABLE t1(
@@ -83,6 +89,7 @@ SELECT * FROM t1 WHERE scol LIKE "%m%";
 SELECT * FROM t1 WHERE scol = "mmmmmmmmmm";
 SELECT * FROM t1 WHERE scol in (repeat('m', 10), 'abcdeabcde');
 SELECT * FROM t1;
+UPDATE t1 set bcol=repeat("abcd", 200) where bcol=repeat("abc", 200);
 DROP TABLE t1;
 --echo 2nd, test on JSON Columns:
 --echo Test Situtation a(JSON)
@@ -148,6 +155,20 @@ SELECT * FROM t1 WHERE scol = "\"barry\"";
 INSERT INTO t1(jcol) VALUES('{"id":10, "name":"mike", "info":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "info2":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "info3":"abcdefghijklmnopqrstuvwxyz"}');
 SELECT * FROM t1 WHERE scol = "\"mike\"";
 SELECT * FROM t1 WHERE scol NOT IN ("\"allen\"","\"clair\"");
+DROP TABLE t1;
+
+--echo TEST PURGE THREAD->row_vers_build_clust_v_col 
+CREATE TABLE t1 (
+    jcol JSON compressed,
+    scol VARCHAR(255) GENERATED ALWAYS AS (jcol->"$.info"),
+    index idx(scol)
+);
+INSERT INTO t1(jcol) VALUES
+('{"id":3, "name":"allen", "info":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}'),
+('{"id":4, "name":"barry", "info":"cccccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddddddddddddddddddddddddddddddddddddddddd"}'),
+('{"id":5, "name":"clair", "info":"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}');
+SELECT * FROM t1 WHERE scol LIKE '%cccccccc%';
+UPDATE t1 SET jcol = '{"id":3, "name":"allen", "info":"bbbbbbbbbbbbbbbbbbcccccccccccccccccccccccccccaaaaaaaaaaaaaaa"}' WHERE jcol->"$.name"='allen';
 DROP TABLE t1;
 --echo Basical Tests Ends Here
 
@@ -463,5 +484,6 @@ INSERT INTO t1(jcol) VALUES
 ('{"md5":"a87ff679a2f3e71d9181a67b7542122c", "id":"7d09898e18511cf7c0c1815d07728d23", "name":"david", "detail":{"md5":"172522ec1028ab781d9dfd17eaca4427", "age":"41", "hobby":"painting", "birthday":"Feb, 27th", "telephone":"1234567890", "message1":"9nFsmf8mgt2i9lZLAmQt1rxzHKffmUuujnpAgzuKcb857n93GdqJGzxyQfp532a4GmskMiNBvzSbEH4uYKGrSSgVTF8qhcI0P0K", "message2":"7Dm8rJ4wpnekCeM02yhH1opqkqahvhoUAx39mM9He9mQBNdFKVU0VEAfm82ELJTxW46QRwkM2fi3pQ6ESizKZX27Wk1GKygWA7x"}}');
 SELECT * FROM t1 WHERE vcol2 = "\"172522ec1028ab781d9dfd17eaca4427\"";
 DROP TABLE t1;
+SET GLOBAL DEBUG='-d,ib_purge_virtual_index_callback';
 --echo Advanced Tests Ends Here
 --echo Finished

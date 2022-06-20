@@ -32,7 +32,7 @@ bld_dir="bld"
 static_flag=" -DCMAKE_CXX_FLAGS=-static-libstdc++ -DCMAKE_C_FLAGS=-static-libgcc " 
 boost_dir=/home/mysql/boost/
 install_dir=/usr/local/mysql
-gccdir=/usr/local/gcc-4.7.3
+gccdir=/usr/local/gcc-4.7.4
 export LD_LIBRARY_PATH=$gccdir/lib64/:$LD_LIBRARY_PATH
 
 TEMP=`getopt -o b:d:hitv: --long debug,test,help,install,tar,version:,directory:,boost-dir:,verion: \
