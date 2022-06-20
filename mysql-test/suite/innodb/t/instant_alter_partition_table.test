@@ -1,0 +1,7 @@
+--source include/innodb_page_size.inc
+--let $row_format=redundant
+--source ../include/instant_alter_partition_table.inc
+--let $row_format=compact
+--source ../include/instant_alter_partition_table.inc
+--let $row_format=dynamic
+--source ../include/instant_alter_partition_table.inc
