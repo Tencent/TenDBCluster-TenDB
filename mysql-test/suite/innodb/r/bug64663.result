@@ -34,4 +34,5 @@ mysql/time_zone_leap_second	33
 mysql/time_zone_name	33
 mysql/time_zone_transition	33
 mysql/time_zone_transition_type	33
+mysql/xa_commit_log	33
 sys/sys_config	33

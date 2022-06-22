@@ -3282,8 +3282,7 @@ Rows_log_event::filter_binlog_one_row(table_def *td,
           is_null ? NULL : value, td->type(i), td->field_metadata(i),
           typestr, rows_filter->map_field_attr[i + 1]);
       size = col_val.first;
-
-      cur_row_field_value.insert({i + 1, col_val.second});
+      cur_row_field_value.insert(std::make_pair(i + 1, col_val.second));
 
       if (!size)
         return std::make_pair(0, false);

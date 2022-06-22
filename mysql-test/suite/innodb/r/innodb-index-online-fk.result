@@ -145,6 +145,7 @@ mysql/time_zone_leap_second
 mysql/time_zone_name
 mysql/time_zone_transition
 mysql/time_zone_transition_type
+mysql/xa_commit_log
 test/child
 test/parent
 INSERT INTO child VALUES(5,4);
@@ -356,6 +357,7 @@ mysql/time_zone_leap_second
 mysql/time_zone_name
 mysql/time_zone_transition
 mysql/time_zone_transition_type
+mysql/xa_commit_log
 test/child
 test/parent
 ALTER TABLE child ADD PRIMARY KEY idx (a3), CHANGE a1 a3 INT,
@@ -401,6 +403,7 @@ mysql/time_zone_leap_second
 mysql/time_zone_name
 mysql/time_zone_transition
 mysql/time_zone_transition_type
+mysql/xa_commit_log
 test/child
 test/parent
 SHOW CREATE TABLE child;
@@ -457,6 +460,7 @@ mysql/time_zone_leap_second
 mysql/time_zone_name
 mysql/time_zone_transition
 mysql/time_zone_transition_type
+mysql/xa_commit_log
 test/child
 test/parent
 SHOW CREATE TABLE child;
@@ -513,6 +517,7 @@ mysql/time_zone_leap_second
 mysql/time_zone_name
 mysql/time_zone_transition
 mysql/time_zone_transition_type
+mysql/xa_commit_log
 test/child
 test/parent
 SHOW CREATE TABLE child;
