@@ -361,7 +361,7 @@ static char *opt_query_event_handler = NULL;
 static char *opt_filter_statement_match_error = NULL;
 static char *opt_filter_statement_match_ignore = NULL;
 static char *opt_filter_statement_match_ignore_force = NULL;
-static char *fields_enclosed = 0, *fields_terminated = 0, *lines_terminated = 0;
+static const char *fields_enclosed = 0, *fields_terminated = 0, *lines_terminated = 0;
 
 st_rows_filter rows_filter;
 st_event_filter *event_filter = (st_event_filter*)my_malloc(PSI_NOT_INSTRUMENTED, sizeof(st_event_filter), MYF(MY_ZEROFILL | MY_FAE | MY_WME));
@@ -2556,8 +2556,8 @@ void parse_filter_input(const char *ptr, st_rows_filter *rows_filter,
 // parse opt_filter_rows to st_rows_filter
 void parse_filter_rows() {
     char *tmp_csvbuff;
-    char *field_term = fields_terminated;
-    char *line_term = lines_terminated;  //\r\n
+    const char *field_term = fields_terminated;
+    const char *line_term = lines_terminated;  //\r\n
     if (!lines_terminated) {
         line_term = const_cast<char *>("\n");
     }
