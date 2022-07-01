@@ -27,7 +27,7 @@ c13 decimal(10,3),
 c14 TEXT,
 c15 BLOB,
 c16 JSON
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
