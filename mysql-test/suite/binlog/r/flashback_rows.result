@@ -1380,7 +1380,7 @@ DELIMITER ;
 #
 [Cannot handler this query event]
 #
-# Test t2 has DDL(add index) and Test --flashback-tables-ignore
+# Test t2 has DDL(add index) and Test --tables-ignore
 #
 #
 # < CASE 4 >
