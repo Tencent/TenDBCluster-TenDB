@@ -3854,16 +3854,22 @@ static int args_post_process(void)
           event_filter->query_event_handler = QUERY_EVENT_KEEP;
       }
   }
-  else if (event_filter->query_event_handler == QUERY_EVENT_SAFE &&
-      opt_filter_statement_match_error == NULL && tables) {
-      // default opt_filter_statement_match_error is tables
-      if (!opt_flashback && tables) {
+  if (event_filter->query_event_handler == QUERY_EVENT_SAFE 
+      && (tables || databases)) {
+      // default opt_filter_statement_match_error is tables/databases
+      if (tables) {
           opt_filter_statement_match_error = tables;
+      }
+      else if (databases) {
+          opt_filter_statement_match_error = databases;
       }
       std::vector<std::string> filter_statement_errors;
       boost::split(filter_statement_errors, opt_filter_statement_match_error,
           boost::is_any_of(","), boost::token_compress_on);
-      event_filter->statement_match_errors = filter_statement_errors;
+      // concat the user-given matches and db-tb matches
+      event_filter->statement_match_errors.insert(
+          event_filter->statement_match_errors.end(), 
+          filter_statement_errors.begin(), filter_statement_errors.end());
   }
 
   global_sid_lock->rdlock();

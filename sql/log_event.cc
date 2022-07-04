@@ -5794,8 +5794,7 @@ void Query_log_event::print_query_header(IO_CACHE* file,
                 print_event_info->delimiter);
 }
 
-my_bool
-event_filter_func(std::string q, std::vector<std::string> match_str) {
+my_bool event_filter_func(std::string q, std::vector<std::string> match_str) {
     /*
     if len(match_str) == 0 {
         return false;
@@ -5811,86 +5810,73 @@ event_filter_func(std::string q, std::vector<std::string> match_str) {
     }
     return false;
 }
+my_bool
+event_filter_func_force(
+    IO_CACHE* file, PRINT_EVENT_INFO* print_event_info, std::string tmp_str) {
+    my_bool handled = false;
+    if (event_filter_func(
+        tmp_str,
+        print_event_info->event_filter->statement_match_ignores_force)) {
+        boost::replace_all(tmp_str, "\n", "# ");
+        my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
+        handled = true;
+    }
+    else if (event_filter_func(
+        tmp_str,
+        print_event_info->event_filter->statement_match_errors)) {
+        fprintf(stderr, "Exit when query event occurs: %s\n", tmp_str.c_str());
+        handled = true;
+        exit(1);
+    }
+    
+    return handled;
+}
 
 void Query_log_event::print_handler_query(
     IO_CACHE *file, PRINT_EVENT_INFO *print_event_info) {
     std::string tmp_str;
     tmp_str.assign(query, q_len);
 
+    if (event_filter_func_force(file, print_event_info, tmp_str)) {
+        return;
+    }
     switch (print_event_info->event_filter->query_event_handler) {
     case QUERY_EVENT_ERROR:
         if (event_filter_func(
             tmp_str,
-            print_event_info->event_filter->statement_match_ignores) ||
-            event_filter_func(
-                tmp_str,
-                print_event_info->event_filter->statement_match_ignores_force)) {
+            print_event_info->event_filter->statement_match_ignores)) {
             boost::replace_all(tmp_str, "\n", "# ");
             my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
             break;
         }
-        else {  // ignore or print this event. we ignore it currently
+        else {
             fprintf(stderr, "Exit when query event occurs: %s\n", tmp_str.c_str());
             exit(1);
         }
-        break;
     case QUERY_EVENT_IGNORE:
-        // ignore and print it to comment
-        if (event_filter_func(
-            tmp_str,
-            print_event_info->event_filter->statement_match_ignores_force)) {
-            boost::replace_all(tmp_str, "\n", "# ");
-            my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
-            break;
-        }
-        else if (event_filter_func(
-            tmp_str,
-            print_event_info->event_filter->statement_match_errors)) {
-            fprintf(stderr, "Exit when query event occurs: %s\n", tmp_str.c_str());
-            exit(1);
-        }
-        else {  // default ignore
-            boost::replace_all(tmp_str, "\n", "# ");
-            my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
-        }
+        boost::replace_all(tmp_str, "\n", "# ");
+        my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
         break;
     case QUERY_EVENT_KEEP:
         if (event_filter_func(
             tmp_str,
-            print_event_info->event_filter->statement_match_ignores_force)) {
+            print_event_info->event_filter->statement_match_ignores)) {
             boost::replace_all(tmp_str, "\n", "# ");
             my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
             break;
-        }
-        else if (event_filter_func(
-            tmp_str,
-            print_event_info->event_filter->statement_match_errors)) {
-            fprintf(stderr, "Exit when query event occurs: %s\n", tmp_str.c_str());
-            exit(1);
         }
         else {
             my_b_printf(file, "%s", tmp_str.c_str());
         }
         break;
     case QUERY_EVENT_SAFE:
-        if (event_filter_func(
-            tmp_str,
-            print_event_info->event_filter->statement_match_ignores_force)) {
-            boost::replace_all(tmp_str, "\n", "# ");
-            my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
-            break;
-        }
-        else if (event_filter_func(
-            tmp_str,
-            print_event_info->event_filter->statement_match_errors)) {
-            fprintf(stderr, "Exit when query event occurs: %s\n", tmp_str.c_str());
-            exit(1);
-        }
+        // QUERY_EVENT_SAFE has different statement_match_error value
         if (event_filter_func(
             tmp_str,
             print_event_info->event_filter->statement_match_ignores)) {
             boost::replace_all(tmp_str, "\n", "# ");
             my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
+            break;
         }
         else {  // default error
             fprintf(stderr,
