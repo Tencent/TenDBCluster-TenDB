@@ -318,11 +318,10 @@ static const char* default_dbug_option = "d:t:o,/tmp/mysqlbinlog.trace";
 #endif
 static const char *load_default_groups[]= { "mysqlbinlog","client",0 };
 
-static my_bool one_database=0, multi_databases=0, disable_log_bin= 0;
-static my_bool multi_tables = 0;
+static my_bool one_database=0, disable_log_bin= 0;
 /* Indicates whether the --flashback-databases --flashback-tables options used  */
-static my_bool flashback_multi_databases=0,flashback_multi_tables=0;
-static my_bool flashback_multi_databases_ignore = 0, flashback_multi_tables_ignore = 0;
+static my_bool multi_databases=0,multi_tables=0;
+static my_bool multi_databases_ignore = 0, multi_tables_ignore = 0;
 static my_bool opt_hexdump= 0;
 const char *base64_output_mode_names[]=
 {"NEVER", "AUTO", "UNSPEC", "DECODE-ROWS", NullS};
@@ -345,15 +344,13 @@ static enum enum_remote_proto {
 static char *opt_remote_proto_str= 0;
 static char *database= 0;
 static char *databases= 0;
-static std::set<std::string> filter_databases;
 static char *tables = 0;
+static std::set<std::string> filter_databases;
 static std::set<std::string> filter_tables;
 
 /* Store --flashback-databases --flashback-tables value */
-static char *flashback_databases= 0, *flashback_tables=0;
-static std::set<std::string> flashback_filter_databases,flashback_filter_tables;
-static char *flashback_databases_ignore = 0, *flashback_tables_ignore = 0;
-static std::set<std::string> flashback_filter_databases_ignore, flashback_filter_tables_ignore;
+static char *databases_ignore = 0, *tables_ignore = 0;
+static std::set<std::string> filter_databases_ignore, filter_tables_ignore;
 static my_bool conv_event_update2write;
 
 static char *opt_filter_rows = NULL;
@@ -948,7 +945,12 @@ static bool shall_skip_database(const char *log_dbname)
   if (one_database)
     return strcmp(log_dbname, database);
   else if (multi_databases){
+      // return false if skip
     return filter_databases.count(log_dbname) == 0;
+  }
+  else if (multi_databases_ignore) {
+    // return true if skip
+    return filter_databases_ignore.count(log_dbname) > 0;
   }
   else
     return false;
@@ -971,54 +973,8 @@ static bool shall_skip_table(const char *log_tblname)
     if (multi_tables) {
         return filter_tables.count(log_tblname) == 0;
     }
-    else
-        return false;
-}
-/**
-  Indicates whether the given database should be filtered out,
-  according to the --flashback-databases=X,X,X option.
-
-  @param log_dbname Name of database.
-
-  @return nonzero if the database with the given name should be
-  filtered out, 0 otherwise.
-*/
-static bool flashback_shall_skip_database(const char *log_dbname)
-{
-    if (log_dbname == NULL){
-        return false;
-    }
-    if (flashback_multi_databases_ignore) {
-        // return true if skip
-        return flashback_filter_databases_ignore.count(log_dbname) > 0;
-    }
-    if (flashback_multi_databases){
-        // return false if skip
-        return flashback_filter_databases.count(log_dbname) == 0;
-    }
-    else
-        return false;
-}
-
-/**
-  Indicates whether the given table should be filtered out,
-  according to the --flashback-tables=X,X,X option.
-
-  @param log_tblname Name of table.
-
-  @return nonzero if the table with the given name should be
-  filtered out, 0 otherwise.
-*/
-static bool flashback_shall_skip_table(const char *log_tblname)
-{
-    if (log_tblname == NULL){
-        return false;
-    }
-    if (flashback_multi_tables_ignore) {
-        return flashback_filter_tables_ignore.count(log_tblname) > 0;
-    }
-    if (flashback_multi_tables){
-        return flashback_filter_tables.count(log_tblname) == 0;
+    else if (multi_tables_ignore) {
+        return filter_tables_ignore.count(log_tblname) > 0;
     }
     else
         return false;
@@ -1375,13 +1331,8 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
     {
       Query_log_event *qle= (Query_log_event*) ev;
       bool parent_query_skips=false;
-      //bool parent_query_skips=
-      //    !qle->is_trans_keyword() && shall_skip_database(qle->db);
-      if(opt_flashback){
-          parent_query_skips=!qle->is_trans_keyword() && flashback_shall_skip_database(qle->db);
-      }else{
-          parent_query_skips=!qle->is_trans_keyword() && shall_skip_database(qle->db);
-      }
+      parent_query_skips = !qle->is_trans_keyword() && shall_skip_database(qle->db);
+
       bool ends_group= ((Query_log_event*) ev)->ends_group();
       bool starts_group= ((Query_log_event*) ev)->starts_group();
       affected_by_flashback=true;
@@ -1655,24 +1606,13 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
     case binary_log::TABLE_MAP_EVENT:
     {
       Table_map_log_event *map= ((Table_map_log_event *)ev);
-      if(!opt_flashback){
-          if (shall_skip_database(map->get_db_name()) ||
-              shall_skip_table(map->get_table_name()))
-          {
-              print_event_info->skipped_event_in_transaction= true;
-              print_event_info->m_table_map_ignored.set_table(map->get_table_id(), map);
-              destroy_evt= FALSE;
-              goto end;
-          }
-      }else{
-          if(flashback_shall_skip_database(map->get_db_name()) ||
-              flashback_shall_skip_table(map->get_table_name()))
-          {
-              print_event_info->skipped_event_in_transaction= true;
-              print_event_info->m_table_map_ignored.set_table(map->get_table_id(), map);
-              destroy_evt= FALSE;
-              goto end;
-          }
+      if (shall_skip_database(map->get_db_name()) ||
+          shall_skip_table(map->get_table_name()))
+      {
+          print_event_info->skipped_event_in_transaction = true;
+          print_event_info->m_table_map_ignored.set_table(map->get_table_id(), map);
+          destroy_evt = FALSE;
+          goto end;
       }
       /* Table_map_log_event output not be affected by --flashback option.
        * Table_map_log_event print result to body_cache, and next Rows_log_event do it too (WRITE_ROWS_EVENT UPDATE_ROWS_EVENT...).
@@ -1990,13 +1930,21 @@ static struct my_option my_long_options[] =
   {"database", 'd', "List entries for just this database (local log only).",
    &database, &database, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
-  {"databases", 'L', "List entries for these databases (local log only)."
+  {"databases", OPT_FILTER_DATABASES, "List entries for these databases (local log only)."
    "Give the database names in a comma separated list.",
    &databases, &databases, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
   {"tables", OPT_FILTER_TABLES, "List entries for these tables (local log only)."
    "Give the tables names in a comma separated list.",
    &tables, &tables, 0, GET_STR_ALLOC, REQUIRED_ARG,
+   0, 0, 0, 0, 0, 0},
+  {"databases-ignore", OPT_DATABASES_IGNORE, "List entries for ignoring these databases (local log only)."
+   "Give the database names in a comma separated list.",
+   &databases_ignore, &databases_ignore, 0, GET_STR_ALLOC, REQUIRED_ARG,
+   0, 0, 0, 0, 0, 0},
+  {"tables-ignore", OPT_TABLES_IGNORE, "List entries for ignoring these tables. not work with --filter-rows (local log only)."
+   "Give the tables names in a comma separated list.",
+   &tables_ignore, &tables_ignore, 0, GET_STR_ALLOC, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
   {"rewrite-db", OPT_REWRITE_DB, "Rewrite the row event to point so that "
    "it can be applied to a new database", &rewrite, &rewrite, 0,
@@ -2033,22 +1981,6 @@ static struct my_option my_long_options[] =
   {"flashback", 'B', "Flashback feature can rollback you committed data to a special time point.",
    &opt_flashback, &opt_flashback, 0, GET_BOOL, NO_ARG, 0, 0, 0, 0,
    0, 0},
-  {"flashback-databases", OPT_FLASHBACK_DATABASES, "List entries for these flashback databases (local log only)."
-   "Give the database names in a comma separated list.",
-   &flashback_databases, &flashback_databases, 0, GET_STR_ALLOC, REQUIRED_ARG,
-   0, 0, 0, 0, 0, 0},
-  {"flashback-tables", OPT_FLASHBACK_TABLES, "List entries for these flashback tables (local log only)."
-   "Give the tables names in a comma separated list.",
-   &flashback_tables, &flashback_tables, 0, GET_STR_ALLOC, REQUIRED_ARG,
-   0, 0, 0, 0, 0, 0},
-  {"flashback-databases-ignore", OPT_FLASHBACK_DATABASES_IGNORE, "List entries for ignoring these databases to flashback whole tables (local log only)."
-   "Give the database names in a comma separated list.",
-   &flashback_databases_ignore, &flashback_databases_ignore, 0, GET_STR_ALLOC, REQUIRED_ARG,
-   0, 0, 0, 0, 0, 0},
-  {"flashback-tables-ignore", OPT_FLASHBACK_TABLES_IGNORE, "List entries for ignoring these tables to flashback. not work with --filter-rows (local log only)."
-   "Give the tables names in a comma separated list.",
-   &flashback_tables_ignore, &flashback_tables_ignore, 0, GET_STR_ALLOC, REQUIRED_ARG,
-   0, 0, 0, 0, 0, 0},
   {"conv-event-update-to-write", OPT_CONV_EVENT_UPDATE, "Whether convert the update_event's after image to write_event."
    "It's useful to work with imdepotent mode",
    &conv_event_update2write, &conv_event_update2write, 0, GET_BOOL, NO_ARG, 0, 0, 0, 0,
@@ -2106,7 +2038,7 @@ static struct my_option my_long_options[] =
    &raw_mode, &raw_mode, 0, GET_BOOL, NO_ARG, 0, 0, 0, 0,
    0, 0},
   {"filter-rows", OPT_FILTER_ROWS, "Filter string or file to filter rows from event. (local log only)."
-   "Format: '@1,@2 100,aaa'. Must work with --tables or --flashback-tables. "
+   "Format: '@1,@2 100,aaa'. Must work with --tables. "
    "You can use @2:hex format to tell mysqlbinlog its' varchar/varbinary/blob value is a hex. "
    "Also you can use @1:signed to mark it as a signed int/tinyint/smallint/mediumint/bigint",
    &opt_filter_rows, &opt_filter_rows, 0, GET_STR, REQUIRED_ARG,
@@ -2612,41 +2544,14 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
   case 'B':
     opt_flashback= 1;
     break;
-  case OPT_FLASHBACK_DATABASES:
-      for(char *p=flashback_databases;;p=NULL){
+  case OPT_FILTER_DATABASES:
+      for(char *p=databases;;p=NULL){
           char *q=strtok(p,",");
           if(q==NULL)
               break;
-          flashback_filter_databases.insert(q);
+          filter_databases.insert(q);
       }
-      flashback_multi_databases=1;
-      break;
-  case OPT_FLASHBACK_TABLES:
-      for(char *p=flashback_tables;;p=NULL){
-          char *q=strtok(p,",");
-          if(q==NULL)
-              break;
-          flashback_filter_tables.insert(q);
-      }
-      flashback_multi_tables=1;
-      break;
-  case OPT_FLASHBACK_DATABASES_IGNORE:
-      for (char *p = flashback_databases_ignore;; p = NULL) {
-          char *q = strtok(p, ",");
-          if (q == NULL)
-              break;
-          flashback_filter_databases_ignore.insert(q);
-      }
-      flashback_multi_databases_ignore = 1;
-      break;
-  case OPT_FLASHBACK_TABLES_IGNORE:
-      for (char *p = flashback_tables_ignore;; p = NULL) {
-          char *q = strtok(p, ",");
-          if (q == NULL)
-              break;
-          flashback_filter_tables_ignore.insert(q);
-      }
-      flashback_multi_tables_ignore = 1;
+      multi_databases=1;
       break;
   case OPT_FILTER_TABLES:
       for (char *p = tables;; p = NULL) {
@@ -2656,6 +2561,24 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
           filter_tables.insert(q);
       }
       multi_tables = 1;
+      break;
+  case OPT_DATABASES_IGNORE:
+      for (char *p = databases_ignore;; p = NULL) {
+          char *q = strtok(p, ",");
+          if (q == NULL)
+              break;
+          filter_databases_ignore.insert(q);
+      }
+      multi_databases_ignore = 1;
+      break;
+  case OPT_TABLES_IGNORE:
+      for (char *p = tables_ignore;; p = NULL) {
+          char *q = strtok(p, ",");
+          if (q == NULL)
+              break;
+          filter_tables_ignore.insert(q);
+      }
+      multi_tables_ignore = 1;
       break;
   case OPT_FILTER_ROWS:
   {
@@ -2710,15 +2633,6 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
   break;
   case 'd':
     one_database = 1;
-    break;
-  case 'L':
-    for (char *p=databases;; p = NULL) {
-      char *q = strtok(p, ",");
-      if (q == NULL)
-        break;
-      filter_databases.insert(q);
-    }
-    multi_databases = 1;
     break;
   case OPT_REWRITE_DB:
   {
@@ -2820,34 +2734,18 @@ get_one_option(int optid, const struct my_option *opt MY_ATTRIBUTE((unused)),
     error("options -d/--database and -L/--databases cannot be used together");
     exit(1);
   }
-  if((one_database || multi_databases) && opt_flashback){
-      error("options -d/--database/-L/-databases and -B/--flashback cannot be used together. "
-          "Maybe --flashback and --flashback-databases be better choice.");
+  if(one_database && opt_flashback){
+      error("options -d/--database and -B/--flashback cannot be used together. "
+          "Maybe --databases and --flashback be better choice.");
       exit(1);
   }
-  if (multi_tables && opt_flashback) {
-      // we allow --tables without --databases/--database(-L/-d)
-      error("options --tables cannot be used together with -B/--flashback. "
-          "Maybe --flashback and --flashback-tables be better choice");
+  if (opt_filter_rows && !multi_tables) {
+      error("options --filter-rows must be used together with --tables.");
       exit(1);
   }
-  if((flashback_multi_databases || flashback_multi_databases_ignore) && !opt_flashback){
-      error("options --flashback-databases/--flashback-databases-ignore "
-          "must be used together with -B/--flashback.");
-      exit(1);
-  }
-  if((flashback_multi_tables || flashback_multi_tables_ignore) && !opt_flashback){
-      error("options --flashback-tables/--flashback-tables-ignore "
-          "must be used together with -B/--flashback.");
-      exit(1);
-  }
-  if (opt_filter_rows && !(flashback_multi_tables || multi_tables)) {
-      error("options --filter-rows must be used together with --tables/--flashback-tables.");
-      exit(1);
-  }
-  if (opt_filter_rows && (flashback_multi_tables_ignore || flashback_multi_databases_ignore)) {
+  if (opt_filter_rows && (multi_tables_ignore || multi_databases_ignore)) {
       error("options --filter-rows can not be used together with "
-          "--flashback-tables-ignore/--flashback-databases-ignore.");
+          "--tables-ignore/--databases-ignore.");
       exit(1);
   }
   // options --filter-rows is applied to multi databases/tables, table shall have the same schema
@@ -3956,20 +3854,22 @@ static int args_post_process(void)
           event_filter->query_event_handler = QUERY_EVENT_KEEP;
       }
   }
-  else if (event_filter->query_event_handler == QUERY_EVENT_SAFE &&
-      opt_filter_statement_match_error == NULL &&
-      (flashback_tables || tables)) {
-      // default opt_filter_statement_match_error is flashback_tables/tables
-      if (opt_flashback && flashback_tables) {
-          opt_filter_statement_match_error = flashback_tables;
-      }
-      else if (!opt_flashback && tables) {
+  if (event_filter->query_event_handler == QUERY_EVENT_SAFE 
+      && (tables || databases)) {
+      // default opt_filter_statement_match_error is tables/databases
+      if (tables) {
           opt_filter_statement_match_error = tables;
+      }
+      else if (databases) {
+          opt_filter_statement_match_error = databases;
       }
       std::vector<std::string> filter_statement_errors;
       boost::split(filter_statement_errors, opt_filter_statement_match_error,
           boost::is_any_of(","), boost::token_compress_on);
-      event_filter->statement_match_errors = filter_statement_errors;
+      // concat the user-given matches and db-tb matches
+      event_filter->statement_match_errors.insert(
+          event_filter->statement_match_errors.end(), 
+          filter_statement_errors.begin(), filter_statement_errors.end());
   }
 
   global_sid_lock->rdlock();
