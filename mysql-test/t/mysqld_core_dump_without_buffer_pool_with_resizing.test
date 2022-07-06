@@ -32,6 +32,11 @@ let $wait_condition =
 set @old_innodb_buffer_pool_size = @@innodb_buffer_pool_size;
 set @old_innodb_file_per_table = @@innodb_file_per_table;
 set @old_innodb_adaptive_hash_index = @@innodb_adaptive_hash_index;
+let $a = `show variables like 'innodb_disable_resize_buffer_pool_debug'`;
+if($a != '')
+{
+  set global innodb_disable_resize_buffer_pool_debug = 0;
+}
 --enable_query_log
 
 set global innodb_file_per_table=ON;
@@ -54,6 +59,11 @@ let $wait_timeout = 120;
 set global innodb_buffer_pool_size = @old_innodb_buffer_pool_size;
 set global innodb_file_per_table = @old_innodb_file_per_table;
 set global innodb_adaptive_hash_index = @old_innodb_adaptive_hash_index;
+let $a = `show variables like 'innodb_disable_resize_buffer_pool_debug'`;
+if($a != '')
+{
+  set global innodb_disable_resize_buffer_pool_debug = 1;
+}
 --enable_query_log
 let $wait_timeout = 120;
 --source include/wait_condition.inc
