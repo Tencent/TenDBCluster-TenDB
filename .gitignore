@@ -104,6 +104,7 @@ CMakeFiles
 CMakeFiles/*
 CTestTestfile.cmake
 COPYING
+!storage/rocksdb/rocksdb/COPYING
 COPYING.LIB
 Docs/#manual.texi#
 Docs/INSTALL-BINARY
@@ -159,6 +160,9 @@ INSTALL-WIN-SOURCE
 Logs/*
 MIRRORS
 Makefile
+!storage/rocksdb/rocksdb/Makefile
+!storage/rocksdb/third_party/zstd/Makefile
+!storage/rocksdb/third_party/lz4/Makefile
 Makefile.in
 Makefile.in'
 PENDING/*

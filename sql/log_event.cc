@@ -5866,7 +5866,8 @@ void Query_log_event::print_handler_query(
             break;
         }
         else {
-            my_b_printf(file, "%s", tmp_str.c_str());
+            //my_b_printf(file, "%s", tmp_str.c_str());
+            my_b_write(file, (uchar*)query, q_len);
         }
         break;
     case QUERY_EVENT_SAFE:
