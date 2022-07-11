@@ -5817,7 +5817,7 @@ event_filter_func_force(
     if (event_filter_func(
         tmp_str,
         print_event_info->event_filter->statement_match_ignores_force)) {
-        boost::replace_all(tmp_str, "\n", "# ");
+        boost::replace_all(tmp_str, "\n", "\n# ");
         my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
         handled = true;
     }
@@ -5836,7 +5836,14 @@ void Query_log_event::print_handler_query(
     IO_CACHE *file, PRINT_EVENT_INFO *print_event_info) {
     std::string tmp_str;
     tmp_str.assign(query, q_len);
-
+    // see mysql_binary_mode.test, when using statement substring match
+    // we donot support binary_mode that may contain 0x00 
+    if (print_event_info->event_filter->statement_match_enabled 
+        && std::strlen(tmp_str.c_str()) != q_len) {
+        fprintf(stderr, "Fail to determine this query_event length: %d != %d, body: %s\n",
+            std::strlen(tmp_str.c_str()), q_len, tmp_str.c_str());
+        exit(1);
+    }
     if (event_filter_func_force(file, print_event_info, tmp_str)) {
         return;
     }
@@ -5845,7 +5852,7 @@ void Query_log_event::print_handler_query(
         if (event_filter_func(
             tmp_str,
             print_event_info->event_filter->statement_match_ignores)) {
-            boost::replace_all(tmp_str, "\n", "# ");
+            boost::replace_all(tmp_str, "\n", "\n# ");
             my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
             break;
         }
@@ -5854,19 +5861,18 @@ void Query_log_event::print_handler_query(
             exit(1);
         }
     case QUERY_EVENT_IGNORE:
-        boost::replace_all(tmp_str, "\n", "# ");
+        boost::replace_all(tmp_str, "\n", "\n# ");
         my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
         break;
     case QUERY_EVENT_KEEP:
         if (event_filter_func(
             tmp_str,
             print_event_info->event_filter->statement_match_ignores)) {
-            boost::replace_all(tmp_str, "\n", "# ");
+            boost::replace_all(tmp_str, "\n", "\n# ");
             my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
             break;
         }
         else {
-            //my_b_printf(file, "%s", tmp_str.c_str());
             my_b_write(file, (uchar*)query, q_len);
         }
         break;
@@ -5875,7 +5881,7 @@ void Query_log_event::print_handler_query(
         if (event_filter_func(
             tmp_str,
             print_event_info->event_filter->statement_match_ignores)) {
-            boost::replace_all(tmp_str, "\n", "# ");
+            boost::replace_all(tmp_str, "\n", "\n# ");
             my_b_printf(file, "# ignore query_log_event\n# %s \n", tmp_str.c_str());
             break;
         }

@@ -3871,6 +3871,11 @@ static int args_post_process(void)
           event_filter->statement_match_errors.end(), 
           filter_statement_errors.begin(), filter_statement_errors.end());
   }
+  if (event_filter->statement_match_errors.size() > 0 ||
+      event_filter->statement_match_ignores.size() > 0 ||
+      event_filter->statement_match_ignores_force.size() > 0) {
+      event_filter->statement_match_enabled = true;
+  }
 
   global_sid_lock->rdlock();
 

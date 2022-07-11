@@ -365,6 +365,7 @@ struct st_event_filter {
     std::vector<std::string> statement_match_errors;
     std::vector<std::string> statement_match_ignores;
     std::vector<std::string> statement_match_ignores_force;
+    bool statement_match_enabled;
 };
 
 enum Binlog_row_field_attr {

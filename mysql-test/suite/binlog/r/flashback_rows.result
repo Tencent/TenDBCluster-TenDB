@@ -1369,7 +1369,10 @@ use `test`/*!*/;
 SET TIMESTAMP=1000000000/*!*/;
 /*!\C latin1 *//*!*/;
 # ignore query_log_event
-# CREATE TABLE t2 (# c01 bigint unsigned primary key,# c02 varchar(20)# ) ENGINE=InnoDB charset=utf8mb4 
+# CREATE TABLE t2 (
+# c01 bigint unsigned primary key,
+# c02 varchar(20)
+# ) ENGINE=InnoDB charset=utf8mb4 
 COMMIT /* added by mysqlbinlog *//*!*/;
 DELIMITER ;
 # End of log file
