@@ -22,7 +22,6 @@ SET timestamp=1000000000;
 --echo # < CASE 1 >
 --echo # Delete all existing binary logs.
 --echo #
-RESET MASTER;
 
 CREATE TABLE t1 (
   c01 tinyint,
@@ -34,6 +33,8 @@ CREATE TABLE t1 (
   c07 varchar(20),
   c08 TEXT
 ) ENGINE=InnoDB;
+
+RESET MASTER;
 
 --echo # < CASE 1 >
 --echo # Insert data to t1
@@ -328,7 +329,7 @@ FLUSH LOGS;
 let $MYSQLD_DATADIR= `select @@datadir`;
 --replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
 --exec $MYSQL_BINLOG  -vv $MYSQLD_DATADIR/master-bin.000001 > $MYSQLTEST_VARDIR/tmp/mysqlbinlog_row_flashback_original_6.sql
---exec $MYSQL_BINLOG --flashback --flashback-databases=world --flashback-tables=city -vv $MYSQLD_DATADIR/master-bin.000001 > $MYSQLTEST_VARDIR/tmp/mysqlbinlog_row_flashback_6.sql
+--exec $MYSQL_BINLOG --flashback --databases=world --tables=city -vv $MYSQLD_DATADIR/master-bin.000001 > $MYSQLTEST_VARDIR/tmp/mysqlbinlog_row_flashback_6.sql
 --exec $MYSQL -e "SET binlog_format= ROW; source $MYSQLTEST_VARDIR/tmp/mysqlbinlog_row_flashback_6.sql;"
 
 SELECT * FROM world.city;
@@ -369,3 +370,43 @@ FLUSH LOGS;
 --source include/assert.inc
 
 DROP TABLE t1;
+
+--echo # < CASE 8 >
+--echo # test mysqlbinlog parse binary_mode query_event data
+--echo #
+
+RESET MASTER;
+
+# zero => 0x00, newline => 0x0D0A, A => 0x41, B => 0x42
+# 0x410D0A42 => 'A\r\nB'
+let $table_name_right= `SELECT 0x410D0A42`;
+# 0x410A42 => 'A\nB'
+let $table_name_wrong= `SELECT 0x410A42`;
+# 0x410042 => 'A\0B'
+let $char= `SELECT 0x410042`;
+
+SET global binlog_format=STATEMENT;
+SET session binlog_format=STATEMENT;
+eval CREATE TABLE `$table_name_right` (c1 CHAR(100));
+eval INSERT INTO `$table_name_right` VALUES("$char"),("$table_name_right");
+eval SELECT HEX(c1) FROM `$table_name_right`;
+
+FLUSH LOGS;
+
+-- echo # expect error: Fail to determine this query_event length
+let $MYSQLD_DATADIR= `select @@datadir`;
+--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+--error 1
+--exec $MYSQL_BINLOG -v $MYSQLD_DATADIR/master-bin.000001 --filter-statement-match-ignore=no_match > $MYSQLTEST_VARDIR/tmp/mysqlbinlog_parse_binary_8.sql 2>&1
+
+-- echo # get binary table_name from sys table
+--let $table_name=`SELECT table_name FROM information_schema.tables WHERE table_schema='test'`
+--let $tbl0= `SELECT HEX(table_name) FROM information_schema.tables WHERE table_schema='test'`
+--let $val0= `SELECT HEX(c1) FROM `$table_name` LIMIT 1`
+
+--eval DROP TABLE `$table_name`;
+
+--echo # replay create and insert binary row data with statement
+--exec $MYSQL_BINLOG $MYSQLD_DATADIR/master-bin.000001 > $MYSQLTEST_VARDIR/tmp/mysqlbinlog_parse_binary_8.sql
+--exec $MYSQL --binary-mode test < $MYSQLTEST_VARDIR/tmp/mysqlbinlog_parse_binary_8.sql
+eval SELECT HEX(c1) FROM `$table_name_right`;
