@@ -102,8 +102,8 @@ fi
 if [ $do_test == 1 ]
 then
     cd mysql-test
-    perl mysql-test-run.pl --timer  --force --parallel=auto --comment=mtr-no-rpl --vardir=var-mtr-no-rpl --ps-protocol --skip-ndb   --skip-rpl --report-unstable-tests --no-warnings --clean-vardir  >&test_no_repl.log &
-    perl mysql-test-run.pl --timer  --force --parallel=auto --comment=rpl --vardir=var-rpl --ps-protocol --skip-ndb   --suite=rpl --clean-vardir --report-unstable-tests --no-warnings  >&test_repl.log &
+    perl mysql-test-run.pl --timer --max-test-fail=1000 --force --parallel=auto --comment=mtr-no-rpl --vardir=var-mtr-no-rpl --skip-ndb --max-connections=2048  --skip-rpl --clean-vardir --report-unstable-tests --no-warnings --retry-failure=4 --retry=5 &>test_no_repl.log &
+    perl mysql-test-run.pl --timer --max-test-fail=1000 --force --parallel=auto --comment=rpl --vardir=var-rpl --skip-ndb --suite=rpl --clean-vardir --report-unstable-tests --no-warnings --retry-failure=4 --retry=5 &>test_repl.log &
     cd ..
 fi
 
