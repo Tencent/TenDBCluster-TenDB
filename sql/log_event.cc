@@ -5837,10 +5837,10 @@ void Query_log_event::print_handler_query(
     std::string tmp_str;
     tmp_str.assign(query, q_len);
     // see mysql_binary_mode.test, when using statement substring match
-    // we donot support binary_mode that may contain 0x00 
-    if (print_event_info->event_filter->statement_match_enabled 
+    // we donot support binary_mode that may contain 0x00
+    if (print_event_info->event_filter->statement_match_enabled
         && std::strlen(tmp_str.c_str()) != q_len) {
-        fprintf(stderr, "Fail to determine this query_event length: %d != %d, body: %s\n",
+        fprintf(stderr, "Fail to determine this query_event length: %lu != %lu, body: %s\n",
             std::strlen(tmp_str.c_str()), q_len, tmp_str.c_str());
         exit(1);
     }
