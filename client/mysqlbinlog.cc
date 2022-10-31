@@ -1733,12 +1733,36 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
             }else if(opt_flashback && events_in_stmt.size()>0){
                 print_event_info->have_unflushed_events= FALSE;
                 Log_event *e=NULL;
+                LEX_STRING tmp_str;
 
                 for(uint i=events_in_stmt.size();i>0;i--){
                     e=events_in_stmt[i-1];
                     e->print(result_file,print_event_info);
                 }
-                ev->output_buf.copy(e->output_buf);
+
+                /* Copy flashbacked result from head_cache/body_cache/footer_cache
+               * and save to ev->output_buf*/
+                if (copy_event_cache_to_string_and_reinit(
+                        &print_event_info->head_cache, &tmp_str))
+                  goto err;
+                ev->output_buf.append((const char *)tmp_str.str,
+                                      tmp_str.length);  // Not \0 terminated);
+                if(tmp_str.str) my_free(tmp_str.str);
+
+                if (copy_event_cache_to_string_and_reinit(
+                        &print_event_info->body_cache, &tmp_str))
+                  goto err;
+                ev->output_buf.append(tmp_str.str, tmp_str.length);
+                if(tmp_str.str) my_free(tmp_str.str);
+
+                if (print_event_info->verbose) {  // --verbose
+                  if (copy_event_cache_to_string_and_reinit(
+                          &print_event_info->footer_cache, &tmp_str))
+                    goto err;
+                  ev->output_buf.append(tmp_str.str, tmp_str.length);
+                  if(tmp_str.str) my_free(tmp_str.str);
+                }
+
                 /* All events in the events_in_stmt should be deleted.ev not be appended to events_in_stmt */
                 for(uint i=0;i<events_in_stmt.size();i++){
                     e=events_in_stmt[i];
@@ -1786,19 +1810,42 @@ Exit_status process_event(PRINT_EVENT_INFO *print_event_info, Log_event *ev,
           if(stmt_end){
               print_event_info->have_unflushed_events= FALSE;
               Log_event *e=NULL;
+              LEX_STRING tmp_str;
 
               for(uint i=events_in_stmt.size();i>0;i--){
                   e=events_in_stmt[i-1];
                   e->print(result_file,print_event_info);
               }
-              ev->output_buf.copy(e->output_buf);
+
+               /* Copy flashbacked result from head_cache/body_cache/footer_cache and save to ev->output_buf*/
+              if (copy_event_cache_to_string_and_reinit(
+                    &print_event_info->head_cache, &tmp_str))
+              goto err;
+              ev->output_buf.append((const char *)tmp_str.str,
+                                  tmp_str.length);
+              if (tmp_str.str) my_free(tmp_str.str);
+
+              if (copy_event_cache_to_string_and_reinit(
+                    &print_event_info->body_cache, &tmp_str))
+                goto err;
+              ev->output_buf.append(tmp_str.str, tmp_str.length);
+              if (tmp_str.str) my_free(tmp_str.str);
+
+              if (print_event_info->verbose) {  // --verbose
+                if (copy_event_cache_to_string_and_reinit(
+                      &print_event_info->footer_cache, &tmp_str))
+                  goto err;
+                ev->output_buf.append(tmp_str.str, tmp_str.length);
+                if (tmp_str.str) my_free(tmp_str.str);
+              }
+
               /* Last event in the events_in_stmt cannot be deleted,because the last event is ev */
               for(uint i=0;i<events_in_stmt.size()-1;i++){
                   e=events_in_stmt[i];
                   delete e;
               }
               events_in_stmt.clear();
-          }
+          } 
           if(!stmt_end && opt_flashback)
               destroy_evt=FALSE;
       }else{
