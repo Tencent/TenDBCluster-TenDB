@@ -152,6 +152,7 @@ static std::shared_ptr<Rdb_tbl_prop_coll_factory> properties_collector_factory;
 Rdb_dict_manager dict_manager;
 Rdb_cf_manager cf_manager;
 Rdb_ddl_manager ddl_manager;
+Rdb_hton_init_state hton_init_state;
 
 /**
   MyRocks background thread control
@@ -424,6 +425,14 @@ static void rocksdb_set_max_background_jobs(THD *thd,
                                             struct st_mysql_sys_var *const var,
                                             void *const var_ptr,
                                             const void *const save);
+static void rocksdb_set_bytes_per_sync(THD *thd,
+                                       struct st_mysql_sys_var *const var,
+                                       void *const var_ptr,
+                                       const void *const save);
+static void rocksdb_set_wal_bytes_per_sync(THD *thd,
+                                           struct st_mysql_sys_var *const var,
+                                           void *const var_ptr,
+                                           const void *const save);
 //////////////////////////////////////////////////////////////////////////////
 // Options definitions
 //////////////////////////////////////////////////////////////////////////////
@@ -508,6 +517,7 @@ static std::unique_ptr<rocksdb::DBOptions> rdb_init_rocksdb_db_options(void) {
   o->listeners.push_back(std::make_shared<Rdb_event_listener>(&ddl_manager));
   o->info_log_level = rocksdb::InfoLogLevel::INFO_LEVEL;
   o->max_subcompactions = DEFAULT_SUBCOMPACTIONS;
+  o->max_open_files = -2; // auto-tune to 50% open_files_limit
 
   o->concurrent_prepare = true;
   o->manual_wal_flush = true;
@@ -859,7 +869,8 @@ static MYSQL_SYSVAR_BOOL(
 static MYSQL_SYSVAR_INT(max_open_files, rocksdb_db_options->max_open_files,
                         PLUGIN_VAR_RQCMDARG | PLUGIN_VAR_READONLY,
                         "DBOptions::max_open_files for RocksDB", nullptr,
-                        nullptr, 1000, /* min */ -1, /* max */ INT_MAX, 0);
+                        nullptr, rocksdb_db_options->max_open_files,
+                        /* min */ -2, /* max */ INT_MAX, 0);
 
 static MYSQL_SYSVAR_ULONG(max_total_wal_size,
                           rocksdb_db_options->max_total_wal_size,
@@ -1041,16 +1052,18 @@ static MYSQL_SYSVAR_BOOL(
     rocksdb_db_options->use_adaptive_mutex);
 
 static MYSQL_SYSVAR_ULONG(bytes_per_sync, rocksdb_db_options->bytes_per_sync,
-                          PLUGIN_VAR_RQCMDARG | PLUGIN_VAR_READONLY,
+                          PLUGIN_VAR_RQCMDARG,
                           "DBOptions::bytes_per_sync for RocksDB", nullptr,
-                          nullptr, rocksdb_db_options->bytes_per_sync,
+                          rocksdb_set_bytes_per_sync,
+                          rocksdb_db_options->bytes_per_sync,
                           /* min */ 0L, /* max */ LONG_MAX, 0);
 
 static MYSQL_SYSVAR_ULONG(wal_bytes_per_sync,
                           rocksdb_db_options->wal_bytes_per_sync,
-                          PLUGIN_VAR_RQCMDARG | PLUGIN_VAR_READONLY,
+                          PLUGIN_VAR_RQCMDARG,
                           "DBOptions::wal_bytes_per_sync for RocksDB", nullptr,
-                          nullptr, rocksdb_db_options->wal_bytes_per_sync,
+                          rocksdb_set_wal_bytes_per_sync,
+                          rocksdb_db_options->wal_bytes_per_sync,
                           /* min */ 0L, /* max */ LONG_MAX, 0);
 
 static MYSQL_SYSVAR_BOOL(
@@ -3530,6 +3543,10 @@ static int rocksdb_init_func(void *const p) {
   // Validate the assumption about the size of ROCKSDB_SIZEOF_HIDDEN_PK_COLUMN.
   static_assert(sizeof(longlong) == 8, "Assuming that longlong is 8 bytes.");
 
+  // Lock the handlertons initialized status flag for writing
+  Rdb_hton_init_state::Scoped_lock state_lock(*rdb_get_hton_init_state(), true);
+  SHIP_ASSERT(!rdb_get_hton_init_state()->initialized());
+
   init_rocksdb_psi_keys();
 
   rocksdb_hton = (handlerton *)p;
@@ -3587,8 +3604,10 @@ static int rocksdb_init_func(void *const p) {
     sql_print_information("RocksDB: rocksdb_max_open_files should not be "
                           "greater than the open_files_limit, effective value "
                           "of rocksdb_max_open_files is being set to "
-                          "open_files_limit.");
-    rocksdb_db_options->max_open_files = open_files_limit;
+                          "open_files_limit / 2.");
+    rocksdb_db_options->max_open_files = open_files_limit / 2;
+  } else if (rocksdb_db_options->max_open_files == -2) {
+    rocksdb_db_options->max_open_files = open_files_limit / 2;
   }
 
   rocksdb_stats = rocksdb::CreateDBStatistics();
@@ -3646,6 +3665,7 @@ static int rocksdb_init_func(void *const p) {
     // NO_LINT_DEBUG
     sql_print_error("RocksDB: rocksdb_flush_log_at_trx_commit needs to be 0 "
                     "to use allow_mmap_writes");
+    rdb_open_tables.free_hash();
     DBUG_RETURN(HA_EXIT_FAILURE);
   }
 
@@ -3673,6 +3693,7 @@ static int rocksdb_init_func(void *const p) {
     } else {
       rdb_open_tables.free_hash();
       rdb_log_status_error(status, "Error listing column families");
+      rdb_open_tables.free_hash();
       DBUG_RETURN(HA_EXIT_FAILURE);
     }
   } else
@@ -3730,11 +3751,13 @@ static int rocksdb_init_func(void *const p) {
       // NO_LINT_DEBUG
       sql_print_error("RocksDB: Persistent cache returned error: (%s)",
                       status.getState());
+      rdb_open_tables.free_hash();
       DBUG_RETURN(HA_EXIT_FAILURE);
     }
     rocksdb_tbl_options->persistent_cache = pcache;
   } else if (strlen(rocksdb_persistent_cache_path)) {
     sql_print_error("RocksDB: Must specify rocksdb_persistent_cache_size_mb");
+    rdb_open_tables.free_hash();
     DBUG_RETURN(HA_EXIT_FAILURE);
   }
 
@@ -3896,6 +3919,9 @@ static int rocksdb_init_func(void *const p) {
   // has been successfully initialized.
   commit_latency_stats = new rocksdb::HistogramImpl();
 
+  // succeeded, set the init status flag
+  rdb_get_hton_init_state()->set_initialized(true);
+
   sql_print_information("RocksDB instance opened");
   DBUG_RETURN(HA_EXIT_SUCCESS);
 }
@@ -3908,6 +3934,12 @@ static int rocksdb_done_func(void *const p) {
   DBUG_ENTER_FUNC();
 
   int error = 0;
+
+  // If we finalize the storage engine plugin, it is no longer initialized.
+  // Grab a writer lock for the duration of the call, so we can clear the flag
+  // and destroy the handlerton and global state in isolation.
+  Rdb_hton_init_state::Scoped_lock state_lock(*rdb_get_hton_init_state(), true);
+  SHIP_ASSERT(rdb_get_hton_init_state()->initialized());
 
   // signal the drop index thread to stop
   rdb_drop_idx_thread.signal(true);
@@ -3987,6 +4019,9 @@ static int rocksdb_done_func(void *const p) {
   rocksdb_stats = nullptr;
 
   my_error_unregister(HA_ERR_ROCKSDB_FIRST, HA_ERR_ROCKSDB_LAST);
+
+  // clear the initialized flag and unlock
+  rdb_get_hton_init_state()->set_initialized(false);
 
   DBUG_RETURN(error);
 }
@@ -4131,6 +4166,50 @@ void ha_rocksdb::load_auto_incr_value() {
   release_scan_iterator();
 }
 
+/*
+  Inspired by innobase_get_int_col_max_value from InnoDB. This returns the
+  maximum value a type can take on.
+*/
+static ulonglong rdb_get_int_col_max_value(const Field *field) {
+  ulonglong max_value = 0;
+  switch (field->key_type()) {
+  case HA_KEYTYPE_BINARY:
+    max_value = 0xFFULL;
+    break;
+  case HA_KEYTYPE_INT8:
+    max_value = 0x7FULL;
+    break;
+  case HA_KEYTYPE_USHORT_INT:
+    max_value = 0xFFFFULL;
+    break;
+  case HA_KEYTYPE_SHORT_INT:
+    max_value = 0x7FFFULL;
+    break;
+  case HA_KEYTYPE_UINT24:
+    max_value = 0xFFFFFFULL;
+    break;
+  case HA_KEYTYPE_INT24:
+    max_value = 0x7FFFFFULL;
+    break;
+  case HA_KEYTYPE_ULONG_INT:
+    max_value = 0xFFFFFFFFULL;
+    break;
+  case HA_KEYTYPE_LONG_INT:
+    max_value = 0x7FFFFFFFULL;
+    break;
+  case HA_KEYTYPE_ULONGLONG:
+    max_value = 0xFFFFFFFFFFFFFFFFULL;
+    break;
+  case HA_KEYTYPE_LONGLONG:
+    max_value = 0x7FFFFFFFFFFFFFFFULL;
+    break;
+  default:
+    abort_with_stack_traces();
+  }
+
+  return max_value;
+}
+
 /* Get PK value from table->record[0]. */
 /*
   TODO(alexyang): No existing support for auto_increment on non-pk columns, see
@@ -4139,25 +4218,29 @@ void ha_rocksdb::load_auto_incr_value() {
 */
 void ha_rocksdb::update_auto_incr_val() {
   Field *field;
-  longlong new_val;
+  ulonglong new_val, max_val;
   field = table->key_info[table->s->next_number_index].key_part[0].field;
+  max_val = rdb_get_int_col_max_value(field);
 
   my_bitmap_map *const old_map =
       dbug_tmp_use_all_columns(table, table->read_set);
   new_val = field->val_int();
   // don't increment if we would wrap around
-  if (new_val != std::numeric_limits<longlong>::max()) {
+  if (new_val != max_val) {
     new_val++;
   }
 
   dbug_tmp_restore_column_map(table->read_set, old_map);
 
-  longlong auto_incr_val = m_tbl_def->m_auto_incr_val;
-  while (auto_incr_val < new_val &&
-         !m_tbl_def->m_auto_incr_val.compare_exchange_weak(auto_incr_val,
-                                                           new_val)) {
-    // Do nothing - just loop until auto_incr_val is >= new_val or
-    // we successfully set it
+  // Only update if positive value was set for auto_incr column.
+  if (new_val <= max_val) {
+    ulonglong auto_incr_val = m_tbl_def->m_auto_incr_val;
+    while (auto_incr_val < new_val &&
+           !m_tbl_def->m_auto_incr_val.compare_exchange_weak(auto_incr_val,
+                                                             new_val)) {
+      // Do nothing - just loop until auto_incr_val is >= new_val or
+      // we successfully set it
+    }
   }
 }
 
@@ -5505,8 +5588,9 @@ rdb_is_index_collation_supported(const my_core::Field *const field) {
   /* Handle [VAR](CHAR|BINARY) or TEXT|BLOB */
   if (type == MYSQL_TYPE_VARCHAR || type == MYSQL_TYPE_STRING ||
       type == MYSQL_TYPE_BLOB || type == MYSQL_TYPE_JSON) {
-    return RDB_INDEX_COLLATIONS.find(field->charset()) !=
-           RDB_INDEX_COLLATIONS.end();
+    return (RDB_INDEX_COLLATIONS.find(field->charset()) !=
+           RDB_INDEX_COLLATIONS.end()) ||
+           rdb_is_collation_supported(field->charset());
   }
   return true;
 }
@@ -5629,18 +5713,13 @@ int ha_rocksdb::create_cfs(
         if (!rdb_is_index_collation_supported(
                 table_arg->key_info[i].key_part[part].field) &&
             !rdb_collation_exceptions->match(tablename_sys)) {
-          std::string collation_err;
-          for (const auto &coll : RDB_INDEX_COLLATIONS) {
-            if (collation_err != "") {
-              collation_err += ", ";
-            }
-            collation_err += coll->name;
-          }
-          my_error(ER_UNSUPPORTED_COLLATION, MYF(0),
-                   tbl_def_arg->full_tablename().c_str(),
-                   table_arg->key_info[i].key_part[part].field->field_name,
-                   collation_err.c_str());
-          DBUG_RETURN(HA_EXIT_FAILURE);
+          push_warning_printf(
+              ha_thd(), Sql_condition::SL_WARNING, HA_ERR_INTERNAL_ERROR,
+              "Indexed column %s.%s uses a collation that does not allow "
+              "index-only access in secondary key and has reduced disk space "
+              "efficiency in primary key.",
+              tbl_def_arg->full_tablename().c_str(),
+              table_arg->key_info[i].key_part[part].field->field_name);
         }
       }
     }
@@ -10037,32 +10116,73 @@ void ha_rocksdb::get_auto_increment(ulonglong off, ulonglong inc,
     off = 1;
   }
 
-  longlong new_val;
+  Field *field;
+  ulonglong new_val, max_val;
+  field = table->key_info[table->s->next_number_index].key_part[0].field;
+  max_val = rdb_get_int_col_max_value(field);
 
   // Local variable reference to simplify code below
-  std::atomic<longlong> &auto_incr = m_tbl_def->m_auto_incr_val;
+  auto &auto_incr = m_tbl_def->m_auto_incr_val;
 
-  if (inc == 1 && off == 1) {
+  if (inc == 1) {
+    DBUG_ASSERT(off == 1);
     // Optimization for the standard case where we are always simply
     // incrementing from the last position
 
     // Use CAS operation in a loop to make sure automically get the next auto
-    // increment value while ensuring tha we don't wrap around to a negative
+    // increment value while ensuring that we don't wrap around to a negative
     // number.
+    //
+    // We set auto_incr to the min of max_val and new_val + 1. This means that
+    // if we're at the maximum, we should be returning the same value for
+    // multiple rows, resulting in duplicate key errors (as expected).
+    //
+    // If we return values greater than the max, the SQL layer will "truncate"
+    // the value anyway, but it means that we store invalid values into
+    // auto_incr that will be visible in SHOW CREATE TABLE.
     new_val = auto_incr;
-    while (new_val != std::numeric_limits<longlong>::max()) {
-      if (auto_incr.compare_exchange_weak(new_val, new_val + 1)) {
+    while (new_val != std::numeric_limits<ulonglong>::max()) {
+      if (auto_incr.compare_exchange_weak(new_val,
+                                          std::min(new_val + 1, max_val))) {
         break;
       }
     }
   } else {
-    // The next value can be more complicated if either `inc` or 'off' is not 1
-    longlong last_val = auto_incr;
+    // The next value can be more complicated if either 'inc' or 'off' is not 1
+    ulonglong last_val = auto_incr;
 
     // Loop until we can correctly update the atomic value
     do {
-      if (((last_val - off) / inc) ==
-          (std::numeric_limits<longlong>::max() - off) / inc) {
+      DBUG_ASSERT(last_val > 0);
+      // Calculate the next value in the auto increment series: offset
+      // + N * increment where N is 0, 1, 2, ...
+      //
+      // For further information please visit:
+      // http://dev.mysql.com/doc/refman/5.7/en/replication-options-master.html
+      //
+      // The following is confusing so here is an explanation:
+      // To get the next number in the sequence above you subtract out the
+      // offset, calculate the next sequence (N * increment) and then add the
+      // offset back in.
+      //
+      // The additions are rearranged to avoid overflow.  The following is
+      // equivalent to (last_val - 1 + inc - off) / inc. This uses the fact
+      // that (a+b)/c = a/c + b/c + (a%c + b%c)/c. To show why:
+      //
+      // (a+b)/c
+      // = (a - a%c + a%c + b - b%c + b%c) / c
+      // = (a - a%c) / c + (b - b%c) / c + (a%c + b%c) / c
+      // = a/c + b/c + (a%c + b%c) / c
+      //
+      // Now, substitute a = last_val - 1, b = inc - off, c = inc to get the
+      // following statement.
+      ulonglong n =
+          (last_val - 1) / inc + ((last_val - 1) % inc + inc - off) / inc;
+
+      // Check if n * inc + off will overflow. This can only happen if we have
+      // an UNSIGNED BIGINT field.
+      if (n > (std::numeric_limits<ulonglong>::max() - off) / inc) {
+        DBUG_ASSERT(max_val == std::numeric_limits<ulonglong>::max());
         // The 'last_val' value is already equal to or larger than the largest
         // value in the sequence.  Continuing would wrap around (technically
         // the behavior would be undefined).  What should we do?
@@ -10074,31 +10194,30 @@ void ha_rocksdb::get_auto_increment(ulonglong off, ulonglong inc,
         //      may not be in our sequence, but it is guaranteed to be equal
         //      to or larger than any other value already inserted.
         //
-        //  For now I'm going to take option @2.
-        new_val = std::numeric_limits<longlong>::max();
+        //  For now I'm going to take option 2.
+        //
+        //  Returning ULLONG_MAX from get_auto_increment will cause the SQL
+        //  layer to fail with ER_AUTOINC_READ_FAILED. This means that due to
+        //  the SE API for get_auto_increment, inserts will fail with
+        //  ER_AUTOINC_READ_FAILED if the column is UNSIGNED BIGINT, but
+        //  inserts will fail with ER_DUP_ENTRY for other types (or no failure
+        //  if the column is in a non-unique SK).
+        new_val = std::numeric_limits<ulonglong>::max();
         auto_incr = new_val;  // Store the largest value into auto_incr
         break;
       }
 
-      // Calculate the next value in the auto increment series:
-      //   offset + N * increment
-      // where N is 0, 1, 2, ...
-      //
-      // For further information please visit:
-      // http://dev.mysql.com/doc/refman/5.7/en/replication-options-master.html
-      //
-      // The following is confusing so here is an explanation:
-      // To get the next number in the sequence above you subtract out
-      // the offset, calculate the next sequence (N * increment) and then add
-      // the offset back in.
-      new_val = (((last_val - off) + (inc - 1)) / inc) * inc + off;
+      new_val = n * inc + off;
 
       // Attempt to store the new value (plus 1 since m_auto_incr_val contains
       // the next available value) into the atomic value.  If the current
       // value no longer matches what we have in 'last_val' this will fail and
       // we will repeat the loop (`last_val` will automatically get updated
       // with the current value).
-    } while (!auto_incr.compare_exchange_weak(last_val, new_val + 1));
+      //
+      // See above explanation for inc == 1 for why we use std::min.
+    } while (!auto_incr.compare_exchange_weak(last_val,
+                                              std::min(new_val + 1, max_val)));
   }
 
   *first_value = new_val;
@@ -11508,6 +11627,10 @@ Rdb_dict_manager *rdb_get_dict_manager(void) { return &dict_manager; }
 
 Rdb_ddl_manager *rdb_get_ddl_manager(void) { return &ddl_manager; }
 
+Rdb_hton_init_state *rdb_get_hton_init_state(void) {
+  return &hton_init_state;
+}
+
 void rocksdb_set_compaction_options(my_core::THD *const thd
                                     MY_ATTRIBUTE((__unused__)),
                                     my_core::st_mysql_sys_var *const var
@@ -11724,6 +11847,62 @@ static void rocksdb_set_max_background_jobs(THD *thd,
     rocksdb_db_options->max_background_jobs = new_val;
     rocksdb::Status s =
         rdb->SetDBOptions({{"max_background_jobs", std::to_string(new_val)}});
+
+    if (!s.ok()) {
+      /* NO_LINT_DEBUG */
+      sql_print_warning("MyRocks: failed to update max_background_jobs. "
+                        "Status code = %d, status = %s.",
+                        s.code(), s.ToString().c_str());
+    }
+  }
+
+  RDB_MUTEX_UNLOCK_CHECK(rdb_sysvars_mutex);
+}
+
+static void rocksdb_set_bytes_per_sync(
+    THD *thd MY_ATTRIBUTE((__unused__)),
+    struct st_mysql_sys_var *const var MY_ATTRIBUTE((__unused__)),
+    void *const var_ptr MY_ATTRIBUTE((__unused__)), const void *const save) {
+  DBUG_ASSERT(save != nullptr);
+  DBUG_ASSERT(rocksdb_db_options != nullptr);
+  DBUG_ASSERT(rocksdb_db_options->env != nullptr);
+
+  RDB_MUTEX_LOCK_CHECK(rdb_sysvars_mutex);
+
+  const ulonglong new_val = *static_cast<const ulonglong *>(save);
+
+  if (rocksdb_db_options->bytes_per_sync != new_val) {
+    rocksdb_db_options->bytes_per_sync = new_val;
+    rocksdb::Status s =
+        rdb->SetDBOptions({{"bytes_per_sync", std::to_string(new_val)}});
+
+    if (!s.ok()) {
+      /* NO_LINT_DEBUG */
+      sql_print_warning("MyRocks: failed to update max_background_jobs. "
+                        "Status code = %d, status = %s.",
+                        s.code(), s.ToString().c_str());
+    }
+  }
+
+  RDB_MUTEX_UNLOCK_CHECK(rdb_sysvars_mutex);
+}
+
+static void rocksdb_set_wal_bytes_per_sync(
+    THD *thd MY_ATTRIBUTE((__unused__)),
+    struct st_mysql_sys_var *const var MY_ATTRIBUTE((__unused__)),
+    void *const var_ptr MY_ATTRIBUTE((__unused__)), const void *const save) {
+  DBUG_ASSERT(save != nullptr);
+  DBUG_ASSERT(rocksdb_db_options != nullptr);
+  DBUG_ASSERT(rocksdb_db_options->env != nullptr);
+
+  RDB_MUTEX_LOCK_CHECK(rdb_sysvars_mutex);
+
+  const ulonglong new_val = *static_cast<const ulonglong *>(save);
+
+  if (rocksdb_db_options->wal_bytes_per_sync != new_val) {
+    rocksdb_db_options->wal_bytes_per_sync = new_val;
+    rocksdb::Status s =
+        rdb->SetDBOptions({{"wal_bytes_per_sync", std::to_string(new_val)}});
 
     if (!s.ok()) {
       /* NO_LINT_DEBUG */
