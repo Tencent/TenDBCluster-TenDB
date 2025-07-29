@@ -3490,7 +3490,7 @@ fts_fetch_doc_from_rec(
 					static_cast<mem_heap_t*>(
 						doc->self_heap->arg));
 		} else {
-      ut_ad(rec_offs_validate(clust_rec, clust_index, offsets));
+      ut_ad(rec_offs_validate(NULL, clust_index, offsets));
       /* Instant ADD COLUMN is never invoked on
       the internal tables that are created for implementing FULLTEXT INDEX
       for InnoDB tables. Use the low-level physical access to the fields. */
