@@ -11225,6 +11225,13 @@ bool ha_innobase::check_instant_alter(
 			return false;
 		
 		dict_table_t* table = this->m_prebuilt->table;
+
+		if(table && 
+	 	    (DICT_TF2_FLAG_IS_SET(table, DICT_TF2_FTS_HAS_DOC_ID) 
+			|| DICT_TF2_FLAG_IS_SET(table, DICT_TF2_FTS))) { 
+			return false;
+		}
+
 		if (table && dict_table_is_comp(table) && !DICT_TF_GET_ZIP_SSIZE(table->flags)) {
 			return true;
 		}
