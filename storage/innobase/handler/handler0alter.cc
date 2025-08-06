@@ -9128,6 +9128,12 @@ foreign_fail:
 				tb_name, TRUE, TRUE, DICT_ERR_IGNORE_NONE);
 			dict_table_set_trx_id(m_prebuilt->table, trx_id);
 
+			if (altered_table->found_next_number_field) {
+				dict_table_autoinc_lock(m_prebuilt->table);
+				dict_table_autoinc_initialize(m_prebuilt->table, ctx->max_autoinc);
+				dict_table_autoinc_unlock(m_prebuilt->table);
+			}
+			
 			/* Drop outdated table stats. */
 			char	errstr[1024];
 			if (dict_stats_drop_table(
